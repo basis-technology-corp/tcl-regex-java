@@ -122,6 +122,8 @@ class Compiler {
         re.csize = 2;
         re.guts = new Guts();
 
+        cm = new ColorMap(this);
+
         // up to line 346 of regcomp.c
 
 
@@ -159,13 +161,23 @@ class Compiler {
         return re.info != b;
     }
 
-
-
-    private boolean colored(Arc a) {
-        return a.type == PLAIN || a.type == AHEAD || a.type == BEHIND;
-    }
-
     private void next() {
 
+    }
+
+    /**
+     * Return a cvec big enough. In this implementation, CVecs grow as needed,
+     * so they are always big enough.
+     * @param nchrs
+     * @param nranges
+     * @param nmcess
+     * @return
+     */
+    Cvec getcvec(int nchrs, int nranges, int nmcess) {
+        if (cv != null) {
+            return cv.clearcvec();
+        }
+        cv = new Cvec(nchrs, nranges, nmcess);
+        return cv;
     }
 }

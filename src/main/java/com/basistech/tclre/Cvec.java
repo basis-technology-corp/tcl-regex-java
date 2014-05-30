@@ -14,25 +14,68 @@
 
 package com.basistech.tclre;
 
+import com.google.common.collect.Lists;
+import it.unimi.dsi.fastutil.chars.CharArrayList;
+import it.unimi.dsi.fastutil.chars.CharList;
+
+import java.util.List;
+
 /**
- * Interface definitions for locale-interface functions in locale.c.
- * Multi-character collating elements (MCCEs) cause most of the trouble.
+ * Character vectors.
+ * These use fastutil to be infinitely expandable.
  */
 class Cvec {
     static final int MAXMCCE = 2;
-    int nchrs;		/* number of chrs */
-    int chrspace;		/* number of chrs possible */
-    char[] chrs;		/* pointer to vector of chrs */
-    int nranges;		/* number of ranges (chr pairs) */
-    int rangespace;		/* number of chrs possible */
-    char[] ranges;		/* pointer to vector of chr pairs */
-    int nmcces;		/* number of MCCEs */
-    int mccespace;		/* number of MCCEs possible */
-    int nmccechrs;		/* number of chrs used for MCCEs */
-    char[][]mcces;		/* pointers to 0-terminated MCCEs */
+    CharList chrs; // this might want to be a set.
+    CharList ranges;
+    List<String> mcces;
 
-    boolean haschr(char c) {
-        return false;
+    Cvec(int nchrs, int nranges, int nmcces) {
+        chrs = new CharArrayList(nchrs);
+        ranges = new CharArrayList(nranges * 2);
+        mcces = Lists.newArrayListWithCapacity(nmcces);
     }
 
-}  /* and both batches of chrs are on the end */
+    Cvec clearcvec() {
+        chrs.clear();
+        mcces.clear();
+        ranges.clear();
+        return this;
+    }
+
+    void addchr(char c) {
+        chrs.add(c);
+    }
+
+    void addrange(char from, char to) {
+        ranges.add(from);
+        ranges.add(to);
+    }
+
+    void addmcce(char[] data, int start, int end) {
+        if (data == null) {
+            return;
+        }
+        int len = end - start;
+        assert len > 0;
+        mcces.add(new String(data, start, len));
+    }
+
+    /**
+     * Return true if the char is either listed explicitly or covered in a range.
+     * @param c the char
+     * @return true if present.
+     */
+    boolean haschr(char c) {
+        if (chrs.contains(c)) {
+            return true;
+        }
+
+        for (int rangeIndex = 0; rangeIndex < ranges.size(); rangeIndex += 2) {
+            if (c >= ranges.getChar(rangeIndex) && c <= ranges.getChar(rangeIndex + 1)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}

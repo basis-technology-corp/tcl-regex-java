@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.basistech</groupId>
     <artifactId>tcl-regex</artifactId>
-    <version>0.3-SNAPSHOT</version>
+    <version>0.1-SNAPSHOT</version>
     <description>Basis java port of the regex engine from Tcl</description>
     <parent>
         <groupId>com.basistech</groupId>
@@ -41,6 +41,21 @@
         <groupId>com.ibm.icu</groupId>
         <artifactId>icu4j</artifactId>
         <version>53.1</version>
+      </dependency>
+      <dependency>
+        <groupId>it.unimi.dsi</groupId>
+        <artifactId>fastutil</artifactId>
+        <version>6.5.6</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>16.0.1</version>
+      </dependency>
+      <dependency>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+          <version>1.7.5</version>
       </dependency>
     </dependencies>
     <build>

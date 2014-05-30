@@ -171,7 +171,7 @@ class Compiler {
 
     }
 
-    void newarc(Nfa nda, int t, int co, State from, State to) {
+    void newarc(Nfa nfa, int t, int co, State from, State to) {
 
     }
 }

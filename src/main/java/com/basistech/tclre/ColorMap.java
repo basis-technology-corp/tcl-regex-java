@@ -24,7 +24,7 @@ import java.util.List;
 * code from regc_color.c.
 */
 class ColorMap {
-    private static final Logger LOG = LoggerFactory.getLogger(ColorMap.class);
+    static final Logger LOG = LoggerFactory.getLogger(ColorMap.class);
     /**
      * Color tree
      */
@@ -36,19 +36,20 @@ class ColorMap {
         Tree[] ptrs = new Tree[Constants.BYTTAB];
     }
 
-    Compiler v; // for compile error reporting
+    // this is called 'v' in the C code.
+    Compiler compiler; // for compile error reporting
 
     // replaced by the use of a list.
     //int ncds; // number of ColorDesc's
     int free; // beginning of free chain (if non-zero)
-    int max;
 
     // colorDescs is 'cd' in the C code.
     List<ColorDesc> colorDescs; // all the color descs. A list for resizability.
     // cdspace replaced by usr of list.
     Tree[] tree;
 
-    ColorMap() {
+    ColorMap(Compiler compiler) {
+        this.compiler = compiler;
         colorDescs = Lists.newArrayList();
         tree = new Tree[Constants.NBYTS];
 
@@ -61,7 +62,7 @@ class ColorMap {
         white.nchrs = (char) (Constants.CHR_MAX - Constants.CHR_MIN + 1);
 
         // allocate top-level array of tree objects.
-        for (int tx = 0; tx < tree.length - 1; tx++) {
+        for (int tx = 0; tx < tree.length; tx++) {
             tree[tx] = new Tree();
         }
 
@@ -86,7 +87,7 @@ class ColorMap {
     /**
      * setcolor - set the color of a character in a colormap
     */
-    private short setcolor(char c, int co) {
+    short setcolor(char c, short co) {
         char uc = c;
         int b;
 
@@ -125,7 +126,11 @@ class ColorMap {
         return prev;
     }
 
-    private short maxcolor() {
+    /**
+     * Maximum valid color, which might encompass some free colors.
+     * @return
+     */
+    short maxcolor() {
         return (short)(colorDescs.size() - 1);
     }
 
@@ -136,7 +141,7 @@ class ColorMap {
      * but takes a simpler approach to storage.
      */
 
-    private short newcolor() {
+    short newcolor() {
         if (isErr()) {
             return Constants.COLORLESS;
         }
@@ -157,7 +162,7 @@ class ColorMap {
         }
     }
 
-    private void freecolor(short co) {
+    void freecolor(short co) {
         assert co >= 0;
         if (co == Constants.WHITE) {
             return;
@@ -187,7 +192,7 @@ class ColorMap {
      * pseudocolor - allocate a false color to be managed by other means.
      * @return
      */
-    private short pseudocolor() {
+    short pseudocolor() {
         short co = newcolor();
         if (isErr()) {
             return Constants.COLORLESS;
@@ -201,7 +206,7 @@ class ColorMap {
     /**
      * subcolor - allocate a new subcolor (if necessary) to this chr
      */
-    private short subcolor(char c) {
+    short subcolor(char c) {
         short co;			/* current color of c */
         short sco;			/* new subcolor */
 
@@ -226,7 +231,7 @@ class ColorMap {
     /**
      * newsub - allocate a new subcolor (if necessary) for a color
      */
-    private short newsub(short co) {
+    short newsub(short co) {
         short sco; // new subclolor.
 
         ColorDesc cd = colorDescs.get(co);
@@ -246,6 +251,7 @@ class ColorMap {
             cd.sub = sco;
             subcd.sub = sco;	/* open subcolor points to self */
         }
+
         assert sco != Constants.NOSUB;
 
         return sco;
@@ -254,7 +260,7 @@ class ColorMap {
     /**
      * subrange - allocate new subcolors to this range of chrs, fill in arcs
      */
-    private void subrange(char from, char to, State lp, State rp) {
+    void subrange(char from, char to, State lp, State rp) {
         char uf;
         int i;
 
@@ -264,7 +270,7 @@ class ColorMap {
         uf = from;
         i = ((uf + Constants.BYTTAB - 1) & (char)~Constants.BYTMASK) - uf;
         for (; from <= to && i > 0; i--, from++) {
-            v.newarc(v.nfa, Compiler.PLAIN, subcolor(from), lp, rp);
+            compiler.newarc(compiler.nfa, Compiler.PLAIN, subcolor(from), lp, rp);
         }
 
         if (from > to) {			/* didn't reach a boundary */
@@ -278,14 +284,14 @@ class ColorMap {
 
     /* clean up any remaining partial table */
         for (; from <= to; from++) {
-            v.newarc(v.nfa, Compiler.PLAIN, subcolor(from), lp, rp);
+            compiler.newarc(compiler.nfa, Compiler.PLAIN, subcolor(from), lp, rp);
         }
     }
 
     /**
      * subblock - allocate new subcolors for one tree block of chrs, fill in arcs
      */
-    private void subblock(char start, State lp, State rp) {
+    void subblock(char start, State lp, State rp) {
         char uc = start;
         int shift;
         int level;
@@ -339,7 +345,7 @@ class ColorMap {
         /* find loop must have run at least once */
             lastt.ptrs[b] = t;
 
-            v.newarc(v.nfa, Compiler.PLAIN, sco, lp, rp);
+            compiler.newarc(compiler.nfa, Compiler.PLAIN, sco, lp, rp);
             cd.nchrs -= Constants.BYTTAB;
             scd.nchrs += Constants.BYTTAB;
             return;
@@ -352,7 +358,7 @@ class ColorMap {
             cd = colorDescs.get(co);
             sco = newsub(co);
             ColorDesc scd = colorDescs.get(sco);
-            v.newarc(v.nfa, Compiler.PLAIN, sco, lp, rp);
+            compiler.newarc(compiler.nfa, Compiler.PLAIN, sco, lp, rp);
             previ = i;
             do {
                 t.ccolor[i++] = sco;
@@ -367,7 +373,7 @@ class ColorMap {
     /**
      *okcolors - promote subcolors to full colors
      */
-    private void okcolors(Nfa nfa) {
+    void okcolors(Nfa nfa) {
         ColorDesc cd;
         ColorDesc scd;
         Arc a;
@@ -412,7 +418,7 @@ class ColorMap {
 
                 for (a = cd.arcs; a != null; a = a.colorchain) {
                     assert a.co == co;
-                    v.newarc(nfa, a.type, sco, a.from, a.to);
+                    compiler.newarc(nfa, a.type, sco, a.from, a.to);
                 }
             }
         }
@@ -421,7 +427,7 @@ class ColorMap {
     /**
      * colorchain - add this arc to the color chain of its color
     */
-    private void colorchain(Arc a) {
+    void colorchain(Arc a) {
         ColorDesc cd = colorDescs.get(a.co);
         a.colorchain = cd.arcs;
         cd.arcs = a;
@@ -430,7 +436,7 @@ class ColorMap {
     /**
      * uncolorchain - delete this arc from the color chain of its color
      */
-    private void uncolorchain(Arc a) {
+    void uncolorchain(Arc a) {
         ColorDesc cd = colorDescs.get(a.co);
         Arc aa;
 
@@ -451,7 +457,7 @@ class ColorMap {
     /**
      * singleton - is this character in its own color?
      */
-    private boolean singleton(char c) {
+    boolean singleton(char c) {
         short co;			/* color of c */
 
         co = getcolor(c);
@@ -463,7 +469,7 @@ class ColorMap {
       * rainbow - add arcs of all full colors (but one) between specified states
      * @param but is COLORLESS if no exceptions
      */
-    private void rainbow(Nfa nfa, int type, short but, State from, State to) {
+    void rainbow(Nfa nfa, int type, short but, State from, State to) {
         ColorDesc cd;
         short co;
 
@@ -473,7 +479,7 @@ class ColorMap {
                     && cd.sub != co
                     && co != but
                     && !cd.pseudo()) {
-                v.newarc(nfa, type, co, from, to);
+                compiler.newarc(nfa, type, co, from, to);
             }
         }
     }
@@ -483,7 +489,7 @@ class ColorMap {
      * The calling sequence ought to be reconciled with cloneouts().
      * @param of complements of this guy's PLAIN outarcs
      */
-    private void colorcomplement(Nfa nfa, int type, State of, State from, State to) {
+    void colorcomplement(Nfa nfa, int type, State of, State from, State to) {
         ColorDesc cd;
         short co;
 
@@ -492,7 +498,7 @@ class ColorMap {
             cd = colorDescs.get(co);
             if (!cd.unusedColor() && !cd.pseudo())
                 if (of.findarc(Compiler.PLAIN, co) == null) {
-                    v.newarc(nfa, type, co, from, to);
+                    compiler.newarc(nfa, type, co, from, to);
                 }
         }
     }
@@ -511,12 +517,12 @@ class ColorMap {
         return (short) ((c >>> Constants.BYTBITS) & Constants.BYTMASK);
     }
 
-    private boolean isErr() {
-        return v.err != 0;
+    boolean isErr() {
+        return compiler.err != 0;
     }
 
-    private void err(int e) {
-        v.err(e);
+    void err(int e) {
+        compiler.err(e);
     }
 
     /**

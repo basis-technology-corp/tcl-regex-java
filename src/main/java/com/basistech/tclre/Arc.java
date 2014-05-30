@@ -15,7 +15,7 @@
 package com.basistech.tclre;
 
 /**
-* Created by benson on 5/29/14.
+* Arc
 */
 class Arc {
     static final int ARCFREE = 0;

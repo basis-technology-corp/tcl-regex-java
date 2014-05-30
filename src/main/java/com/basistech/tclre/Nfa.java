@@ -15,7 +15,7 @@
 package com.basistech.tclre;
 
 /**
-* Created by benson on 5/29/14.
+* Nfa representation.
 */
 class Nfa {
     State pre;	/* pre-initial state */

@@ -51,13 +51,14 @@ class Compiler {
     char[] pattern;
     int now;		/* scan pointer into string */
     int stop;		/* end of string */
+    char[] savepattern;
     int savenow;		/* saved now and stop for "subroutine call" */
     int savestop;
     int err;		/* error code (0 if none) */
     int cflags;		/* copy of compile flags */
     int lasttype;		/* type of previous token */
     int nexttype;		/* type of next token */
-    char nextvalue;		/* value (if any) of next token */
+    int nextvalue;		/* value (if any) of next token */
     int lexcon;		/* lexical context type (see lex.c) */
     int nsubexp;		/* subexpression count */
     List<Subre> subs;	/* subRE pointer vector */
@@ -72,20 +73,13 @@ class Compiler {
     int ntree;		/* number of tree nodes */
     Cvec cv;	/* interface cvec */
     Cvec cv2;	/* utility cvec */
-    Cvec mcces;	/* collating-element information */
 
-    boolean isCeLeader(char c) {
-        return mcces != null && mcces.haschr(c);
-    }
+    Cvec mcces;	/* collating-element information */
 
     State mccepbegin;	/* in nfa, start of MCCE prototypes */
     State mccepend;	/* in nfa, end of MCCE prototypes */
     List<Subre> lacons;	/* lookahead-constraint vector */
-
-    int nlacons() {
-        return lacons.size();
-    }
-    // int nlacons;		/* size of lacons */
+    Lex lex;
 
     /**
      * Constructor does minimal setup; construct, then call compile().
@@ -113,9 +107,19 @@ class Compiler {
         this.cflags = flags;
         subs = Lists.newArrayListWithCapacity(10);
         lacons = Lists.newArrayList();
+        // the lexer is 'over there' but shared state here, for now at least.
+        lex = new Lex(this);
     }
 
-    void compile() {
+
+
+    int nlacons() {
+        return lacons.size();
+    }
+    // int nlacons;		/* size of lacons */
+
+
+    void compile() throws RegexException {
         stop = pattern.length;
         nlcolor = Constants.COLORLESS;
         re.info = 0;
@@ -123,23 +127,30 @@ class Compiler {
         re.guts = new Guts();
 
         cm = new ColorMap(this);
+        cv = new Cvec(100, 20, 10);
 
-        // up to line 346 of regcomp.c
+        // No MCESS support, so no initialization of it.
 
-
-    }
-
-    private boolean see(int t) {
-        return nexttype == t;
-    }
-
-    private void eat(int t) {
-        if (see(t)) {
-            next();
+        if (err != 0) {
+            throw new RegexException(); // TODO: fix up.
         }
+
+        /* Parsing */
+
+
     }
 
-    private boolean iserr() {
+
+    /**
+     * Always return false because there is no mcess support enabled.
+     * @param c
+     * @return
+     */
+    boolean isCeLeader(char c) {
+        return mcces != null && mcces.haschr(c);
+    }
+
+    boolean iserr() {
         return err != 0;
     }
 
@@ -151,18 +162,14 @@ class Compiler {
         return err;
     }
 
-    private void insist(boolean v, int e) {
+    void insist(boolean v, int e) {
         if (!v) {
             err(e);
         }
     }
 
-    private boolean note(long b) {
+    boolean note(long b) {
         return re.info != b;
-    }
-
-    private void next() {
-
     }
 
     /**
@@ -179,5 +186,34 @@ class Compiler {
         }
         cv = new Cvec(nchrs, nranges, nmcess);
         return cv;
+    }
+
+    // The C version we use has no collation support generated in, so we get
+    // the following stub functions.
+    /*
+     - nmcces - how many distinct MCCEs are there?
+     ^ static int nmcces(struct vars *);
+     */
+    int nmcces() {
+    /*
+     * No multi-character collating elements defined at the moment.
+     */
+        return 0;
+    }
+
+    /*
+     - nleaders - how many chrs can be first chrs of MCCEs?
+     ^ static int nleaders(struct vars *);
+     */
+    int nleaders() {
+        return 0;
+    }
+
+    /*
+     - allmcces - return a cvec with all the MCCEs of the locale
+     ^ static struct cvec *allmcces(struct vars *, struct cvec *);
+     */
+    Cvec allmcces(Cvec cv) {
+        return cv.clearcvec();
     }
 }

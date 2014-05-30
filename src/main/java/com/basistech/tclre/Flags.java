@@ -42,5 +42,21 @@ final class Flags {
     static final int REG_PROGRESS = 020000;	/* none of your business :-) */
     static final int REG_NOCAPT = 040000; /* disable capturing parens */
 
+    // these are internal. This may need sorting.
+    static final int REG_UBACKREF = 000001;
+    static final int REG_ULOOKAHEAD = 000002;
+    static final int REG_UBOUNDS = 000004;
+    static final int REG_UBRACES = 000010;
+    static final int REG_UBSALNUM = 000020;
+    static final int REG_UPBOTCH = 000040;
+    static final int REG_UBBS = 000100;
+    static final int REG_UNONPOSIX = 000200;
+    static final int REG_UUNSPEC = 000400;
+    static final int REG_UUNPORT = 001000;
+    static final int REG_ULOCALE = 002000;
+    static final int REG_UEMPTYMATCH = 004000;
+    static final int REG_UIMPOSSIBLE = 010000;
+    static final int REG_USHORTEST = 020000;
+
 
 }

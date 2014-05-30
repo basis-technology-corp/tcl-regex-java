@@ -14,23 +14,22 @@
 
 package com.basistech.tclre;
 
+import com.google.common.base.Objects;
+
 /**
 * Created by benson on 5/29/14.
 */
 class State {
     static final int FREESTATE = -1;
     int no;
-    byte flag;		/* marks special states */
+    int flag;		/* marks special states */
     int nins;		/* number of inarcs */
     Arc ins;	/* chain of inarcs */
     int nouts;		/* number of outarcs */
     Arc outs;	/* chain of outarcs */
-    Arc free;	/* chain of free arcs */
     State tmp;	/* temporary for traversal algorithms */
     State next;	/* chain for traversing all */
     State prev;	/* back chain */
-    ArcBatch oas;	/* first arcbatch, avoid malloc in easy case */
-    int noas;		/* number of arcs used in first arcbatch */
 
     Arc findarc(int type, short co) {
         for (Arc a = outs; a != null; a = a.outchain) {
@@ -39,5 +38,15 @@ class State {
             }
         }
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("no", no)
+                .add("flag", flag)
+                .add("nins", nins)
+                .add("nouts", nouts)
+                .toString();
     }
 }

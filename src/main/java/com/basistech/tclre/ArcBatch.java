@@ -15,8 +15,9 @@
 package com.basistech.tclre;
 
 /**
-* Created by benson on 5/29/14.
+* This is part of an allocation strategy for Arcs that I don't think we will use in Java.
 */
+@Deprecated
 class ArcBatch {		/* for bulk allocation of arcs */
     static final int ABSIZE = 10;
     ArcBatch Next;

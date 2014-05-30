@@ -270,7 +270,7 @@ class ColorMap {
         uf = from;
         i = ((uf + Constants.BYTTAB - 1) & (char)~Constants.BYTMASK) - uf;
         for (; from <= to && i > 0; i--, from++) {
-            compiler.newarc(compiler.nfa, Compiler.PLAIN, subcolor(from), lp, rp);
+            compiler.nfa.newarc(Compiler.PLAIN, subcolor(from), lp, rp);
         }
 
         if (from > to) {			/* didn't reach a boundary */
@@ -284,7 +284,7 @@ class ColorMap {
 
     /* clean up any remaining partial table */
         for (; from <= to; from++) {
-            compiler.newarc(compiler.nfa, Compiler.PLAIN, subcolor(from), lp, rp);
+            compiler.nfa.newarc(Compiler.PLAIN, subcolor(from), lp, rp);
         }
     }
 
@@ -345,7 +345,7 @@ class ColorMap {
         /* find loop must have run at least once */
             lastt.ptrs[b] = t;
 
-            compiler.newarc(compiler.nfa, Compiler.PLAIN, sco, lp, rp);
+            compiler.nfa.newarc(Compiler.PLAIN, sco, lp, rp);
             cd.nchrs -= Constants.BYTTAB;
             scd.nchrs += Constants.BYTTAB;
             return;
@@ -358,7 +358,7 @@ class ColorMap {
             cd = colorDescs.get(co);
             sco = newsub(co);
             ColorDesc scd = colorDescs.get(sco);
-            compiler.newarc(compiler.nfa, Compiler.PLAIN, sco, lp, rp);
+            compiler.nfa.newarc(Compiler.PLAIN, sco, lp, rp);
             previ = i;
             do {
                 t.ccolor[i++] = sco;
@@ -418,7 +418,7 @@ class ColorMap {
 
                 for (a = cd.arcs; a != null; a = a.colorchain) {
                     assert a.co == co;
-                    compiler.newarc(nfa, a.type, sco, a.from, a.to);
+                    nfa.newarc(a.type, sco, a.from, a.to);
                 }
             }
         }
@@ -479,7 +479,7 @@ class ColorMap {
                     && cd.sub != co
                     && co != but
                     && !cd.pseudo()) {
-                compiler.newarc(nfa, type, co, from, to);
+                compiler.nfa.newarc(type, co, from, to);
             }
         }
     }
@@ -498,7 +498,7 @@ class ColorMap {
             cd = colorDescs.get(co);
             if (!cd.unusedColor() && !cd.pseudo())
                 if (of.findarc(Compiler.PLAIN, co) == null) {
-                    compiler.newarc(nfa, type, co, from, to);
+                    compiler.nfa.newarc(type, co, from, to);
                 }
         }
     }

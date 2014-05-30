@@ -159,19 +159,13 @@ class Compiler {
         return re.info != b;
     }
 
-    void emptyarc(State from, State to) {
-        newarc(nfa, EMPTY, 0, from, to);
-    }
+
 
     private boolean colored(Arc a) {
         return a.type == PLAIN || a.type == AHEAD || a.type == BEHIND;
     }
 
     private void next() {
-
-    }
-
-    void newarc(Nfa nfa, int t, int co, State from, State to) {
 
     }
 }

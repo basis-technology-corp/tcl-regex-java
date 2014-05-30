@@ -14,9 +14,12 @@
 
 package com.basistech.tclre;
 
+import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.util.List;
 
 /**
  * Unit tests for the color map management.
@@ -24,6 +27,10 @@ import org.mockito.Mockito;
  * primarily an exercise in trying to provoke stupid crashes.
  */
 public class ColorMapTest extends Assert {
+
+    static final char TESTCHAR1 = '\u4e00';
+    static final char TESTCHAR2 = '\u4e01';
+    static final char TESTCHAR3 = '\u4e02';
 
     private Compiler mockCompiler() {
         Compiler compiler = Mockito.mock(Compiler.class);
@@ -95,10 +102,10 @@ public class ColorMapTest extends Assert {
     public void setcolor() {
         ColorMap cm = new ColorMap(mockCompiler());
         short newColor = cm.newcolor();
-        short oldColor = cm.setcolor('\u4e00', newColor);
+        short oldColor = cm.setcolor(TESTCHAR1, newColor);
         assertEquals(Constants.WHITE, oldColor);
         assertNotSame(Constants.WHITE, newColor);
-        assertEquals(newColor, cm.getcolor('\u4e00'));
+        assertEquals(newColor, cm.getcolor(TESTCHAR1));
         // Make sure we didn't bust something else.
         for (int c = 0; c <= 0xffff; c += 0x1000) {
             if (c != 0x4e00) {
@@ -110,27 +117,69 @@ public class ColorMapTest extends Assert {
 
     @Test
     public void subcolor() {
-        char testchar1 = '\u4e00';
-        char testchar2 = '\u4e01';
-        char testchar3 = '\u4e02';
+
         ColorMap cm = new ColorMap(mockCompiler());
-        short color1 = cm.subcolor(testchar1);
+        short color1 = cm.subcolor(TESTCHAR1);
         assertNotSame(Constants.WHITE, color1);
         ColorDesc cd1 = cm.colorDescs.get(color1);
         assertEquals(1, cd1.nchrs);
-        assertEquals(color1, cm.getcolor(testchar1));
+        assertEquals(color1, cm.getcolor(TESTCHAR1));
 
         // the subcolor is open, so it ends up in the same place.
-        short color2 = cm.subcolor(testchar2);
+        short color2 = cm.subcolor(TESTCHAR2);
         assertEquals(color1, color2);
-        assertEquals(color2, cm.getcolor(testchar2));
+        assertEquals(color2, cm.getcolor(TESTCHAR2));
         // we have no arcs, so a catatonic mock is enough mock.
         Nfa nfa = Mockito.mock(Nfa.class);
         cm.okcolors(nfa);
-        short color3 = cm.subcolor(testchar3);
+        short color3 = cm.subcolor(TESTCHAR3);
         assertNotSame(color2, color3);
     }
 
+    @Test
+    public void colorchain() {
+        ColorMap cm = new ColorMap(mockCompiler());
+        // we need a mimimal NFA. Mocking does not help, we need actual data structure.
+        Nfa nfa = new Nfa(cm);
+        State s0 = nfa.newState();
+        State s1 = nfa.newState();
+        State s2 = nfa.newState();
+        State s3 = nfa.newState();
 
+        short color1 = cm.subcolor(TESTCHAR1);
 
+        nfa.newarc(Compiler.PLAIN, color1, s0, s1);
+        nfa.newarc(Compiler.PLAIN, color1, s0, s3);
+        cm.okcolors(nfa);
+
+        short color2 = cm.subcolor(TESTCHAR2);
+        nfa.newarc(Compiler.PLAIN, color2, s2, s3);
+        cm.okcolors(nfa);
+
+        ColorDesc cd = cm.colorDescs.get(color1);
+
+        assertNotNull(cd.arcs.colorchain);
+        List<Arc> color1Arcs = collectArcList(cd.arcs);
+        assertEquals(2, color1Arcs.size());
+        for (Arc a : color1Arcs) {
+            // all color1 arcs start with s0
+            assertEquals(color1, a.co);
+            assertSame(s0, a.from);
+        }
+
+        Arc a = s1.ins; // take the S0->S1 arc
+
+        cm.uncolorchain(cd.arcs);
+        assertNotNull(cd.arcs); // leave the prior one.
+        assertNull(a.colorchain);
+    }
+
+    // collects the arcs from a colorchain
+    private List<Arc> collectArcList(Arc arcs) {
+        List<Arc> list = Lists.newArrayList();
+        for (Arc a = arcs; a != null; a = a.colorchain) {
+            list.add(a);
+        }
+        return list;
+    }
 }

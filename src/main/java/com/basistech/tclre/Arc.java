@@ -14,6 +14,8 @@
 
 package com.basistech.tclre;
 
+import com.google.common.base.Objects;
+
 /**
 * Arc
 */
@@ -27,4 +29,22 @@ class Arc {
     //define	freechain	outchain
     Arc inchain;	/* *to's ins chain */
     Arc colorchain;	/* color's arc chain */
+
+    /** is an arc colored, and hence on a color chain? */
+    boolean colored() {
+        return type == Compiler.PLAIN || type == Compiler.AHEAD || type == Compiler.BEHIND;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("type", type)
+                .add("co", co)
+                .add("from", from)
+                .add("to", to)
+                .add("outchain", outchain)
+                .add("inchain", inchain)
+                .add("colorchain", colorchain)
+                .toString();
+    }
 }

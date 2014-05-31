@@ -17,13 +17,9 @@ package com.basistech.tclre;
 import com.google.common.base.Objects;
 
 /**
-* Created by benson on 5/29/14.
-*/ /*
 * subexpression tree
 */
 class Subre {
-    byte op;		/* '|', '.' (concat), 'b' (backref), '(', '=' */
-    byte flags;
     static final int	LONGER = 01;	/* prefers longer match */
     static final int	SHORTER	= 02;	/* prefers shorter match */
     static final int	MIXED = 04;	/* mixed preference below */
@@ -62,6 +58,8 @@ class Subre {
         return up(f1 | f2) | pref2(f1, f2);
     }
 
+    char op;		/* '|', '.' (concat), 'b' (backref), '(', '=' */
+    int flags;
     short retry;		/* index into retry memory */
     int subno;		/* subexpression number (for 'b' and '(') */
     short min;		/* min repetitions, for backref only */
@@ -72,6 +70,18 @@ class Subre {
     State end;	/* ...ending in inarcs here */
     Cnfa cnfa;	/* compacted NFA, if any */
     Subre chain;	/* for bookkeeping and error cleanup */
+
+    Subre(char op, int flags, State initState, State finalState) {
+        assert "|.b(=".indexOf(op) != -1;
+
+        this.op = op;
+        this.flags = flags;
+        min = 1;
+        max = 1;
+        begin = initState;
+        end = finalState;
+        cnfa = new Cnfa();
+    }
 
     @Override
     public String toString() {

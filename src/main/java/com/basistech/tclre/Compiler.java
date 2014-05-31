@@ -229,9 +229,170 @@ class Compiler {
      * NFA must have been optimize()d already.
      */
     void makesearch(Nfa nfa) {
+        Arc a;
+        Arc b;
+        State pre = nfa.pre;
+        State s;
+        State s2;
+        State slist;
+
+    /* no loops are needed if it's anchored */
+        for (a = pre.outs; a != null; a = a.outchain) {
+            assert(a.type == PLAIN);
+            if (a.co != nfa.bos[0] && a.co != nfa.bos[1])
+                break;
+        }
+        if (a != null) {
+        /* add implicit .* in front */
+            cm.rainbow(nfa, PLAIN, Constants.COLORLESS, pre, pre);
+
+        /* and ^* and \A* too -- not always necessary, but harmless */
+            nfa.newarc(PLAIN, nfa.bos[0], pre, pre);
+            nfa.newarc(PLAIN, nfa.bos[1], pre, pre);
+        }
+
+    /*
+     * Now here's the subtle part.  Because many REs have no lookback
+     * constraints, often knowing when you were in the pre state tells
+     * you little; it's the next state(s) that are informative.  But
+     * some of them may have other inarcs, i.e. it may be possible to
+     * make actual progress and then return to one of them.  We must
+     * de-optimize such cases, splitting each such state into progress
+     * and no-progress states.
+     */
+
+    /* first, make a list of the states */
+        slist = null;
+        for (a = pre.outs; a != null; a = a.outchain) {
+            s = a.to;
+            for (b = s.ins; b != null; b = b.inchain)
+                if (b.from != pre)
+                    break;
+            if (b != null) {		/* must be split */
+                if (s.tmp == null) {  /* if not already in the list */
+                                   /* (fixes bugs 505048, 230589, */
+                                   /* 840258, 504785) */
+                    s.tmp = slist;
+                    slist = s;
+                }
+            }
+        }
+
+    /* do the splits */
+        for (s = slist; s != null; s = s2) {
+            s2 = nfa.newstate();
+            copyouts(nfa, s, s2);
+            for (a = s.ins; a != null; a = b) {
+                b = a.inchain;
+                if (a.from != pre) {
+                    cparc(nfa, a, a.from, s2);
+                    nfa.freearc(a);
+                }
+            }
+            s2 = s.tmp;
+            s.tmp = null;		/* clean up while we're at it */
+        }
+
 
     }
 
+    /**
+     * findarc - find arc, if any, from given source with given type and color
+     * If there is more than one such arc, the result is random.
+     */
+    Arc findarc(State s, int type, short co) {
+        Arc a;
+
+        for (a = s.outs; a != null; a = a.outchain) {
+            if (a.type == type && a.co == co) {
+                return a;
+            }
+        }
+        return null;
+    }
+
+    /**
+     - cparc - allocate a new arc within an NFA, copying details from old one
+     ^ static VOID cparc(struct nfa *, struct arc *, struct state *,
+     ^ 	struct state *);
+     */
+    void cparc(Nfa nfa, Arc oa, State from, State to) {
+        nfa.newarc(oa.type, oa.co, from, to);
+    }
+
+    /**
+     - moveins - move all in arcs of a state to another state
+     * You might think this could be done better by just updating the
+     * existing arcs, and you would be right if it weren't for the desire
+     * for duplicate suppression, which makes it easier to just make new
+     * ones to exploit the suppression built into newarc.
+     */
+    void moveins(Nfa nfa, State old, State newState) {
+        Arc a;
+
+        assert old != newState;
+
+        while ((a = old.ins) != null) {
+        cparc(nfa, a, a.from, newState);
+        nfa.freearc(a);
+    }
+        assert old.nins == 0;
+        assert old.ins == null;
+    }
+
+    /**
+     * copyins - copy all in arcs of a state to another state
+     */
+    void copyins(Nfa nfa, State old, State newState) {
+        Arc a;
+
+        assert old != newState;
+
+        for (a = old.ins; a != null; a = a.inchain) {
+            cparc(nfa, a, a.from, newState);
+        }
+    }
+
+    /**
+     * moveouts - move all out arcs of a state to another state
+     ^ static VOID moveouts(struct nfa *, struct state *, struct state *);
+     */
+    void moveouts(Nfa nfa, State old, State newState) {
+        Arc a;
+
+        assert old != newState;
+
+        while ((a = old.outs) != null) {
+            cparc(nfa, a, newState, a.to);
+            nfa.freearc(a);
+        }
+    }
+
+    /**
+     * copyouts - copy all out arcs of a state to another state
+     */
+    void copyouts(Nfa nfa, State old, State newState) {
+        Arc a;
+
+        assert old != newState;
+
+        for (a = old.outs; a != null; a = a.outchain) {
+            cparc(nfa, a, newState, a.to);
+        }
+    }
+
+    /**
+     * cloneouts - copy out arcs of a state to another state pair, modifying type
+     */
+    void cloneouts(Nfa nfa, State old, State from, State to, int type) {
+        Arc a;
+
+        assert old != from;
+
+        for (a = old.outs; a != null; a = a.outchain) {
+            nfa.newarc(type, a.co, from, to);
+        }
+    }
 
     /**
      * optst - optimize a subRE subtree
@@ -313,9 +474,9 @@ class Compiler {
 
     /**
      * nfanode - do one NFA for nfatree
+     * @return results of {@link #optimize(Nfa)}
      */
-    long			/* optimize results */
-    nfanode(Subre t) throws RegexException {
+    long nfanode(Subre t) throws RegexException {
         long ret = 0;
 
         assert t.begin != null;
@@ -340,10 +501,128 @@ class Compiler {
         return ret;
     }
 
-
-    Subre parse(int stopper, int type, State initState, State finalState) {
-        return null;
+    int lmix(int f) {
+        return f <<2;	/* LONGER -> MIXED */
     }
+
+    int smix(int f) {
+        return f <<1;	/* SHORTER -> MIXED */
+    }
+
+    int up(int f) {
+        return (f & ~Subre.LOCAL) | (lmix(f) & smix(f) & Subre.MIXED);
+    }
+
+    boolean eat(char t) {
+        return see(t) && lex.next();
+    }
+
+    boolean messy(int f) {
+        return 0 != (f & (Subre.MIXED|Subre.CAP|Subre.BACKR));
+    }
+
+    /**
+     * parse - parse an RE
+     * This is actually just the top level, which parses a bunch of branches
+     * tied together with '|'.  They appear in the tree as the left children
+     * of a chain of '|' subres.
+     */
+    Subre parse(int stopper, int type, State initState, State finalState) throws RegexException {
+        State left;	/* scaffolding for branch */
+        State right;
+        Subre branches;	/* top level */
+        Subre branch;	/* current branch */
+        Subre t;	/* temporary */
+        int firstbranch;	/* is this the first branch? */
+
+        assert(stopper == ')' || stopper == EOS);
+
+        branches = new Subre('|', Subre.LONGER, initState, finalState);
+
+        branch = branches;
+        firstbranch = 1;
+        do {	/* a branch */
+            if (0 == firstbranch) {
+            /* need a place to hang it */
+                branch.right = new Subre('|', Subre.LONGER, initState, finalState);
+                branch = branch.right;
+            }
+            firstbranch = 0;
+            left = nfa.newstate();
+            right = nfa.newstate();
+
+            nfa.emptyarc(initState, left);
+            nfa.emptyarc(right, finalState);
+
+            branch.left = parsebranch(stopper, type, left, right, false);
+
+            branch.flags |= up(branch.flags | branch.left.flags);
+            if ((branch.flags &~ branches.flags) != 0)	/* new flags */
+                for (t = branches; t != branch; t = t.right) {
+                    t.flags |= branch.flags;
+                }
+        } while (eat('|'));
+        assert(see(stopper) || see(EOS));
+
+        if (!see(stopper)) {
+            assert stopper == ')' && see(EOS);
+            //ERR(REG_EPAREN);
+            throw new RegexException("REG_EPAREN");
+        }
+
+    /* optimize out simple cases */
+        if (branch == branches) {	/* only one branch */
+            assert branch.right == null;
+            t = branch.left;
+            branch.left = null;
+            branches = t;
+        } else if (!messy(branches.flags)) {	/* no interesting innards */
+            branches.left = null;
+            branches.right = null;
+            branches.op = '=';
+        }
+
+        return branches;
+    }
+
+    /**
+     * parsebranch - parse one branch of an RE
+     * This mostly manages concatenation, working closely with parseqatom().
+     * Concatenated things are bundled up as much as possible, with separate
+     * ',' nodes introduced only when necessary due to substructure.
+     */
+    Subre parsebranch(int stopper, int type, State left, State right, boolean partial) {
+        State lp;	/* left end of current construct */
+        boolean seencontent = false;	/* is there anything in this branch yet? */
+        Subre t;
+
+        lp = left;
+
+        t = new Subre('=', 0, left, right);	/* op '=' is tentative */
+        while (!see('|') && !see(stopper) && !see(EOS)) {
+            if (seencontent) {	/* implicit concat operator */
+                lp = nfa.newstate();
+                moveins(nfa, right, lp);
+            }
+            seencontent = true;
+
+        /* NB, recursion in parseqatom() may swallow rest of branch */
+            parseqatom(stopper, type, lp, right, t);
+        }
+
+        if (!seencontent) {		/* empty branch */
+            if (!partial) {
+                note(Flags.REG_UUNSPEC);
+            }
+
+            assert lp == left;
+            nfa.emptyarc(left, right);
+        }
+
+        return t;
+    }
+
+    
 
     /**
      * optimize - optimize an NFA

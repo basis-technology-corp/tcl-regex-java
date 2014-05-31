@@ -14,6 +14,8 @@
 
 package com.basistech.tclre;
 
+import com.google.common.base.Objects;
+
 /**
 * Created by benson on 5/29/14.
 */ /*
@@ -70,4 +72,16 @@ class Subre {
     State end;	/* ...ending in inarcs here */
     Cnfa cnfa;	/* compacted NFA, if any */
     Subre chain;	/* for bookkeeping and error cleanup */
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("op", op)
+                .add("flags", flags)
+                .add("retry", retry)
+                .add("subno", subno)
+                .add("min", min)
+                .add("max", max)
+                .toString();
+    }
 }

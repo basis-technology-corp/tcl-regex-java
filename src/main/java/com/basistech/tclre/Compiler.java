@@ -15,6 +15,7 @@
 package com.basistech.tclre;
 
 import com.google.common.collect.Lists;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,6 @@ import java.util.List;
  */
 class Compiler {
     private static final Logger LOG = LoggerFactory.getLogger(Compiler.class);
-
 
     /* token type codes, some also used as NFA arc types */
     static final int EMPTY = 'n';		/* no token present */
@@ -118,6 +118,20 @@ class Compiler {
     }
     // int nlacons;		/* size of lacons */
 
+    char newline() {
+        return '\n';
+    }
+    
+    void cnoerr() throws RegexException {
+        if (err != 0) {
+            throw new RegexException();
+        }
+    }
+    
+    boolean see(int t) {
+        return nexttype == t;
+    }
+
 
     void compile() throws RegexException {
         stop = pattern.length;
@@ -137,9 +151,213 @@ class Compiler {
 
         /* Parsing */
 
+        lex.lexstart();
+        if (0 != (cflags & Flags.REG_NLSTOP) || 0 != (cflags& Flags.REG_NLANCH)) {
+        /* assign newline a unique color */
+            nlcolor = cm.subcolor(newline());
+            cm.okcolors(nfa);
+        }
+        cnoerr();
+        tree = parse(EOS, PLAIN, nfa.init, nfa.finalState);
+        assert see(EOS);		/* even if error; ISERR() => see(EOS) */
+
+        cnoerr();
+
+        assert tree != null;
+
+    /* finish setup of nfa and its subre tree */
+        nfa.specialcolors();
+
+        cnoerr();
+
+        LOG.debug("========= RAW ==========");
+        nfa.dumpnfa();
+        //dumpst(tree, debug, 1);
+
+        optst(tree);
+        ntree = numst(tree, 1);
+        markst(tree);
+        cleanst();
+        LOG.debug("========= TREE FIXED ==========");
+
+    /* build compacted NFAs for tree and lacons */
+        re.info |= nfatree(tree);
+        cnoerr();
+
+        for (int i = 0; i < lacons.size(); i++) {
+            LOG.debug(String.format("========= LA%d ==========", i));
+            nfanode(lacons.get(0));
+        }
+
+        cnoerr();
+
+        if (0 != (tree.flags & Subre.SHORTER)) {
+            note(Flags.REG_USHORTEST);
+        }
+
+    /* build compacted NFAs for tree, lacons, fast search */
+        LOG.debug("========= SEARCH ==========");
+    /* can sacrifice main NFA now, so use it as work area */
+        optimize(nfa);
+        cnoerr();
+        makesearch(nfa);
+        cnoerr();
+        re.guts.search = compact(nfa);
+        cnoerr();
+
+    /* looks okay, package it up */
+        re.nsub = nsubexp;
+
+        re.guts.cflags = cflags;
+        re.guts.info = re.info;
+        re.guts.nsub = re.nsub;
+        re.guts.tree = tree;
+        re.guts.ntree = ntree;
+        if (0 != (cflags & Flags.REG_ICASE)) {
+            // TODO: fill in comparators.
+        } else {
+
+        }
+
+        re.guts.lacons = lacons;
+
+        assert err == 0;
+    }
+
+    /**
+     * makesearch - turn an NFA into a search NFA (implicit prepend of .*?)
+     * NFA must have been optimize()d already.
+     */
+    void makesearch(Nfa nfa) {
 
     }
 
+
+    /**
+     * optst - optimize a subRE subtree
+     */
+    void optst(Subre t) {
+        if (t == null) {
+            return;
+        }
+
+    /* recurse through children */
+        if (t.left != null) {
+            optst(t.left);
+        }
+        if (t.right != null) {
+            optst(t.right);
+        }
+    }
+
+    /**
+     * numst - number tree nodes (assigning retry indexes)
+     * @return next number
+     */
+    int numst(Subre t, int start) {
+        int i;
+
+        assert t != null;
+
+        i = start;
+        t.retry = (short)i++;
+
+        if (t.left != null) {
+            i = numst(t.left, i);
+        }
+        if (t.right != null) {
+            i = numst(t.right, i);
+        }
+        return i;
+    }
+
+
+    /**
+     * markst - mark tree nodes as INUSE
+     */
+    void markst(Subre t) {
+        assert t != null;
+
+        t.flags |= Subre.INUSE;
+        if (t.left != null) {
+            markst(t.left);
+        }
+        if (t.right != null) {
+            markst(t.right);
+        }
+    }
+
+    /**
+     * cleanst - free any tree nodes not marked INUSE
+     */
+    void cleanst() {
+        treechain = null;
+        treefree = null;		/* just on general principles */
+    }
+
+    /**
+     * nfatree - turn a subRE subtree into a tree of compacted NFAs
+     */
+    long			/* optimize results from top node */
+    nfatree(Subre t) throws RegexException {
+        assert t != null && t.begin != null;
+
+        if (t.left != null) {
+            nfatree(t.left);
+        }
+        if (t.right != null) {
+            nfatree(t.right);
+        }
+        return nfanode(t);
+    }
+
+    /**
+     * nfanode - do one NFA for nfatree
+     */
+    long			/* optimize results */
+    nfanode(Subre t) throws RegexException {
+        long ret = 0;
+
+        assert t.begin != null;
+
+        LOG.debug(String.format("========= TREE NODE %s ==========", t));
+
+        Nfa newNfa = new Nfa(nfa);
+        if (err != 0) {
+            throw new RegexException();
+        }
+
+        newNfa.dupnfa(t.begin, t.end, newNfa.init, newNfa.finalState);
+        if (!iserr()) {
+            newNfa.specialcolors();
+            ret = optimize(newNfa);
+        }
+        if (!iserr()) {
+            t.cnfa = compact(newNfa);
+        }
+
+        // freenfa ... depend on our friend the GC.
+        return ret;
+    }
+
+
+    Subre parse(int stopper, int type, State initState, State finalState) {
+        return null;
+    }
+
+    /**
+     * optimize - optimize an NFA
+     */
+    long			/* re_info bits */
+    optimize(Nfa nfa) {
+        return 0;
+    }
+
+    /** compact - compact an NFA
+     */
+    Cnfa compact(Nfa nfa) {
+        return null;
+    }
 
     /**
      * Always return false because there is no mcess support enabled.
@@ -172,22 +390,6 @@ class Compiler {
         return re.info != b;
     }
 
-    /**
-     * Return a cvec big enough. In this implementation, CVecs grow as needed,
-     * so they are always big enough.
-     * @param nchrs
-     * @param nranges
-     * @param nmcess
-     * @return
-     */
-    Cvec getcvec(int nchrs, int nranges, int nmcess) {
-        if (cv != null) {
-            return cv.clearcvec();
-        }
-        cv = new Cvec(nchrs, nranges, nmcess);
-        return cv;
-    }
-
     // The C version we use has no collation support generated in, so we get
     // the following stub functions.
     /*
@@ -208,23 +410,4 @@ class Compiler {
     int nleaders() {
         return 0;
     }
-
-    /*
-     - allmcces - return a cvec with all the MCCEs of the locale
-     ^ static struct cvec *allmcces(struct vars *, struct cvec *);
-     */
-    Cvec allmcces(Cvec cv) {
-        return cv.clearcvec();
-    }
-
-    // from regc_locale
-
-    int element(String what) {
-        return -1;
-    }
-
-    Cvec range(char start, char end, boolean cases) {
-        return null;
-    }
-
 }

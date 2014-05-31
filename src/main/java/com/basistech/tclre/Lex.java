@@ -749,6 +749,120 @@ class Lex {
         return !iserr();
     }
 
+    /**
+     * brenext - get next BRE token
+     * This is much like EREs except for all the stupid backslashes and the
+     */
+    boolean brenext(char pc) {
+        char c = pc;
+
+        switch (c) {
+        case '*':
+            if (lasttype(Compiler.EMPTY) || lasttype('(') || lasttype('^')) {
+                return retv(Compiler.PLAIN, c);
+            }
+            return ret('*');
+        case '[':
+            if (have(6) && charAtNow() == '[' &&
+                    charAtNowPlus(1) == ':' &&
+                    (charAtNowPlus(2) == '<' ||
+                            charAtNowPlus(2) == '>') &&
+                    charAtNowPlus(3) == ':' &&
+                    charAtNowPlus(4) == ']' &&
+                    charAtNowPlus(5) == ']') {
+                c = charAtNowPlus(2);
+                v.now += 6;
+                note(Flags.REG_UNONPOSIX);
+                return ret((c == '<') ? '<' : '>');
+            }
+            intocon(L_BRACK);
+            if (next1('^')) {
+                v.now++;
+                return retv('[', 0);
+            }
+            return retv('[', 1);
+        case '.':
+            return ret('.');
+
+        case '^':
+            if (lasttype(Compiler.EMPTY)) {
+                return ret('^');
+            }
+            if (lasttype('(')) {
+                note(Flags.REG_UUNSPEC);
+                return ret('^');
+            }
+            return retv(Compiler.PLAIN, c);
+
+        case '$':
+            if (0 != (v.cflags & Flags.REG_EXPANDED)) {
+                skip();
+            }
+            if (ateos()) {
+                return ret('$');
+            }
+            if (next2('\\', ')')) {
+                note(Flags.REG_UUNSPEC);
+                return ret('$');
+            }
+            return retv(Compiler.PLAIN, c);
+
+        case '\\':
+            break;		/* see below */
+        default:
+            return retv(Compiler.PLAIN, c);
+
+        }
+
+        assert c == '\\';
+
+        if (ateos()) {
+            return failw(Errors.REG_EESCAPE);
+        }
+
+        c = charAtNowAdvance();
+        switch (c) {
+        case '{':
+            intocon(L_BBND);
+            note(Flags.REG_UBOUNDS);
+            return ret('{');
+
+        case '(':
+            return retv('(', 1);
+
+        case ')':
+            return retv(')', c);
+
+        case '<':
+            note(Flags.REG_UNONPOSIX);
+            return ret('<');
+
+        case '>':
+            note(Flags.REG_UNONPOSIX);
+            return ret('>');
+
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            note(Flags.REG_UBACKREF);
+            return retv(Compiler.BACKREF, digitval(c));
+
+        default:
+            if (iscalnum(c)) {
+                note(Flags.REG_UBSALNUM);
+                note(Flags.REG_UUNSPEC);
+            }
+            return retv(Compiler.PLAIN, c);
+
+        }
+    }
+
     void skip() {
         int start = v.now;
 
@@ -773,10 +887,6 @@ class Lex {
         }
     }
 
-    boolean brenext(char c) {
-        return false;
-    }
-
     /**
      * lexescape - parse an ARE backslash escape (backslash already eaten)
      * Note slightly nonstandard use of the CCLASS type code.
@@ -796,7 +906,7 @@ class Lex {
         note(Flags.REG_UNONPOSIX);
         switch (c) {
         case 'a':
-            return retv(Compiler.PLAIN, charnamed("alert", '\007'));
+            return retv(Compiler.PLAIN, '\007');
 
         case 'A':
             return retv(Compiler.SBEGIN, 0);
@@ -824,7 +934,7 @@ class Lex {
 
         case 'e':
             note(Flags.REG_UUNPORT);
-            return retv(Compiler.PLAIN, charnamed("esc", '\033'));
+            return retv(Compiler.PLAIN, '\033');
 
         case 'f':
             return retv(Compiler.PLAIN, '\f');
@@ -940,7 +1050,7 @@ class Lex {
  */
     char 			/* chr value; errors signalled via ERR */
     lexdigits(int base, int minlen, int maxlen) {
-        char n;			/* unsigned to avoid overflow misbehavior */
+        int n;			/* unsigned to avoid overflow misbehavior */
         int len;
         char c;
         int d;
@@ -999,41 +1109,12 @@ class Lex {
             if (d < 0) {
                 break;		/* NOTE BREAK OUT */
             }
-            n = (char)(n * ub + d);
+            n = n * ub + d;
         }
         if (len < minlen) {
             v.err(Errors.REG_EESCAPE);
         }
 
-        return n;
-    }
-
-
-    /**
-     * chrnamed - return the chr known by a given (chr string) name
-     * The code is a bit clumsy, but this routine gets only such specialized
-     * use that it hardly matters.
-     */
-    char charnamed(String what, char lastresort) {
-        int c;
-        int e;
-        Cvec cv;
-
-        int errsave = v.err;
-        v.err = 0;
-        c = v.element(what);
-        e = v.err;
-        v.err = errsave;
-
-        if (e != 0) {
-            return lastresort;
-        }
-
-
-        cv = v.range((char)c, (char)c, false);
-        if (cv.chrs.size() == 0) {
-            return lastresort;
-        }
-        return cv.chrs.getChar(0);
+        return (char)n;
     }
 }

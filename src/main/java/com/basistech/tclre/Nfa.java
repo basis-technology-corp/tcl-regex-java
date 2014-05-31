@@ -14,10 +14,15 @@
 
 package com.basistech.tclre;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
-* Nfa representation.
-*/
+ * Nfa representation.
+ */
 class Nfa {
+    private static final Logger LOG = LoggerFactory.getLogger(Nfa.class);
+
     State pre;	/* pre-initial state */
     State init;	/* initial state */
     State finalState;	/* final state */
@@ -35,6 +40,7 @@ class Nfa {
 
     /**
      * New Nfa at the top level.
+     *
      * @param cm
      */
     Nfa(ColorMap cm) {
@@ -84,11 +90,12 @@ class Nfa {
     }
 
     void emptyarc(State from, State to) {
-        newarc(Compiler.EMPTY, (short) 0, from, to);
+        newarc(Compiler.EMPTY, (short)0, from, to);
     }
 
     /**
      * Factory method for new states.
+     *
      * @return a new state wired into this Nfa.
      */
     State newstate(int flag) {
@@ -109,15 +116,17 @@ class Nfa {
 
     /**
      * Convenience method to return a new state with flag = 0.
+     *
      * @return new state
      */
-    State newState() {
+    State newstate() {
         return newstate(0);
     }
 
     /**
      * get rid of a state, releasing all its arcs.
      * I'm not sure that all this is needed, as opposed to depending on the GC.
+     *
      * @param s the state to dispose of.
      */
     void dropstate(State s) {
@@ -136,6 +145,7 @@ class Nfa {
 
     /**
      * Unwire a state from the NFA.
+     *
      * @param s the state
      */
     void freestate(State s) {
@@ -193,5 +203,230 @@ class Nfa {
             a.inchain = victim.inchain;
         }
         to.nins--;
+    }
+
+
+    /**
+     * cparc - allocate a new arc within an NFA, copying details from old one
+     */
+    void cparc(Arc oa, State from, State to) {
+        newarc(oa.type, oa.co, from, to);
+    }
+
+    /**
+     * dupnfa - duplicate sub-NFA
+     * Another recursive traversal, this time using tmp to point to duplicates
+     * as well as mark already-seen states.  (You knew there was a reason why
+     * it's a state pointer, didn't you? :-))
+     * @param start duplicate starting here
+     * @param stop ending here.
+     * @param from stringing dup from here
+     * @param to here.
+     */
+    void dupnfa(State start, State stop, State from, State to) {
+        if (start == stop) {
+            newarc(Compiler.EMPTY, (short)0, from, to);
+            return;
+        }
+
+        stop.tmp = to;
+        duptraverse(start, from);
+    /* done, except for clearing out the tmp pointers */
+
+        stop.tmp = null;
+        cleartraverse(start);
+    }
+
+    /**
+     * duptraverse - recursive heart of dupnfa
+     */
+    void duptraverse(State s, State stmp) {
+        Arc a;
+
+        if (s.tmp != null) {
+            return;		/* already done */
+        }
+
+        s.tmp = (stmp == null) ? newstate() : stmp;
+        if (s.tmp == null) {
+            assert v.err != 0;
+            return;
+        }
+
+        for (a = s.outs; a != null && !v.iserr(); a = a.outchain) {
+            duptraverse(a.to, null);
+            assert a.to.tmp != null;
+            cparc(a, s.tmp, a.to.tmp);
+        }
+    }
+
+    /*
+     - cleartraverse - recursive cleanup for algorithms that leave tmp ptrs set
+     */
+    void cleartraverse(State s) {
+        Arc a;
+
+        if (s.tmp == null) {
+            return;
+        }
+        s.tmp = null;
+
+        for (a = s.outs; a != null; a = a.outchain) {
+            cleartraverse(a.to);
+        }
+    }
+
+
+    /**
+     * specialcolors - fill in special colors for an NFA
+     */
+    void specialcolors() {
+    /* false colors for BOS, BOL, EOS, EOL */
+        if (parent == null) {
+            bos[0] = cm.pseudocolor();
+            bos[1] = cm.pseudocolor();
+            eos[0] = cm.pseudocolor();
+            eos[1] = cm.pseudocolor();
+        } else {
+            assert (parent.bos[0] != Constants.COLORLESS);
+            bos[0] = parent.bos[0];
+            assert (parent.bos[1] != Constants.COLORLESS);
+            bos[1] = parent.bos[1];
+            assert (parent.eos[0] != Constants.COLORLESS);
+            eos[0] = parent.eos[0];
+            assert (parent.eos[1] != Constants.COLORLESS);
+            eos[1] = parent.eos[1];
+        }
+    }
+
+    /**
+     * dumpnfa - dump an NFA in human-readable form
+     */
+    void dumpnfa() {
+        State s;
+
+        LOG.debug(String.format("pre %d, post %d", pre.no, post.no));
+        if (bos[0] != Constants.COLORLESS) {
+            LOG.debug(String.format(", bos [%d]", bos[0]));
+        }
+        if (bos[1] != Constants.COLORLESS) {
+            LOG.debug(String.format(", bol [%d]", bos[1]));
+        }
+        if (eos[0] != Constants.COLORLESS) {
+            LOG.debug(String.format(", eos [%d]", eos[0]));
+        }
+        if (eos[1] != Constants.COLORLESS) {
+            LOG.debug(String.format(", eol [%d]", eos[1]));
+        }
+        for (s = states; s != null; s = s.next) {
+            dumpstate(s);
+        }
+        if (parent == null) {
+            cm.dumpcolors();
+        }
+    }
+
+    /**
+     * dumpstate - dump an NFA state in human-readable form
+     */
+    void dumpstate(State s) {
+        Arc a;
+
+        LOG.debug(String.format("%d%s%c", s.no, (s.tmp != null) ? "T" : "",
+                (s.flag != 0) ? s.flag : '.'));
+        if (s.prev != null && s.prev.next != s) {
+            LOG.debug(String.format("\tstate chain bad\n"));
+        }
+        if (s.nouts == 0) {
+            LOG.debug("\tno out arcs\n");
+        } else {
+            dumparcs(s);
+        }
+        for (a = s.ins; a != null; a = a.inchain) {
+            if (a.to != s) {
+                LOG.debug(String.format("\tlink from %d to %d on %d's in-chain\n",
+                        a.from.no, a.to.no, s.no));
+            }
+        }
+    }
+
+    /**
+     * dumparcs - dump out-arcs in human-readable form
+     */
+    void dumparcs(State s) {
+        int pos;
+
+        assert s.nouts > 0;
+    /* printing arcs in reverse order is usually clearer */
+        pos = dumprarcs(s.outs, s, 1);
+        if (pos != 1) {
+            LOG.debug("");
+        }
+    }
+
+    /**
+     * dumprarcs - dump remaining outarcs, recursively, in reverse order
+     * @return resulting print position
+     */
+    int
+    dumprarcs(Arc a, State s, int pos) {
+        if (a.outchain != null) {
+            pos = dumprarcs(a.outchain, s, pos);
+        }
+        dumparc(a, s);
+        if (pos == 5) {
+            LOG.debug("");
+            pos = 1;
+        } else {
+            pos++;
+        }
+        return pos;
+    }
+
+    /**
+     * dumparc - dump one outarc in readable form, including prefixing tab
+     */
+    void dumparc(Arc a, State s) {
+        switch (a.type) {
+        case Compiler.PLAIN:
+            LOG.debug(String.format("[%d]", a.co));
+            break;
+        case Compiler.AHEAD:
+            LOG.debug(String.format(">%d>", a.co));
+            break;
+        case Compiler.BEHIND:
+            LOG.debug(String.format("<%d<", a.co));
+            break;
+        case Compiler.LACON:
+            LOG.debug(String.format(":%d:", a.co));
+            break;
+        case '^':
+        case '$':
+            LOG.debug(String.format("%c%d", (char)a.type, a.co));
+            break;
+        case Compiler.EMPTY:
+            break;
+        default:
+            LOG.debug(String.format("0x%x/0%lo", a.type, a.co));
+            break;
+        }
+        if (a.from != s) {
+            LOG.debug(String.format("?%d?", a.from.no));
+        }
+        LOG.debug("->");
+        if (a.to == null) {
+            LOG.debug("null");
+            return;
+        }
+        LOG.debug(String.format("%d", a.to.no));
+
+        Arc aa;
+        for (aa = a.to.ins; aa != null; aa = aa.inchain) {
+            if (aa == a)
+                break;		/* NOTE BREAK OUT */
+        }
+        if (aa ==null) {
+            LOG.debug("?!?");	/* missing from in-chain */
+        }
     }
 }

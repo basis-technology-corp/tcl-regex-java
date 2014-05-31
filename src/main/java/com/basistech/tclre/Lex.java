@@ -209,6 +209,10 @@ class Lex {
         return x < 0x80 && Character.isLetterOrDigit(x);
     }
 
+    boolean iscspace(char x) {
+        return x < 0x80 && Character.isSpaceChar(x);
+    }
+
     /**
      * prefixes - implement various special prefixes
      */
@@ -746,16 +750,290 @@ class Lex {
     }
 
     void skip() {
+        int start = v.now;
 
+        assert 0 != (v.cflags & Flags.REG_EXPANDED);
+
+        for (; ; ) {
+            while (!ateos() && iscspace(charAtNow())) {
+                v.now++;
+            }
+            if (ateos() || charAtNow() != '#') {
+                break;				/* NOTE BREAK OUT */
+            }
+            assert next1('#');
+            while (!ateos() && charAtNow() != '\n') {
+                v.now++;
+            }
+        /* leave the newline to be picked up by the iscspace loop */
+        }
+
+        if (v.now != start) {
+            note(Flags.REG_UNONPOSIX);
+        }
     }
 
     boolean brenext(char c) {
         return false;
     }
 
+    /**
+     * lexescape - parse an ARE backslash escape (backslash already eaten)
+     * Note slightly nonstandard use of the CCLASS type code.
+     */
     boolean lexescape() {
-        return false;
+        char c;
+        int save;
+
+        assert 0 == (v.cflags & Flags.REG_ADVF);
+
+        assert (!ateos());
+        c = charAtNowAdvance();
+        if (!iscalnum(c)) {
+            return retv(Compiler.PLAIN, c);
+        }
+
+        note(Flags.REG_UNONPOSIX);
+        switch (c) {
+        case 'a':
+            return retv(Compiler.PLAIN, charnamed("alert", '\007'));
+
+        case 'A':
+            return retv(Compiler.SBEGIN, 0);
+
+        case 'b':
+            return retv(Compiler.PLAIN, '\b');
+
+        case 'B':
+            return retv(Compiler.PLAIN, '\\');
+
+        case 'c':
+            note(Flags.REG_UUNPORT);
+            if (ateos()) {
+                return failw(Errors.REG_EESCAPE);
+            }
+            return retv(Compiler.PLAIN, (char)(charAtNowAdvance() & 037));
+
+        case 'd':
+            note(Flags.REG_ULOCALE);
+            return retv(Compiler.CCLASS, 'd');
+
+        case 'D':
+            note(Flags.REG_ULOCALE);
+            return retv(Compiler.CCLASS, 'D');
+
+        case 'e':
+            note(Flags.REG_UUNPORT);
+            return retv(Compiler.PLAIN, charnamed("esc", '\033'));
+
+        case 'f':
+            return retv(Compiler.PLAIN, '\f');
+
+        case 'm':
+            return ret('<');
+
+        case 'M':
+            return ret('>');
+
+        case 'n':
+            return retv(Compiler.PLAIN, '\n');
+
+        case 'r':
+            return retv(Compiler.PLAIN, '\r');
+
+        case 's':
+            note(Flags.REG_ULOCALE);
+            return retv(Compiler.CCLASS, 's');
+
+        case 'S':
+            note(Flags.REG_ULOCALE);
+            return retv(Compiler.CCLASS, 'S');
+
+        case 't':
+            return retv(Compiler.PLAIN, '\t');
+
+        case 'u':
+            c = lexdigits(16, 4, 4);
+            if (iserr()) {
+                return failw(Errors.REG_EESCAPE);
+            }
+            return retv(Compiler.PLAIN, c);
+
+        case 'U':
+            c = lexdigits(16, 8, 8);
+            if (iserr()) {
+                return failw(Errors.REG_EESCAPE);
+            }
+            return retv(Compiler.PLAIN, c);
+
+        case 'v':
+            return retv(Compiler.PLAIN, '\u000b');
+
+        case 'w':
+            note(Flags.REG_ULOCALE);
+            return retv(Compiler.CCLASS, 'w');
+
+        case 'W':
+            note(Flags.REG_ULOCALE);
+            return retv(Compiler.CCLASS, 'W');
+
+        case 'x':
+            note(Flags.REG_UUNPORT);
+            c = lexdigits(16, 1, 255);	/* REs >255 long outside spec */
+            if (iserr()) {
+                return failw(Errors.REG_EESCAPE);
+            }
+            return retv(Compiler.PLAIN, c);
+
+        case 'y':
+            note(Flags.REG_ULOCALE);
+            return retv(Compiler.WBDRY, 0);
+
+        case 'Y':
+            note(Flags.REG_ULOCALE);
+            return retv(Compiler.NWBDRY, 0);
+
+        case 'Z':
+            return retv(Compiler.SEND, 0);
+
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            save = v.now;
+            v.now--;	/* put first digit back */
+            c = lexdigits(10, 1, 255);	/* REs >255 long outside spec */
+            if (iserr()) {
+                return failw(Errors.REG_EESCAPE);
+            }
+        /* ugly heuristic (first test is "exactly 1 digit?") */
+            if (v.now - save == 0 || (int)c <= v.nsubexp) {
+                note(Flags.REG_UBACKREF);
+                return retv(Compiler.BACKREF, (char)c);
+            }
+        /* oops, doesn't look like it's a backref after all... */
+            v.now = save;
+        /* and fall through into octal number */
+        case '0':
+            note(Flags.REG_UUNPORT);
+            v.now--;	/* put first digit back */
+            c = lexdigits(8, 1, 3);
+            if (iserr()) {
+                return failw(Errors.REG_EESCAPE);
+            }
+            return retv(Compiler.PLAIN, c);
+
+        default:
+            assert iscalpha(c);
+            return failw(Errors.REG_EESCAPE);	/* unknown alphabetic escape */
+        }
+    }
+
+    /*
+ - lexdigits - slurp up digits and return chr value
+ ^ static chr lexdigits(struct vars *, int, int, int);
+ */
+    char 			/* chr value; errors signalled via ERR */
+    lexdigits(int base, int minlen, int maxlen) {
+        char n;			/* unsigned to avoid overflow misbehavior */
+        int len;
+        char c;
+        int d;
+        final char ub = (char)base;
+
+        n = 0;
+        for (len = 0; len < maxlen && !ateos(); len++) {
+            c = charAtNowAdvance();
+            switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                d = digitval(c);
+                break;
+            case 'a':
+            case 'A':
+                d = 10;
+                break;
+            case 'b':
+            case 'B':
+                d = 11;
+                break;
+            case 'c':
+            case 'C':
+                d = 12;
+                break;
+            case 'd':
+            case 'D':
+                d = 13;
+                break;
+            case 'e':
+            case 'E':
+                d = 14;
+                break;
+            case 'f':
+            case 'F':
+                d = 15;
+                break;
+            default:
+                v.now--;	/* oops, not a digit at all */
+                d = -1;
+                break;
+            }
+
+            if (d >= base) {	/* not a plausible digit */
+                v.now--;
+                d = -1;
+            }
+            if (d < 0) {
+                break;		/* NOTE BREAK OUT */
+            }
+            n = (char)(n * ub + d);
+        }
+        if (len < minlen) {
+            v.err(Errors.REG_EESCAPE);
+        }
+
+        return n;
     }
 
 
+    /**
+     * chrnamed - return the chr known by a given (chr string) name
+     * The code is a bit clumsy, but this routine gets only such specialized
+     * use that it hardly matters.
+     */
+    char charnamed(String what, char lastresort) {
+        int c;
+        int e;
+        Cvec cv;
+
+        int errsave = v.err;
+        v.err = 0;
+        c = v.element(what);
+        e = v.err;
+        v.err = errsave;
+
+        if (e != 0) {
+            return lastresort;
+        }
+
+
+        cv = v.range((char)c, (char)c, false);
+        if (cv.chrs.size() == 0) {
+            return lastresort;
+        }
+        return cv.chrs.getChar(0);
+    }
 }

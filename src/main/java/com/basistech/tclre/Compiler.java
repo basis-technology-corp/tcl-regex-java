@@ -216,4 +216,15 @@ class Compiler {
     Cvec allmcces(Cvec cv) {
         return cv.clearcvec();
     }
+
+    // from regc_locale
+
+    int element(String what) {
+        return -1;
+    }
+
+    Cvec range(char start, char end, boolean cases) {
+        return null;
+    }
+
 }

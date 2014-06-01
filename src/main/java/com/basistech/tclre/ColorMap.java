@@ -498,7 +498,7 @@ class ColorMap {
             cd = colorDescs.get(co);
             if (!cd.unusedColor() && !cd.pseudo())
                 if (of.findarc(Compiler.PLAIN, co) == null) {
-                    compiler.nfa.newarc(type, co, from, to);
+                    nfa.newarc(type, co, from, to);
                 }
         }
     }

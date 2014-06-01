@@ -28,17 +28,14 @@ class Cvec {
     static final int MAXMCCE = 2;
     CharList chrs; // this might want to be a set.
     CharList ranges;
-    List<String> mcces;
 
-    Cvec(int nchrs, int nranges, int nmcces) {
+    Cvec(int nchrs, int nranges) {
         chrs = new CharArrayList(nchrs);
         ranges = new CharArrayList(nranges * 2);
-        mcces = Lists.newArrayListWithCapacity(nmcces);
     }
 
     Cvec clearcvec() {
         chrs.clear();
-        mcces.clear();
         ranges.clear();
         return this;
     }
@@ -50,15 +47,6 @@ class Cvec {
     void addrange(char from, char to) {
         ranges.add(from);
         ranges.add(to);
-    }
-
-    void addmcce(char[] data, int start, int end) {
-        if (data == null) {
-            return;
-        }
-        int len = end - start;
-        assert len > 0;
-        mcces.add(new String(data, start, len));
     }
 
     /**

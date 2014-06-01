@@ -115,6 +115,40 @@ class Nfa {
     }
 
     /**
+     * moveouts - move all out arcs of a state to another state
+     */
+    void moveouts(State old, State newState) {
+        Arc a;
+
+        assert old != newState;
+
+        while ((a = old.outs) != null) {
+            cparc(a, newState, a.to);
+            freearc(a);
+        }
+    }
+
+    /**
+     * moveins - move all in arcs of a state to another state
+     * You might think this could be done better by just updating the
+     * existing arcs, and you would be right if it weren't for the desire
+     * for duplicate suppression, which makes it easier to just make new
+     * ones to exploit the suppression built into newarc.
+     */
+    void moveins(State old, State newState) {
+        Arc a;
+
+        assert old != newState;
+
+        while ((a = old.ins) != null) {
+            cparc(a, a.from, newState);
+            freearc(a);
+        }
+        assert old.nins == 0;
+        assert old.ins == null;
+    }
+
+    /**
      * Convenience method to return a new state with flag = 0.
      *
      * @return new state

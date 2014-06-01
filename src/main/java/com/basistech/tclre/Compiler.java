@@ -46,6 +46,8 @@ class Compiler {
     static final int SBEGIN = 'A';		/* beginning of string (even if not BOL) */
     static final int SEND = 'Z';		/* end of string (even if not EOL) */
     static final int PREFER = 'P';		/* length preference */
+    static final int DUPMAX = 255;
+    static final int INFINITY = 256;
 
     RegExp re;
     char[] pattern;
@@ -60,9 +62,7 @@ class Compiler {
     int nexttype;		/* type of next token */
     int nextvalue;		/* value (if any) of next token */
     int lexcon;		/* lexical context type (see lex.c) */
-    int nsubexp;		/* subexpression count */
     List<Subre> subs;	/* subRE pointer vector */
-    int nsubs;		/* length of vector */
     Nfa nfa;	/* the NFA */
     ColorMap cm;	/* character color map */
     short nlcolor;		/* color of newline */
@@ -84,6 +84,7 @@ class Compiler {
     /**
      * Constructor does minimal setup; construct, then call compile().
      * The entire effect is a side-effect on 're'.
+     *
      * @param re
      * @param pattern
      * @param flags
@@ -93,12 +94,12 @@ class Compiler {
             throw new NullPointerException();
         }
 
-        if ( (0 != (flags & Flags.REG_QUOTE)) &&
-                (0 != (flags&(Flags.REG_ADVANCED|Flags.REG_EXPANDED|Flags.REG_NEWLINE)))) {
+        if ((0 != (flags & Flags.REG_QUOTE)) &&
+                (0 != (flags & (Flags.REG_ADVANCED | Flags.REG_EXPANDED | Flags.REG_NEWLINE)))) {
             throw new IllegalArgumentException("Invalid flag combination");
         }
 
-        if (0 == (flags&Flags.REG_EXTENDED) && 0 != (flags&Flags.REG_ADVF)) {
+        if (0 == (flags & Flags.REG_EXTENDED) && 0 != (flags & Flags.REG_ADVF)) {
             throw new IllegalArgumentException("Invalid flag combination (!extended && advf");
         }
 
@@ -112,7 +113,6 @@ class Compiler {
     }
 
 
-
     int nlacons() {
         return lacons.size();
     }
@@ -121,13 +121,13 @@ class Compiler {
     char newline() {
         return '\n';
     }
-    
+
     void cnoerr() throws RegexException {
         if (err != 0) {
             throw new RegexException();
         }
     }
-    
+
     boolean see(int t) {
         return nexttype == t;
     }
@@ -141,7 +141,7 @@ class Compiler {
         re.guts = new Guts();
 
         cm = new ColorMap(this);
-        cv = new Cvec(100, 20, 10);
+        cv = new Cvec(100, 20);
 
         // No MCESS support, so no initialization of it.
 
@@ -152,7 +152,7 @@ class Compiler {
         /* Parsing */
 
         lex.lexstart();
-        if (0 != (cflags & Flags.REG_NLSTOP) || 0 != (cflags& Flags.REG_NLANCH)) {
+        if (0 != (cflags & Flags.REG_NLSTOP) || 0 != (cflags & Flags.REG_NLANCH)) {
         /* assign newline a unique color */
             nlcolor = cm.subcolor(newline());
             cm.okcolors(nfa);
@@ -206,7 +206,7 @@ class Compiler {
         cnoerr();
 
     /* looks okay, package it up */
-        re.nsub = nsubexp;
+        re.nsub = subs.size();
 
         re.guts.cflags = cflags;
         re.guts.info = re.info;
@@ -238,9 +238,10 @@ class Compiler {
 
     /* no loops are needed if it's anchored */
         for (a = pre.outs; a != null; a = a.outchain) {
-            assert(a.type == PLAIN);
-            if (a.co != nfa.bos[0] && a.co != nfa.bos[1])
+            assert (a.type == PLAIN);
+            if (a.co != nfa.bos[0] && a.co != nfa.bos[1]) {
                 break;
+            }
         }
         if (a != null) {
         /* add implicit .* in front */
@@ -265,9 +266,11 @@ class Compiler {
         slist = null;
         for (a = pre.outs; a != null; a = a.outchain) {
             s = a.to;
-            for (b = s.ins; b != null; b = b.inchain)
-                if (b.from != pre)
+            for (b = s.ins; b != null; b = b.inchain) {
+                if (b.from != pre) {
                     break;
+                }
+            }
             if (b != null) {		/* must be split */
                 if (s.tmp == null) {  /* if not already in the list */
                                    /* (fixes bugs 505048, 230589, */
@@ -312,16 +315,16 @@ class Compiler {
     }
 
     /**
-     - cparc - allocate a new arc within an NFA, copying details from old one
-     ^ static VOID cparc(struct nfa *, struct arc *, struct state *,
-     ^ 	struct state *);
+     * - cparc - allocate a new arc within an NFA, copying details from old one
+     * ^ static VOID cparc(struct nfa *, struct arc *, struct state *,
+     * ^ 	struct state *);
      */
     void cparc(Nfa nfa, Arc oa, State from, State to) {
         nfa.newarc(oa.type, oa.co, from, to);
     }
 
     /**
-     - moveins - move all in arcs of a state to another state
+     * - moveins - move all in arcs of a state to another state
      * You might think this could be done better by just updating the
      * existing arcs, and you would be right if it weren't for the desire
      * for duplicate suppression, which makes it easier to just make new
@@ -333,9 +336,9 @@ class Compiler {
         assert old != newState;
 
         while ((a = old.ins) != null) {
-        cparc(nfa, a, a.from, newState);
-        nfa.freearc(a);
-    }
+            cparc(nfa, a, a.from, newState);
+            nfa.freearc(a);
+        }
         assert old.nins == 0;
         assert old.ins == null;
     }
@@ -355,7 +358,7 @@ class Compiler {
 
     /**
      * moveouts - move all out arcs of a state to another state
-     ^ static VOID moveouts(struct nfa *, struct state *, struct state *);
+     * ^ static VOID moveouts(struct nfa *, struct state *, struct state *);
      */
     void moveouts(Nfa nfa, State old, State newState) {
         Arc a;
@@ -413,6 +416,7 @@ class Compiler {
 
     /**
      * numst - number tree nodes (assigning retry indexes)
+     *
      * @return next number
      */
     int numst(Subre t, int start) {
@@ -474,6 +478,7 @@ class Compiler {
 
     /**
      * nfanode - do one NFA for nfatree
+     *
      * @return results of {@link #optimize(Nfa)}
      */
     long nfanode(Subre t) throws RegexException {
@@ -502,11 +507,11 @@ class Compiler {
     }
 
     int lmix(int f) {
-        return f <<2;	/* LONGER -> MIXED */
+        return f << 2;	/* LONGER -> MIXED */
     }
 
     int smix(int f) {
-        return f <<1;	/* SHORTER -> MIXED */
+        return f << 1;	/* SHORTER -> MIXED */
     }
 
     int up(int f) {
@@ -518,7 +523,11 @@ class Compiler {
     }
 
     boolean messy(int f) {
-        return 0 != (f & (Subre.MIXED|Subre.CAP|Subre.BACKR));
+        return 0 != (f & (Subre.MIXED | Subre.CAP | Subre.BACKR));
+    }
+
+    static interface AtomSetter {
+        void set(Subre s);
     }
 
     /**
@@ -535,7 +544,7 @@ class Compiler {
         Subre t;	/* temporary */
         int firstbranch;	/* is this the first branch? */
 
-        assert(stopper == ')' || stopper == EOS);
+        assert (stopper == ')' || stopper == EOS);
 
         branches = new Subre('|', Subre.LONGER, initState, finalState);
 
@@ -557,12 +566,13 @@ class Compiler {
             branch.left = parsebranch(stopper, type, left, right, false);
 
             branch.flags |= up(branch.flags | branch.left.flags);
-            if ((branch.flags &~ branches.flags) != 0)	/* new flags */
+            if ((branch.flags & ~branches.flags) != 0)	/* new flags */ {
                 for (t = branches; t != branch; t = t.right) {
                     t.flags |= branch.flags;
                 }
+            }
         } while (eat('|'));
-        assert(see(stopper) || see(EOS));
+        assert (see(stopper) || see(EOS));
 
         if (!see(stopper)) {
             assert stopper == ')' && see(EOS);
@@ -591,7 +601,7 @@ class Compiler {
      * Concatenated things are bundled up as much as possible, with separate
      * ',' nodes introduced only when necessary due to substructure.
      */
-    Subre parsebranch(int stopper, int type, State left, State right, boolean partial) {
+    Subre parsebranch(int stopper, int type, State left, State right, boolean partial) throws RegexException {
         State lp;	/* left end of current construct */
         boolean seencontent = false;	/* is there anything in this branch yet? */
         Subre t;
@@ -622,7 +632,733 @@ class Compiler {
         return t;
     }
 
-    
+    void parseqatom(int stopper, int type, State lp, State rp, Subre top) throws RegexException {
+        State s;	/* temporaries for new states */
+        State s2;
+        int m, n;
+        Subre atom;	/* atom's subtree */
+        Subre t;
+
+        int cap;		/* capturing parens? */
+        int pos;		/* positive lookahead? */
+        int subno;		/* capturing-parens or backref number */
+        int atomtype;
+        int qprefer;		/* quantifier short/long preference */
+        int f;
+        AtomSetter atomp = null;
+
+    /* initial bookkeeping */
+        atom = null;
+        assert lp.nouts == 0;	/* must string new code */
+        assert rp.nins == 0;	/*  between lp and rp */
+        subno = 0;		/* just to shut lint up */
+
+    /* an atom or constraint... */
+        atomtype = nexttype;
+        switch (atomtype) {
+    /* first, constraints, which end by returning */
+        case '^':
+            nfa.newarc('^', (short)1, lp, rp);
+            if (0 != (cflags & Flags.REG_NLANCH)) {
+                nfa.newarc(BEHIND, nlcolor, lp, rp);
+            }
+            lex.next();
+            return;
+
+        case '$':
+            nfa.newarc('$', (short)1, lp, rp);
+            if (0 != (cflags & Flags.REG_NLANCH)) {
+                nfa.newarc(AHEAD, nlcolor, lp, rp);
+            }
+            lex.next();
+            return;
+
+        case SBEGIN:
+            nfa.newarc('^', (short)1, lp, rp);	/* BOL */
+            nfa.newarc('^', (short)0, lp, rp);	/* or BOS */
+            lex.next();
+            return;
+
+        case SEND:
+            nfa.newarc('$', (short)1, lp, rp);	/* EOL */
+            nfa.newarc('$', (short)0, lp, rp);	/* or EOS */
+            lex.next();
+            return;
+
+        case '<':
+            wordchrs();	/* does next() */
+            s = nfa.newstate();
+            nonword(BEHIND, lp, s);
+            word(AHEAD, s, rp);
+            return;
+
+        case '>':
+            wordchrs();	/* does next() */
+            s = nfa.newstate();
+            word(BEHIND, lp, s);
+            nonword(AHEAD, s, rp);
+            return;
+
+        case WBDRY:
+            wordchrs();	/* does next() */
+            s = nfa.newstate();
+            nonword(BEHIND, lp, s);
+            word(AHEAD, s, rp);
+            s = nfa.newstate();
+            word(BEHIND, lp, s);
+            nonword(AHEAD, s, rp);
+            return;
+
+        case NWBDRY:
+            wordchrs();	/* does next() */
+            s = nfa.newstate();
+            word(BEHIND, lp, s);
+            word(AHEAD, s, rp);
+            s = nfa.newstate();
+            nonword(BEHIND, lp, s);
+            nonword(AHEAD, s, rp);
+            return;
+
+        case LACON:	/* lookahead constraint */
+            pos = nextvalue;
+            lex.next();
+            s = nfa.newstate();
+            s2 = nfa.newstate();
+            t = parse(')', LACON, s, s2);
+            assert see(')');
+            lex.next();
+            n = newlacon(s, s2, pos);
+            nfa.newarc(LACON, (short)n, lp, rp);
+            return;
+
+    /* then errors, to get them out of the way */
+        case '*':
+        case '+':
+        case '?':
+        case '{':
+            throw new RegexException("REG_BADRPT");
+
+
+        default:
+            throw new RegexException("REG_ASSERT");
+
+    /* then plain characters, and minor variants on that theme */
+        case ')':		/* unbalanced paren */
+            if ((cflags & Flags.REG_ADVANCED) != Flags.REG_EXTENDED) {
+                throw new RegexException("REG_EPAREN");
+            }
+        /* legal in EREs due to specification botch */
+            note(Flags.REG_UPBOTCH);
+        /* fallthrough into case PLAIN */
+        case PLAIN:
+            onechr((char)nextvalue, lp, rp);
+            cm.okcolors(nfa);
+            lex.next();
+            break;
+        case '[':
+            if (nextvalue == 1) {
+                bracket(lp, rp);
+            } else {
+                cbracket(lp, rp);
+            }
+            assert see(']');
+            lex.next();
+            break;
+        case '.':
+            cm.rainbow(nfa, PLAIN,
+                    (0 != (cflags & Flags.REG_NLSTOP)) ? nlcolor : Constants.COLORLESS,
+                    lp, rp);
+            lex.next();
+            break;
+    /* and finally the ugly stuff */
+        case '(':	/* value flags as capturing or non */
+            cap = (type == LACON) ? 0 : nextvalue;
+            if (0 != cap) {
+                subs.add(null); // gets filled in.
+                subno = subs.size();
+            } else {
+                atomtype = PLAIN;	/* something that's not '(' */
+            }
+            lex.next();
+        /* need new endpoints because tree will contain pointers */
+            s = nfa.newstate();
+            s2 = nfa.newstate();
+
+            nfa.emptyarc(lp, s);
+            nfa.emptyarc(s2, rp);
+
+            atom = parse(')', PLAIN, s, s2);
+            assert see(')');
+            lex.next();
+
+            if (cap != 0) {
+                subs.set(subno, atom);
+                t = new Subre('(', atom.flags | Subre.CAP, lp, rp);
+                t.subno = subno;
+                t.left = atom;
+                atom = t;
+            }
+        /* postpone everything else pending possible {0} */
+            break;
+        case BACKREF:	/* the Feature From The Black Lagoon */
+            if (type == LACON) {
+                throw new RegexException("REG_ESUBREG");
+            }
+            if (nextvalue >= subs.size()) {
+                throw new RegexException("REG_ESUBREG");
+            }
+            if (subs.get(nextvalue) == null) {
+                throw new RegexException("REG_ESUBREG");
+            }
+
+            assert nextvalue > 0;
+            atom = new Subre('b', Subre.BACKR, lp, rp);
+            subno = nextvalue;
+            atom.subno = subno;
+            nfa.emptyarc(lp, rp);	/* temporarily, so there's something */
+            lex.next();
+            break;
+        }
+
+    /* ...and an atom may be followed by a quantifier */
+        switch (nexttype) {
+        case '*':
+            m = 0;
+            n = INFINITY;
+            qprefer = (nextvalue != 0) ? Subre.LONGER : Subre.SHORTER;
+            lex.next();
+            break;
+        case '+':
+            m = 1;
+            n = INFINITY;
+            qprefer = (nextvalue != 0) ? Subre.LONGER : Subre.SHORTER;
+            lex.next();
+            break;
+        case '?':
+            m = 0;
+            n = 1;
+            qprefer = (nextvalue != 0) ? Subre.LONGER : Subre.SHORTER;
+            lex.next();
+            break;
+        case '{':
+            lex.next();
+            m = scannum();
+            if (eat(',')) {
+                if (see(DIGIT)) {
+                    n = scannum();
+                } else {
+                    n = INFINITY;
+                }
+                if (m > n) {
+                    throw new RegexException("REG_BADBR");
+                }
+            /* {m,n} exercises preference, even if it's {m,m} */
+                qprefer = (nextvalue != 0) ? Subre.LONGER : Subre.SHORTER;
+            } else {
+                n = m;
+            /* {m} passes operand's preference through */
+                qprefer = 0;
+            }
+            if (!see('}')) {	/* catches errors too */
+                throw new RegexException("REG_BADBR");
+            }
+            lex.next();
+            break;
+        default:		/* no quantifier */
+            m = n = 1;
+            qprefer = 0;
+            break;
+        }
+
+    /* annoying special case:  {0} or {0,0} cancels everything */
+        if (m == 0 && n == 0) {
+            if (atomtype == '(') {
+                subs.set(subno, null);
+            }
+            delsub(nfa, lp, rp);
+            nfa.emptyarc(lp, rp);
+            return;
+        }
+
+    /* if not a messy case, avoid hard part */
+        assert !messy(top.flags);
+        f = top.flags | qprefer | ((atom != null) ? atom.flags : 0);
+        if (atomtype != '(' && atomtype != BACKREF && !messy(up(f))) {
+            if (!(m == 1 && n == 1)) {
+                repeat(lp, rp, m, n);
+            }
+            top.flags = f;
+            return;
+        }
+
+    /*
+     * hard part:  something messy
+     * That is, capturing parens, back reference, short/long clash, or
+     * an atom with substructure containing one of those.
+     */
+
+    /* now we'll need a subre for the contents even if they're boring */
+        if (atom == null) {
+            atom = new Subre('=', 0, lp, rp);
+        }
+
+    /*
+     * prepare a general-purpose state skeleton
+     *
+     *    --. [s] ---prefix--. [begin] ---atom--. [end] ----rest--. [rp]
+     *   /                                            /
+     * [lp] ---. [s2] ----bypass---------------------
+     *
+     * where bypass is an empty, and prefix is some repetitions of atom
+     */
+        s = nfa.newstate();		/* first, new endpoints for the atom */
+        s2 = nfa.newstate();
+        nfa.moveouts(lp, s);
+        nfa.moveins(rp, s2);
+        atom.begin = s;
+        atom.end = s2;
+        s = nfa.newstate();		/* and spots for prefix and bypass */
+        s2 = nfa.newstate();
+        nfa.emptyarc(lp, s);
+        nfa.emptyarc(lp, s2);
+
+    /* break remaining subRE into x{...} and what follows */
+        t = new Subre('.', Subre.combine(qprefer, atom.flags), lp, rp);
+        t.left = atom;
+
+        final Subre target = t;
+        atomp = new AtomSetter() {
+
+            @Override
+            public void set(Subre s) {
+                target.left = s;
+            }
+        };
+
+    /* here we should recurse... but we must postpone that to the end */
+
+    /* split top into prefix and remaining */
+        assert (top.op == '=' && top.left == null && top.right == null);
+        top.left = new Subre('=', top.flags, top.begin, lp);
+        top.op = '.';
+        top.right = t;
+
+    /* if it's a backref, now is the time to replicate the subNFA */
+        if (atomtype == BACKREF) {
+            assert (atom.begin.nouts == 1);	/* just the EMPTY */
+            delsub(nfa, atom.begin, atom.end);
+            assert subs.get(subno) != null;
+        /* and here's why the recursion got postponed:  it must */
+        /* wait until the skeleton is filled in, because it may */
+        /* hit a backref that wants to copy the filled-in skeleton */
+            nfa.dupnfa(subs.get(subno).begin, subs.get(subno).end,
+                    atom.begin, atom.end);
+        }
+
+    /* it's quantifier time; first, turn x{0,...} into x{1,...}|empty */
+        if (m == 0) {
+            nfa.emptyarc(s2, atom.end);		/* the bypass */
+            assert Subre.pref(qprefer) != 0;
+            f = Subre.combine(qprefer, atom.flags);
+            t = new Subre('|', f, lp, atom.end);
+            t.left = atom;
+            t.right = new Subre('|', Subre.pref(f), s2, atom.end);
+            t.right.left = new Subre('=', 0, s2, atom.end);
+
+            atomp.set(t);
+            final Subre target2 = t;
+            atomp = new AtomSetter() {
+                @Override
+                public void set(Subre s) {
+                    target2.left = s;
+                }
+            };
+            m = 1;
+        }
+
+    /* deal with the rest of the quantifier */
+        if (atomtype == BACKREF) {
+        /* special case:  backrefs have internal quantifiers */
+            nfa.emptyarc(s, atom.begin);	/* empty prefix */
+        /* just stuff everything into atom */
+            repeat(atom.begin, atom.end, m, n);
+            atom.min = (short)m;
+            atom.max = (short)n;
+            atom.flags |= Subre.combine(qprefer, atom.flags);
+        } else if (m == 1 && n == 1) {
+        /* no/vacuous quantifier:  done */
+            nfa.emptyarc(s, atom.begin);	/* empty prefix */
+        } else {
+        /* turn x{m,n} into x{m-1,n-1}x, with capturing */
+        /*  parens in only second x */
+            nfa.dupnfa(atom.begin, atom.end, s, atom.begin);
+            assert (m >= 1 && m != INFINITY && n >= 1);
+            repeat(s, atom.begin, m - 1, (n == INFINITY) ? n : n - 1);
+            f = Subre.combine(qprefer, atom.flags);
+            t = new Subre('.', f, s, atom.end);	/* prefix and atom */
+            t.left = new Subre('=', Subre.pref(f), s, atom.begin);
+            t.right = atom;
+            atomp.set(t);
+        }
+
+    /* and finally, look after that postponed recursion */
+        t = top.right;
+        if (!(see('|') || see(stopper) || see(EOS))) {
+            t.right = parsebranch(stopper, type, atom.end, rp, true);
+        } else {
+            nfa.emptyarc(atom.end, rp);
+            t.right = new Subre('=', 0, atom.end, rp);
+        }
+        assert (see('|') || see(stopper) || see(EOS));
+        t.flags |= Subre.combine(t.flags, t.right.flags);
+        top.flags |= Subre.combine(top.flags, t.flags);
+    }
+
+    void delsub(Nfa nda, State lp, State rp) {
+        rp.tmp = rp;
+        deltraverse(nfa, lp, rp);
+        assert lp.nouts == 0 && rp.nins == 0;	/* did the job */
+        assert lp.no != State.FREESTATE && rp.no != State.FREESTATE;	/* no more */
+        lp.tmp = null;
+        rp.tmp = null;
+    }
+
+    /**
+     * deltraverse - the recursive heart of delsub
+     * This routine's basic job is to destroy all out-arcs of the state.
+     */
+    void deltraverse(Nfa nfa, State leftend, State s) {
+        Arc a;
+        State to;
+
+        if (s.nouts == 0) {
+            return;			/* nothing to do */
+        }
+        if (s.tmp != null) {
+            return;			/* already in progress */
+        }
+
+        s.tmp = s;			/* mark as in progress */
+
+        while ((a = s.outs) != null) {
+            to = a.to;
+            deltraverse(nfa, leftend, to);
+            assert to.nouts == 0 || to.tmp != null;
+            nfa.freearc(a);
+            if (to.nins == 0 && to.tmp == null) {
+                assert to.nouts == 0;
+                nfa.freestate(to);
+            }
+        }
+        assert s.no != State.FREESTATE;	/* we're still here */
+        assert s == leftend || s.nins != 0;	/* and still reachable */
+        assert s.nouts == 0;		/* but have no outarcs */
+
+        s.tmp = null;			/* we're done here */
+    }
+
+
+    /**
+     * nonword - generate arcs for non-word-character ahead or behind
+     */
+    void nonword(int dir, State lp, State rp) {
+        int anchor = (dir == AHEAD) ? '$' : '^';
+
+        assert dir == AHEAD || dir == BEHIND;
+        nfa.newarc(anchor, (short)1, lp, rp);
+        nfa.newarc(anchor, (short)0, lp, rp);
+        cm.colorcomplement(nfa, dir, wordchrs, lp, rp);
+    /* (no need for special attention to \n) */
+    }
+
+    /**
+     * word - generate arcs for word character ahead or behind
+     */
+    void word(int dir, State lp, State rp) {
+        assert dir == AHEAD || dir == BEHIND;
+        cloneouts(nfa, wordchrs, lp, rp, dir);
+    /* (no need for special attention to \n) */
+    }
+
+    /**
+     * scannum - scan a number
+     *
+     * @return value <= DUPMAX
+     */
+    int scannum() throws RegexException {
+        int n = 0;
+
+        while (see(DIGIT) && n < DUPMAX) {
+            n = n * 10 + nextvalue;
+            lex.next();
+        }
+
+        if (see(DIGIT) || n > DUPMAX) {
+            throw new RegexException("REG_BADBR");
+        }
+        return n;
+    }
+
+    static final int SOME = 2;
+    static final int INF = 3;
+
+    static int pair(int a, int b) {
+        return a * 4 + b;
+    }
+
+    static int reduce(int x) {
+        if (x == INFINITY) {
+            return INF;
+        } else if (x > 1) {
+            return SOME;
+        } else {
+            return x;
+        }
+    }
+
+    /**
+     * repeat - replicate subNFA for quantifiers
+     * The duplication sequences used here are chosen carefully so that any
+     * pointers starting out pointing into the subexpression end up pointing into
+     * the last occurrence.  (Note that it may not be strung between the same
+     * left and right end states, however!)  This used to be important for the
+     * subRE tree, although the important bits are now handled by the in-line
+     * code in parse(), and when this is called, it doesn't matter any more.
+     */
+    void repeat(State lp, State rp, int m, int n) throws RegexException {
+        final int rm = reduce(m);
+        final int rn = reduce(n);
+        State s;
+        State s2;
+
+        switch (pair(rm, rn)) {
+        // pair(0, 0)
+        case 0:		/* empty string */
+            delsub(nfa, lp, rp);
+            nfa.emptyarc(lp, rp);
+            break;
+        //case PAIR(0, 1):		/* do as x| */
+        case 1:
+            nfa.emptyarc(lp, rp);
+            break;
+        //case PAIR(0, SOME):		/* do as x{1,n}| */
+        case SOME:
+            repeat(lp, rp, 1, n);
+            nfa.emptyarc(lp, rp);
+            break;
+        //case PAIR(0, INF):		/* loop x around */
+        case INF:
+            s = nfa.newstate();
+            nfa.moveouts(lp, s);
+            nfa.moveins(rp, s);
+            nfa.emptyarc(lp, s);
+            nfa.emptyarc(s, rp);
+            break;
+        //case PAIR(1, 1):		/* no action required */
+        case 4 * 1 + 1:
+            break;
+        //case PAIR(1, SOME):		/* do as x{0,n-1}x = (x{1,n-1}|)x */
+        case 4 * 1 + SOME:
+            s = nfa.newstate();
+            nfa.moveouts(lp, s);
+            nfa.dupnfa(s, rp, lp, s);
+            repeat(lp, s, 1, n - 1);
+            nfa.emptyarc(lp, s);
+            break;
+        //case PAIR(1, INF):		/* add loopback arc */
+        case 4 * 1 + INF:
+            s = nfa.newstate();
+            s2 = nfa.newstate();
+            nfa.moveouts(lp, s);
+            nfa.moveins(rp, s2);
+            nfa.emptyarc(lp, s);
+            nfa.emptyarc(s2, rp);
+            nfa.emptyarc(s2, s);
+            break;
+        //case PAIR(SOME, SOME):		/* do as x{m-1,n-1}x */
+        case 4 * SOME + SOME:
+            s = nfa.newstate();
+            nfa.moveouts(lp, s);
+            nfa.dupnfa(s, rp, lp, s);
+            repeat(lp, s, m - 1, n - 1);
+            break;
+        //case PAIR(SOME, INF):		/* do as x{m-1,}x */
+        case 4 * SOME + INF:
+            s = nfa.newstate();
+            nfa.moveouts(lp, s);
+            nfa.dupnfa(s, rp, lp, s);
+            repeat(lp, s, m - 1, n);
+            break;
+        default:
+            throw new RegexException("REG_ASSERT");
+        }
+    }
+
+    /**
+     * wordchrs - set up word-chr list for word-boundary stuff, if needed
+     * The list is kept as a bunch of arcs between two dummy states; it's
+     * disposed of by the unreachable-states sweep in NFA optimization.
+     * Does NEXT().  Must not be called from any unusual lexical context.
+     * This should be reconciled with the \w etc. handling in lex.c, and
+     * should be cleaned up to reduce dependencies on input scanning.
+     */
+    void wordchrs() {
+        State left;
+        State right;
+
+        if (wordchrs != null) {
+            lex.next();		/* for consistency */
+            return;
+        }
+
+        left = nfa.newstate();
+        right = nfa.newstate();
+    /* fine point:  implemented with [::], and lexer will set REG_ULOCALE */
+        lex.lexword();
+        lex.next();
+        assert savepattern != null && see('[');
+        bracket(left, right);
+        assert (savepattern != null && see(']'));
+        lex.next();
+        wordchrs = left;
+    }
+
+    /**
+     * bracket - handle non-complemented bracket expression
+     * Also called from cbracket for complemented bracket expressions.
+     */
+    void bracket(State lp, State rp) {
+        assert see('[');
+        lex.next();
+        while (!see(']') && !see(EOS)) {
+            brackpart(lp, rp);
+        }
+        assert see(']');
+        cm.okcolors(nfa);
+    }
+
+    /**
+     * brackpart - handle one item (or range) within a bracket expression
+     */
+    void brackpart(State lp, State rp) {
+    }
+
+    /**
+     * cbracket - handle complemented bracket expression
+     * We do it by calling bracket() with dummy endpoints, and then complementing
+     * the result.  The alternative would be to invoke rainbow(), and then delete
+     * arcs as the b.e. is seen... but that gets messy.
+     */
+    void cbracket(State lp, State rp) {
+        State left = nfa.newstate();
+        State right = nfa.newstate();
+
+        bracket(left, right);
+        if (0 != (cflags & Flags.REG_NLSTOP)) {
+            nfa.newarc(PLAIN, nlcolor, left, right);
+        }
+
+        assert lp.nouts == 0;		/* all outarcs will be ours */
+
+    /* easy part of complementing */
+        cm.colorcomplement(nfa, PLAIN, left, lp, rp);
+
+        // No MCCE in Java.
+        nfa.dropstate(left);
+        assert right.nins == 0;
+        nfa.freestate(right);
+    }
+
+    /**
+     * newlacon - allocate a lookahead-constraint subRE
+     *
+     * @return lacon number
+     */
+    int newlacon(State begin, State end, int pos) {
+        if (lacons.size() == 0) {
+            // skip 0
+            lacons.add(null);
+        }
+        Subre sub = new Subre((char)0, 0, begin, end);
+        sub.subno = pos;
+        lacons.add(sub);
+        return lacons.size();
+    }
+
+    /**
+     * onechr - fill in arcs for a plain character, and possible case complements
+     * This is mostly a shortcut for efficient handling of the common case.
+     */
+    void onechr(char c, State lp, State rp) {
+        if (0 == (cflags & Flags.REG_ICASE)) {
+            nfa.newarc(PLAIN, cm.subcolor(c), lp, rp);
+            return;
+        }
+
+    /* rats, need general case anyway... */
+        dovec(allcases(c), lp, rp);
+    }
+
+    /**
+     * allcases - supply cvec for all case counterparts of a chr (including itself)
+     * This is a shortcut, preferably an efficient one, for simple characters;
+     * messy cases are done via range().
+     */
+    Cvec allcases(char c) {
+        Cvec cv;
+
+        // the following as usual are a possible source of stress.
+        char lc = Character.toLowerCase(c);
+        char uc = Character.toUpperCase(c);
+        char tc = Character.toTitleCase(c);
+
+        if (tc != uc) {
+            cv = new Cvec(3, 0);
+            cv.addchr(tc);
+        } else {
+            cv = new Cvec(2, 0);
+        }
+        cv.addchr(lc);
+        if (lc != uc) {
+            cv.addchr(uc);
+        }
+        return cv;
+    }
+
+    /**
+     * dovec - fill in arcs for each element of a cvec
+     * This one has to handle the messy cases, like MCCEs and MCCE leaders.
+     */
+    void dovec(Cvec cv, State lp, State rp) {
+        int ce;
+        int i;
+        short co;
+        Cvec leads;
+        Arc a;
+        Arc pa;		/* arc in prototype */
+        State s;
+        State ps;	/* state in prototype */
+
+        /* need a place to store leaders, if any */
+        /* all 'mcce' processing dropped on the way to java */
+        leads = null;
+
+    /* first, get the ordinary characters out of the way */
+        for (char ch : cv.chrs) {
+            nfa.newarc(PLAIN, cm.subcolor(ch), lp, rp);
+        }
+
+    /* and the ranges */
+        for (int rx = 0; rx < cv.ranges.size(); rx += 2) {
+            char from = cv.ranges.getChar(rx);
+            char to = cv.ranges.getChar(rx + 1);
+
+            // mcce code eliminated here.
+            if (from <= to) {
+                cm.subrange(from, to, lp, rp);
+            }
+        }
+    }
 
     /**
      * optimize - optimize an NFA
@@ -632,7 +1368,8 @@ class Compiler {
         return 0;
     }
 
-    /** compact - compact an NFA
+    /**
+     * compact - compact an NFA
      */
     Cnfa compact(Nfa nfa) {
         return null;
@@ -640,6 +1377,7 @@ class Compiler {
 
     /**
      * Always return false because there is no mcess support enabled.
+     *
      * @param c
      * @return
      */

@@ -91,7 +91,7 @@ class Lex {
         return v.nexttype == t;
     }
 
-    private void eat(int t) {
+    private void eat(int t) throws RegexException {
         if (see(t)) {
             next();
         }
@@ -156,11 +156,6 @@ class Lex {
         return true;
     }
 
-    boolean failw(int e) {
-        v.err(e);
-        return false;
-    }
-
     boolean lasttype(int t) {
         return v.lasttype == t;
     }
@@ -176,11 +171,8 @@ class Lex {
     /**
      * lexstart - set up lexical stuff, scan leading options
      */
-    void lexstart() {
+    void lexstart() throws RegexException {
         prefixes();			/* may turn on new type bits etc. */
-        if (v.err != 0) {
-            return;
-        }
 
         if (0 != (v.cflags & Flags.REG_QUOTE)) {
             assert 0 == (v.cflags & (Flags.REG_ADVANCED | Flags.REG_EXPANDED | Flags.REG_NEWLINE));
@@ -216,7 +208,7 @@ class Lex {
     /**
      * prefixes - implement various special prefixes
      */
-    void prefixes() {
+    void prefixes() throws RegexException {
     /* literal string doesn't get any of this stuff */
         if (0 != (v.cflags & Flags.REG_QUOTE)) {
             return;
@@ -226,8 +218,7 @@ class Lex {
         if (have(4) && next3('*', '*', '*')) {
             switch (charAtNowPlus(3)) {
             case '?':		/* "***?" error, msg shows version */
-                v.err(Errors.REG_BADPAT);
-                return;		/* proceed no further */
+                throw new RegexException("REG_BADPAT");
             case '=':		/* "***=" shifts to literal string */
                 v.note(Flags.REG_UNONPOSIX);
                 v.cflags |= Flags.REG_QUOTE;
@@ -240,8 +231,7 @@ class Lex {
                 v.now += 4;
                 break;
             default:		/* otherwise *** is just an error */
-                v.err(Errors.REG_BADRPT);
-                return;
+                throw new RegexException("REG_BADRPT");
             }
         }
 
@@ -295,14 +285,12 @@ class Lex {
                     v.cflags |= Flags.REG_EXPANDED;
                     break;
                 default:
-                    v.err(Errors.REG_BADOPT);
-                    return;
+                    throw new RegexException("REG_BADOPT");
                 }
             }
 
             if (!next1(')')) {
-                v.err(Errors.REG_BADOPT);
-                return;
+                throw new RegexException("REG_BADOPT");
             }
             v.now++;
             if (0 != (v.cflags & Flags.REG_QUOTE)) {
@@ -335,10 +323,6 @@ class Lex {
         lexnest(backw);
     }
 
-    boolean iserr() {
-        return v.err != 0;
-    }
-
     int digitval(char c) {
         return c - '0';
     }
@@ -350,13 +334,8 @@ class Lex {
     /**
      * next - get next token
      */
-    boolean next() {
+    boolean next() throws RegexException {
         char c;
-
-    /* errors yield an infinite sequence of failures */
-        if (iserr()) {
-            return false;	/* the error has set nexttype to EOS */
-        }
 
     /* remember flavor of last token */
         v.lasttype = v.nexttype;
@@ -396,12 +375,12 @@ class Lex {
                 return ret(Compiler.EOS);
             case L_EBND:
             case L_BBND:
-                return failw(Errors.REG_EBRACE);
+                throw new RegexException("REG_EBRACE");
             case L_BRACK:
             case L_CEL:
             case L_ECL:
             case L_CCL:
-                return failw(Errors.REG_EBRACK);
+                throw new RegexException("REG_EBRACK");
             }
             assert false;
         }
@@ -443,7 +422,7 @@ class Lex {
                     }
                     return retv('}', 1);
                 } else {
-                    return failw(Errors.REG_BADBR);
+                    throw new RegexException("Errors.REG_BADBR");
                 }
             case '\\':		/* BRE bound ends with \} */
                 if (incon(L_BBND) && next1('}')) {
@@ -451,10 +430,10 @@ class Lex {
                     intocon(L_BRE);
                     return ret('}');
                 } else {
-                    return failw(Errors.REG_BADBR);
+                    throw new RegexException("Errors.REG_BADBR");
                 }
             default:
-                return failw(Errors.REG_BADBR);
+                throw new RegexException("Errors.REG_BADBR");
             }
 
         case L_BRACK:			/* brackets are not too hard */
@@ -473,7 +452,7 @@ class Lex {
                 }
                 note(Flags.REG_UNONPOSIX);
                 if (ateos()) {
-                    return failw(Errors.REG_EESCAPE);
+                    throw new RegexException("REG_EESCAPE");
                 }
                 lexescape();
 
@@ -493,7 +472,7 @@ class Lex {
                         lexnest(brbackw);
                         break;
                     default:
-                        return failw(Errors.REG_EESCAPE);
+                        throw new RegexException("Errors.REG_EESCAPE");
                     }
                 /* lexnest done, back up and try again */
                     v.nexttype = v.lasttype;
@@ -501,7 +480,7 @@ class Lex {
 
                 }
             /* not one of the acceptable escapes */
-                return failw(Errors.REG_EESCAPE);
+                throw new RegexException("Errors.REG_EESCAPE");
 
             case '-':
                 if (lasttype('[') || next1(']')) {
@@ -512,7 +491,7 @@ class Lex {
 
             case '[':
                 if (ateos()) {
-                    return failw(Errors.REG_EBRACK);
+                    throw new RegexException("Errors.REG_EBRACK");
                 }
 
                 switch (charAtNowAdvance()) {
@@ -647,7 +626,7 @@ class Lex {
                     return retv(Compiler.LACON, 0);
 
                 default:
-                    return failw(Errors.REG_BADRPT);
+                    throw new RegexException("Errors.REG_BADRPT");
 
                 }
             }
@@ -693,7 +672,7 @@ class Lex {
 
         case '\\':		/* mostly punt backslashes to code below */
             if (ateos()) {
-                return failw(Errors.REG_EESCAPE);
+                throw new RegexException("REG_EESCAPE");
             }
             break;
         default:		/* ordinary character */
@@ -713,9 +692,6 @@ class Lex {
 
         lexescape();
 
-        if (iserr()) {
-            return failw(Errors.REG_EESCAPE);
-        }
         if (v.nexttype == Compiler.CCLASS) {	/* fudge at lexical level */
             switch (v.nextvalue) {
             case 'd':
@@ -738,22 +714,21 @@ class Lex {
                 break;
 
             default:
-                assert false;
-                return failw(Errors.REG_ASSERT);
+                throw new RegexException("REG_ASSERT");
             }
         /* lexnest done, back up and try again */
             v.nexttype = v.lasttype;
             return next();
         }
     /* otherwise, lexescape has already done the work */
-        return !iserr();
+        return true;
     }
 
     /**
      * brenext - get next BRE token
      * This is much like EREs except for all the stupid backslashes and the
      */
-    boolean brenext(char pc) {
+    boolean brenext(char pc) throws RegexException {
         char c = pc;
 
         switch (c) {
@@ -817,7 +792,7 @@ class Lex {
         assert c == '\\';
 
         if (ateos()) {
-            return failw(Errors.REG_EESCAPE);
+           throw new RegexException("REG_EESCAPE");
         }
 
         c = charAtNowAdvance();
@@ -891,7 +866,7 @@ class Lex {
      * lexescape - parse an ARE backslash escape (backslash already eaten)
      * Note slightly nonstandard use of the CCLASS type code.
      */
-    boolean lexescape() {
+    boolean lexescape() throws RegexException {
         char c;
         int save;
 
@@ -920,7 +895,7 @@ class Lex {
         case 'c':
             note(Flags.REG_UUNPORT);
             if (ateos()) {
-                return failw(Errors.REG_EESCAPE);
+                throw new RegexException("REG_EESCAPE");
             }
             return retv(Compiler.PLAIN, (char)(charAtNowAdvance() & 037));
 
@@ -964,16 +939,10 @@ class Lex {
 
         case 'u':
             c = lexdigits(16, 4, 4);
-            if (iserr()) {
-                return failw(Errors.REG_EESCAPE);
-            }
             return retv(Compiler.PLAIN, c);
 
         case 'U':
             c = lexdigits(16, 8, 8);
-            if (iserr()) {
-                return failw(Errors.REG_EESCAPE);
-            }
             return retv(Compiler.PLAIN, c);
 
         case 'v':
@@ -990,9 +959,6 @@ class Lex {
         case 'x':
             note(Flags.REG_UUNPORT);
             c = lexdigits(16, 1, 255);	/* REs >255 long outside spec */
-            if (iserr()) {
-                return failw(Errors.REG_EESCAPE);
-            }
             return retv(Compiler.PLAIN, c);
 
         case 'y':
@@ -1018,11 +984,8 @@ class Lex {
             save = v.now;
             v.now--;	/* put first digit back */
             c = lexdigits(10, 1, 255);	/* REs >255 long outside spec */
-            if (iserr()) {
-                return failw(Errors.REG_EESCAPE);
-            }
         /* ugly heuristic (first test is "exactly 1 digit?") */
-            if (v.now - save == 0 || (int)c <= v.nsubexp) {
+            if (v.now - save == 0 || (int)c <= v.subs.size()) {
                 note(Flags.REG_UBACKREF);
                 return retv(Compiler.BACKREF, (char)c);
             }
@@ -1033,14 +996,12 @@ class Lex {
             note(Flags.REG_UUNPORT);
             v.now--;	/* put first digit back */
             c = lexdigits(8, 1, 3);
-            if (iserr()) {
-                return failw(Errors.REG_EESCAPE);
-            }
+
             return retv(Compiler.PLAIN, c);
 
         default:
             assert iscalpha(c);
-            return failw(Errors.REG_EESCAPE);	/* unknown alphabetic escape */
+            throw new RegexException("REG_EESCAPE"); // unknown escape.
         }
     }
 
@@ -1049,7 +1010,7 @@ class Lex {
  ^ static chr lexdigits(struct vars *, int, int, int);
  */
     char 			/* chr value; errors signalled via ERR */
-    lexdigits(int base, int minlen, int maxlen) {
+    lexdigits(int base, int minlen, int maxlen) throws RegexException {
         int n;			/* unsigned to avoid overflow misbehavior */
         int len;
         char c;
@@ -1112,7 +1073,7 @@ class Lex {
             n = n * ub + d;
         }
         if (len < minlen) {
-            v.err(Errors.REG_EESCAPE);
+            throw new RegexException("REG_EESCAPE");
         }
 
         return (char)n;

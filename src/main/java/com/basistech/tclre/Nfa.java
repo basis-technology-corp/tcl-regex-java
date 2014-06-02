@@ -283,11 +283,10 @@ class Nfa {
 
         s.tmp = (stmp == null) ? newstate() : stmp;
         if (s.tmp == null) {
-            assert v.err != 0;
             return;
         }
 
-        for (a = s.outs; a != null && !v.iserr(); a = a.outchain) {
+        for (a = s.outs; a != null; a = a.outchain) {
             duptraverse(a.to, null);
             assert a.to.tmp != null;
             cparc(a, s.tmp, a.to.tmp);

@@ -20,18 +20,18 @@ import org.mockito.Mockito;
 
 public class NfaTest extends Assert {
 
-    private ColorMap mockColorMap() {
+    private ColorMap mockColorMap() throws RegexException {
         ColorMap colorMap = Mockito.mock(ColorMap.class);
         Mockito.when(colorMap.subcolor('a')).thenReturn((short)1);
         return colorMap;
     }
 
     @Test
-    public void newarc() {
+    public void newarc() throws RegexException {
         Nfa nfa = new Nfa(mockColorMap());
         short color = nfa.cm.subcolor('a');
-        State s1 = nfa.newState();
-        State s2 = nfa.newState();
+        State s1 = nfa.newstate();
+        State s2 = nfa.newstate();
         assertNotNull(s1);
         assertNotNull(s2);
         nfa.newarc(Compiler.PLAIN, color, s1, s2);
@@ -50,9 +50,9 @@ public class NfaTest extends Assert {
     }
 
     @Test
-    public void dropstate() {
+    public void dropstate() throws RegexException {
         Nfa nfa = new Nfa(mockColorMap());
-        State s1 = nfa.newState();
+        State s1 = nfa.newstate();
         nfa.dropstate(s1);
         assertEquals(0, nfa.nstates);
         assertNull(nfa.states);

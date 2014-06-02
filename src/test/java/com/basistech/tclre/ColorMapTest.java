@@ -41,8 +41,6 @@ public class ColorMapTest extends Assert {
     @Test
     public void initialSetup() {
         ColorMap cm = new ColorMap(mockCompiler());
-
-        assertFalse(cm.isErr());
         assertEquals(0, cm.free);
 
         ColorDesc white = cm.colorDescs.get(Constants.WHITE);
@@ -116,7 +114,7 @@ public class ColorMapTest extends Assert {
     }
 
     @Test
-    public void subcolor() {
+    public void subcolor() throws RegexException {
 
         ColorMap cm = new ColorMap(mockCompiler());
         short color1 = cm.subcolor(TESTCHAR1);
@@ -137,14 +135,14 @@ public class ColorMapTest extends Assert {
     }
 
     @Test
-    public void colorchain() {
+    public void colorchain() throws RegexException {
         ColorMap cm = new ColorMap(mockCompiler());
         // we need a mimimal NFA. Mocking does not help, we need actual data structure.
         Nfa nfa = new Nfa(cm);
-        State s0 = nfa.newState();
-        State s1 = nfa.newState();
-        State s2 = nfa.newState();
-        State s3 = nfa.newState();
+        State s0 = nfa.newstate();
+        State s1 = nfa.newstate();
+        State s2 = nfa.newstate();
+        State s3 = nfa.newstate();
 
         short color1 = cm.subcolor(TESTCHAR1);
 

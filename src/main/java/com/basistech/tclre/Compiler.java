@@ -15,6 +15,7 @@
 package com.basistech.tclre;
 
 import com.google.common.collect.Lists;
+import com.ibm.icu.text.UnicodeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +57,6 @@ class Compiler {
     char[] savepattern;
     int savenow;		/* saved now and stop for "subroutine call" */
     int savestop;
-    int err;		/* error code (0 if none) */
     int cflags;		/* copy of compile flags */
     int lasttype;		/* type of previous token */
     int nexttype;		/* type of next token */
@@ -71,10 +71,6 @@ class Compiler {
     Subre treechain;	/* all tree nodes allocated */
     Subre treefree;		/* any free tree nodes */
     int ntree;		/* number of tree nodes */
-    Cvec cv;	/* interface cvec */
-    Cvec cv2;	/* utility cvec */
-
-    Cvec mcces;	/* collating-element information */
 
     State mccepbegin;	/* in nfa, start of MCCE prototypes */
     State mccepend;	/* in nfa, end of MCCE prototypes */
@@ -122,12 +118,6 @@ class Compiler {
         return '\n';
     }
 
-    void cnoerr() throws RegexException {
-        if (err != 0) {
-            throw new RegexException();
-        }
-    }
-
     boolean see(int t) {
         return nexttype == t;
     }
@@ -141,13 +131,8 @@ class Compiler {
         re.guts = new Guts();
 
         cm = new ColorMap(this);
-        cv = new Cvec(100, 20);
 
         // No MCESS support, so no initialization of it.
-
-        if (err != 0) {
-            throw new RegexException(); // TODO: fix up.
-        }
 
         /* Parsing */
 
@@ -157,18 +142,15 @@ class Compiler {
             nlcolor = cm.subcolor(newline());
             cm.okcolors(nfa);
         }
-        cnoerr();
+
         tree = parse(EOS, PLAIN, nfa.init, nfa.finalState);
         assert see(EOS);		/* even if error; ISERR() => see(EOS) */
 
-        cnoerr();
 
         assert tree != null;
 
     /* finish setup of nfa and its subre tree */
         nfa.specialcolors();
-
-        cnoerr();
 
         LOG.debug("========= RAW ==========");
         nfa.dumpnfa();
@@ -182,14 +164,11 @@ class Compiler {
 
     /* build compacted NFAs for tree and lacons */
         re.info |= nfatree(tree);
-        cnoerr();
 
         for (int i = 0; i < lacons.size(); i++) {
             LOG.debug(String.format("========= LA%d ==========", i));
             nfanode(lacons.get(0));
         }
-
-        cnoerr();
 
         if (0 != (tree.flags & Subre.SHORTER)) {
             note(Flags.REG_USHORTEST);
@@ -199,11 +178,8 @@ class Compiler {
         LOG.debug("========= SEARCH ==========");
     /* can sacrifice main NFA now, so use it as work area */
         optimize(nfa);
-        cnoerr();
         makesearch(nfa);
-        cnoerr();
         re.guts.search = compact(nfa);
-        cnoerr();
 
     /* looks okay, package it up */
         re.nsub = subs.size();
@@ -220,8 +196,6 @@ class Compiler {
         }
 
         re.guts.lacons = lacons;
-
-        assert err == 0;
     }
 
     /**
@@ -489,18 +463,10 @@ class Compiler {
         LOG.debug(String.format("========= TREE NODE %s ==========", t));
 
         Nfa newNfa = new Nfa(nfa);
-        if (err != 0) {
-            throw new RegexException();
-        }
-
         newNfa.dupnfa(t.begin, t.end, newNfa.init, newNfa.finalState);
-        if (!iserr()) {
-            newNfa.specialcolors();
-            ret = optimize(newNfa);
-        }
-        if (!iserr()) {
-            t.cnfa = compact(newNfa);
-        }
+        newNfa.specialcolors();
+        ret = optimize(newNfa);
+        t.cnfa = compact(newNfa);
 
         // freenfa ... depend on our friend the GC.
         return ret;
@@ -518,7 +484,7 @@ class Compiler {
         return (f & ~Subre.LOCAL) | (lmix(f) & smix(f) & Subre.MIXED);
     }
 
-    boolean eat(char t) {
+    boolean eat(char t) throws RegexException {
         return see(t) && lex.next();
     }
 
@@ -1202,7 +1168,7 @@ class Compiler {
      * This should be reconciled with the \w etc. handling in lex.c, and
      * should be cleaned up to reduce dependencies on input scanning.
      */
-    void wordchrs() {
+    void wordchrs() throws RegexException {
         State left;
         State right;
 
@@ -1241,20 +1207,20 @@ class Compiler {
      * brackpart - handle one item (or range) within a bracket expression
      */
     void brackpart(State lp, State rp) throws RegexException {
-        Cvec cv;
+        UnicodeSet set;
         char c;
+        // start and end positions of the name of something,
         int startp;
         int endp;
+        // start and end chars of a range
         char startc;
-        String itemName;
+        char endc = 0;
         int ele;
 
     /* parse something, get rid of special cases, take shortcuts */
         switch (nexttype) {
         case RANGE:			/* a-b-c or other botch */
             throw new RegexException("REG_ERANGE");
-            return;
-        break;
         case PLAIN:
             c = (char)nextvalue;
             lex.next();
@@ -1295,26 +1261,21 @@ class Compiler {
             } else {
                 startc = (char)ele;
             }
-            cv = Locale.eclass((cflags & Flags.REG_FAKE) != 0, startc, 0 != (cflags & Flags.REG_ICASE));
-            throw new RegexException("");
-            dovec(cv, lp, rp);
+            set = Locale.eclass((cflags & Flags.REG_FAKE) != 0, startc, 0 != (cflags & Flags.REG_ICASE));
+            dovec(set, lp, rp);
             return;
-        break;
         case CCLASS:
             startp = now;
             endp = scanplain();
             if (endp <= startp) {
                 throw new RegexException("REG_ECTYPE");
             }
-            cv = cclass(v, startp, endp, (cflags&REG_ICASE));
-            throw new RegexException("");
-            dovec(cv, lp, rp);
+            set = Locale.cclass(new String(pattern, startp, endp - startp), 0 != (cflags & Flags.REG_ICASE));
+            dovec(set, lp, rp);
             return;
-        break;
+
         default:
             throw new RegexException("REG_ASSERT");
-            return;
-        break;
         }
 
         if (see(RANGE)) {
@@ -1324,37 +1285,44 @@ class Compiler {
             case RANGE:
                 c = (char)nextvalue;
                 lex.next();
-                endc = element(v, c, c+1);
-                throw new RegexException("");
+                endc = c;
                 break;
             case COLLEL:
                 startp = now;
-                endp = scanplain(v);
-                INSIST(startp < endp, REG_ECOLLATE);
-                throw new RegexException("");
-                endc = element(v, startp, endp);
-                throw new RegexException("");
+                endp = scanplain();
+                if (endp <= startp) {
+                    throw new RegexException("REG_ECOLLATE");
+                }
+
+                // look up named character.
+                String charName = new String(pattern, startp, endp - startp);
+                ele = Locale.element(charName);
+                if (ele == -1) {
+                    throw new RegexException("Unvalid character name " + charName);
+                }
                 break;
             default:
                 throw new RegexException("REG_ERANGE");
-                return;
-            break;
+
             }
-        } else
+        } else {
             endc = startc;
+        }
 
     /*
      * Ranges are unportable.  Actually, standard C does
      * guarantee that digits are contiguous, but making
      * that an exception is just too complicated.
      */
-        if (startc != endc)
-            NOTE(REG_UUNPORT);
-        cv = range(v, startc, endc, (cflags&REG_ICASE));
-        throw new RegexException("");
-        dovec(v, cv, lp, rp);
+        if (startc != endc) {
+            note(Flags.REG_UUNPORT);
+        }
 
-
+        set = new UnicodeSet(startc, endc);
+        if (0 != (cflags & Flags.REG_ICASE)) {
+            set.closeOver(UnicodeSet.ADD_CASE_MAPPINGS);
+        }
+        dovec(set, lp, rp);
     }
 
     /**
@@ -1363,7 +1331,7 @@ class Compiler {
      * to look past the final bracket of the [. etc.
      * @return pos past the sequence
      */
-    int scanplain() {
+    int scanplain() throws RegexException {
         int endp;
 
         assert see(COLLEL) || see(ECLASS) || see(CCLASS);
@@ -1388,7 +1356,7 @@ class Compiler {
      * the result.  The alternative would be to invoke rainbow(), and then delete
      * arcs as the b.e. is seen... but that gets messy.
      */
-    void cbracket(State lp, State rp) {
+    void cbracket(State lp, State rp) throws RegexException {
         State left = nfa.newstate();
         State right = nfa.newstate();
 
@@ -1428,27 +1396,25 @@ class Compiler {
      * onechr - fill in arcs for a plain character, and possible case complements
      * This is mostly a shortcut for efficient handling of the common case.
      */
-    void onechr(char c, State lp, State rp) {
+    void onechr(char c, State lp, State rp) throws RegexException {
         if (0 == (cflags & Flags.REG_ICASE)) {
             nfa.newarc(PLAIN, cm.subcolor(c), lp, rp);
             return;
         }
 
     /* rats, need general case anyway... */
-        dovec(allcases(c), lp, rp);
+        dovec(Locale.allcases(c), lp, rp);
     }
 
 
 
     /**
      * dovec - fill in arcs for each element of a cvec
-     * This one has to handle the messy cases, like MCCEs and MCCE leaders.
      */
-    void dovec(Cvec cv, State lp, State rp) {
+    void dovec(UnicodeSet set, State lp, State rp) throws RegexException {
         int ce;
         int i;
         short co;
-        Cvec leads;
         Arc a;
         Arc pa;		/* arc in prototype */
         State s;
@@ -1456,22 +1422,16 @@ class Compiler {
 
         /* need a place to store leaders, if any */
         /* all 'mcce' processing dropped on the way to java */
-        leads = null;
 
-    /* first, get the ordinary characters out of the way */
-        for (char ch : cv.chrs) {
-            nfa.newarc(PLAIN, cm.subcolor(ch), lp, rp);
-        }
 
-    /* and the ranges */
-        for (int rx = 0; rx < cv.ranges.size(); rx += 2) {
-            char from = cv.ranges.getChar(rx);
-            char to = cv.ranges.getChar(rx + 1);
-
-            // mcce code eliminated here.
-            if (from <= to) {
-                cm.subrange(from, to, lp, rp);
+        int rangeCount = set.getRangeCount();
+        for (int rx = 0; rx < rangeCount; rx++) {
+            int rangeStart = set.getRangeStart(rx);
+            int rangeEnd = set.getRangeEnd(rx);
+            if (rangeStart == rangeEnd) {
+                nfa.newarc(PLAIN, cm.subcolor((char)rangeStart), lp, rp);
             }
+            cm.subrange((char)rangeStart, (char)rangeEnd, lp, rp);
         }
     }
 
@@ -1488,34 +1448,6 @@ class Compiler {
      */
     Cnfa compact(Nfa nfa) {
         return null;
-    }
-
-    /**
-     * Always return false because there is no mcess support enabled.
-     *
-     * @param c
-     * @return
-     */
-    boolean isCeLeader(char c) {
-        return mcces != null && mcces.haschr(c);
-    }
-
-    boolean iserr() {
-        return err != 0;
-    }
-
-    int err(int e) {
-        nexttype = EOS;
-        if (err != 0) {
-            err = e;
-        }
-        return err;
-    }
-
-    void insist(boolean v, int e) {
-        if (!v) {
-            err(e);
-        }
     }
 
     boolean note(long b) {

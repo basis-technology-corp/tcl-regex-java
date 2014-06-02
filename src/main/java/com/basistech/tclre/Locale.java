@@ -14,6 +14,11 @@
 
 package com.basistech.tclre;
 
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
+import com.ibm.icu.text.UnicodeSet;
+
 import it.unimi.dsi.fastutil.objects.Object2CharMap;
 import it.unimi.dsi.fastutil.objects.Object2CharOpenHashMap;
 
@@ -126,8 +131,12 @@ final class Locale {
     }
 
 
-    static Cvec range(char start, char end, boolean cases) {
-        return null;
+    static UnicodeSet range(char start, char end, boolean cases) {
+        UnicodeSet set = new UnicodeSet(start, end);
+        if (cases) {
+            set.closeOver(UnicodeSet.ADD_CASE_MAPPINGS);
+        }
+        return set;
     }
 
     // from regc_locale
@@ -140,31 +149,31 @@ final class Locale {
     }
 
     /**
-     * eclass - supply cvec for an equivalence class
-     * Must include case counterparts on request.
+     * eclass - Because we have no MCCE support, this 
+     * ends processing single characters.
      */
-    static Cvec eclass(boolean fake, char c, boolean cases) {
-        Cvec cv;
+    static UnicodeSet eclass(boolean fake, char c, boolean cases) {
 
     /* crude fake equivalence class for testing */
         if (fake && c == 'x') {
-            cv = new Cvec(4, 0);
-            cv.addchr('x');
-            cv.addchr('y');
+            UnicodeSet set = new UnicodeSet();
+            set.add('x');
+            set.add('y');
             if (cases) {
-                cv.addchr('X');
-                cv.addchr('Y');
+                set.add('X');
+                set.add('Y');
             }
-            return cv;
+            return set;
         }
 
     /* otherwise, none */
         if (cases) {
             return allcases(c);
+        } else {
+            UnicodeSet set = new UnicodeSet();
+            set.add(c);
+            return set;
         }
-        cv = new Cvec(1, 0);
-        cv.addchr(c);
-        return cv;
     }
 
     /**
@@ -172,28 +181,26 @@ final class Locale {
      * This is a shortcut, preferably an efficient one, for simple characters;
      * messy cases are done via range().
      */
-    static Cvec allcases(char c) {
-        Cvec cv;
-
-        // the following as usual are a possible source of stress.
-        char lc = Character.toLowerCase(c);
-        char uc = Character.toUpperCase(c);
-        char tc = Character.toTitleCase(c);
-
-        if (tc != uc) {
-            cv = new Cvec(3, 0);
-            cv.addchr(tc);
-        } else {
-            cv = new Cvec(2, 0);
-        }
-        cv.addchr(lc);
-        if (lc != uc) {
-            cv.addchr(uc);
-        }
-        return cv;
+    static UnicodeSet allcases(char c) {
+        UnicodeSet set = new UnicodeSet();
+        set.add(c);
+        set.closeOver(UnicodeSet.ADD_CASE_MAPPINGS);
+        return set;
     }
 
     private Locale() {
         //
+    }
+
+    /**
+     * Return a UnicodeSet for a character class name.
+     * It appears that the names that TCL accepts are also acceptable to ICU.
+     * @param s class name
+     * @param casefold whether to include casefolding
+     * @return set
+     */
+    public static UnicodeSet cclass(String s, boolean casefold) {
+        // ICU support character classes, so...
+        return new UnicodeSet(String.format("[:%s:]", s), casefold ? UnicodeSet.ADD_CASE_MAPPINGS : 0);
     }
 }

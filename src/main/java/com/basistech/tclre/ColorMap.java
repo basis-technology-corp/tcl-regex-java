@@ -15,6 +15,7 @@
 package com.basistech.tclre;
 
 import com.google.common.collect.Lists;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +92,7 @@ class ColorMap {
         char uc = c;
         int b;
 
-        if (isErr() || co == Constants.COLORLESS) {
+        if (co == Constants.COLORLESS) {
             return Constants.COLORLESS;
         }
 
@@ -142,10 +143,6 @@ class ColorMap {
      */
 
     short newcolor() {
-        if (isErr()) {
-            return Constants.COLORLESS;
-        }
-
         if (free != 0) {
             assert free > 0;
             ColorDesc cd = colorDescs.get(free);
@@ -194,9 +191,6 @@ class ColorMap {
      */
     short pseudocolor() {
         short co = newcolor();
-        if (isErr()) {
-            return Constants.COLORLESS;
-        }
         ColorDesc cd = colorDescs.get(co);
         cd.nchrs = 1;
         cd.flags = ColorDesc.PSEUDO;
@@ -206,15 +200,12 @@ class ColorMap {
     /**
      * subcolor - allocate a new subcolor (if necessary) to this chr
      */
-    short subcolor(char c) {
+    short subcolor(char c) throws RegexException {
         short co;			/* current color of c */
         short sco;			/* new subcolor */
 
         co = getcolor(c);
         sco = newsub(co);
-        if (isErr()) {
-            return Constants.COLORLESS;
-        }
         assert sco != Constants.COLORLESS;
 
         if (co == sco)		/* already in an open subcolor */
@@ -231,7 +222,7 @@ class ColorMap {
     /**
      * newsub - allocate a new subcolor (if necessary) for a color
      */
-    short newsub(short co) {
+    short newsub(short co) throws RegexException {
         short sco; // new subclolor.
 
         ColorDesc cd = colorDescs.get(co);
@@ -243,8 +234,7 @@ class ColorMap {
             }
             sco = newcolor();	/* must create subcolor */
             if (sco == Constants.COLORLESS) {
-                assert isErr();
-                return Constants.COLORLESS;
+                throw new RegexException("Invalid color allocation");
             }
 
             ColorDesc subcd = colorDescs.get(sco);
@@ -252,15 +242,13 @@ class ColorMap {
             subcd.sub = sco;	/* open subcolor points to self */
         }
 
-        assert sco != Constants.NOSUB;
-
         return sco;
     }
 
     /**
      * subrange - allocate new subcolors to this range of chrs, fill in arcs
      */
-    void subrange(char from, char to, State lp, State rp) {
+    void subrange(char from, char to, State lp, State rp) throws RegexException {
         char uf;
         int i;
 
@@ -291,7 +279,7 @@ class ColorMap {
     /**
      * subblock - allocate new subcolors for one tree block of chrs, fill in arcs
      */
-    void subblock(char start, State lp, State rp) {
+    void subblock(char start, State lp, State rp) throws RegexException {
         char uc = start;
         int shift;
         int level;
@@ -473,13 +461,13 @@ class ColorMap {
         ColorDesc cd;
         short co;
 
-        for (co = 0; co < colorDescs.size() && isErr(); co++) {
+        for (co = 0; co < colorDescs.size(); co++) {
             cd = colorDescs.get(co);
             if (!cd.unusedColor()
                     && cd.sub != co
                     && co != but
                     && !cd.pseudo()) {
-                compiler.nfa.newarc(type, co, from, to);
+                nfa.newarc(type, co, from, to);
             }
         }
     }
@@ -494,7 +482,7 @@ class ColorMap {
         short co;
 
         assert of != from;
-        for (co = 0; co < colorDescs.size() && !isErr(); co++) {
+        for (co = 0; co < colorDescs.size(); co++) {
             cd = colorDescs.get(co);
             if (!cd.unusedColor() && !cd.pseudo())
                 if (of.findarc(Compiler.PLAIN, co) == null) {
@@ -515,14 +503,6 @@ class ColorMap {
 
     static short b1(char c) {
         return (short) ((c >>> Constants.BYTBITS) & Constants.BYTMASK);
-    }
-
-    boolean isErr() {
-        return compiler.err != 0;
-    }
-
-    void err(int e) {
-        compiler.err(e);
     }
 
     /**

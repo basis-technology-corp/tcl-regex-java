@@ -149,6 +149,32 @@ class Nfa {
     }
 
     /**
+     * copyins - copy all in arcs of a state to another state
+     */
+    void copyins(State old, State newState) {
+        Arc a;
+
+        assert old != newState;
+
+        for (a = old.ins; a != null; a = a.inchain) {
+            cparc(a, a.from, newState);
+        }
+    }
+
+    /**
+     * copyouts - copy all out arcs of a state to another state
+     */
+    void copyouts(State old, State newState) {
+        Arc a;
+
+        assert old != newState;
+
+        for (a = old.outs; a != null; a = a.outchain) {
+            cparc(a, newState, a.to);
+        }
+    }
+
+    /**
      * Convenience method to return a new state with flag = 0.
      *
      * @return new state
@@ -461,5 +487,168 @@ class Nfa {
         if (aa ==null) {
             LOG.debug("?!?");	/* missing from in-chain */
         }
+    }
+
+    /**
+     * optimize - optimize an NFA
+     * @return re_info bits
+     */
+    long optimize() {
+        LOG.debug("initial cleanup");
+        cleanup();		/* may simplify situation */
+        dumpnfa();
+        LOG.debug("empties");
+        fixempties();	/* get rid of EMPTY arcs */
+        LOG.debug("constraints");
+        pullback();	/* pull back constraints backward */
+        pushfwd();	/* push fwd constraints forward */
+        LOG.debug("final cleanup");
+        cleanup();		/* final tidying */
+        return analyze();	/* and analysis */
+    }
+
+    /**
+     * cleanup - clean up NFA after optimizations
+     */
+    void cleanup() {
+        State s;
+        State nexts;
+        int n;
+
+    /* clear out unreachable or dead-end states */
+    /* use pre to mark reachable, then post to mark can-reach-post */
+        markreachable(pre, null, pre);
+        markcanreach(post, pre, post);
+        for (s = states; s != null; s = nexts) {
+            nexts = s.next;
+            if (s.tmp != post && 0 == s.flag)
+                dropstate(s);
+        }
+        assert post.nins == 0 || post.tmp == post;
+
+        cleartraverse(pre);
+
+        assert post.nins == 0 || post.tmp == null;
+    /* the nins==0 (final unreachable) case will be caught later */
+
+    /* renumber surviving states */
+        n = 0;
+        for (s = states; s != null; s = s.next) {
+            s.no = n++;
+        }
+        nstates = n;
+    }
+
+    /**
+     * markreachable - recursive marking of reachable states
+     * @param s a state
+     * @param okay consider only states with this mark.
+     * @param mark the value to mark with
+ */
+    void markreachable(State s, State okay, State mark) {
+        Arc a;
+
+        if (s.tmp != okay) {
+            return;
+        }
+
+        s.tmp = mark;
+
+        for (a = s.outs; a != null; a = a.outchain) {
+            markreachable(a.to, okay, mark);
+        }
+    }
+
+    /**
+     * markcanreach - recursive marking of states which can reach here
+     */
+    void markcanreach(State s, State okay, State mark) {
+        Arc a;
+
+        if (s.tmp != okay) {
+            return;
+        }
+        s.tmp = mark;
+
+        for (a = s.ins; a != null; a = a.inchain) {
+            markcanreach(a.from, okay, mark);
+        }
+    }
+
+    /**
+     * fixempties - get rid of EMPTY arcs
+     */
+    void fixempties() {
+        State s;
+        State nexts;
+        Arc a;
+        Arc nexta;
+        boolean progress;
+
+    /* find and eliminate empties until there are no more */
+        do {
+            progress = false;
+            for (s = states; s != null; s = nexts) {
+                nexts = s.next;
+                for (a = s.outs; a !=null; a = nexta) {
+                    nexta = a.outchain;
+                    if (a.type == Compiler.EMPTY && unempty(a))
+                        progress = true;
+                    assert nexta == null || s.no != State.FREESTATE;
+                }
+            }
+            if (progress) {
+                dumpnfa();
+            }
+        } while (progress);
+    }
+
+    /**
+     * unempty - optimize out an EMPTY arc, if possible
+     * Actually, as it stands this function always succeeds, but the return
+     * value is kept with an eye on possible future changes.
+     */
+    boolean unempty(Arc a) {
+        State from = a.from;
+        State to = a.to;
+        boolean usefrom;		/* work on from, as opposed to to? */
+
+        assert a.type == Compiler.EMPTY;
+        assert from != pre && to != post;
+
+        if (from == to) {		/* vacuous loop */
+            freearc(a);
+            return true;
+        }
+
+    /* decide which end to work on */
+        usefrom = true;			/* default:  attack from */
+        if (from.nouts > to.nins) {
+            usefrom = false;
+        } else if (from.nouts == to.nins) {
+        /* decide on secondary issue:  move/copy fewest arcs */
+            if (from.nins > to.nouts) {
+                usefrom = false;
+            }
+        }
+
+        freearc(a);
+        if (usefrom) {
+            if (from.nouts == 0) {
+            /* was the state's only outarc */
+                moveins(from, to);
+                freestate(from);
+            } else
+                copyins(from, to);
+        } else {
+            if (to.nins == 0) {
+            /* was the state's only inarc */
+                moveouts(to, from);
+                freestate(to);
+            } else
+                copyouts(to, from);
+        }
+
+        return true;
     }
 }

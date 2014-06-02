@@ -177,7 +177,7 @@ class Compiler {
     /* build compacted NFAs for tree, lacons, fast search */
         LOG.debug("========= SEARCH ==========");
     /* can sacrifice main NFA now, so use it as work area */
-        optimize(nfa);
+        nfa.optimize();
         makesearch(nfa);
         re.guts.search = compact(nfa);
 
@@ -453,7 +453,7 @@ class Compiler {
     /**
      * nfanode - do one NFA for nfatree
      *
-     * @return results of {@link #optimize(Nfa)}
+     * @return results of {@link Nfa#optimize()}
      */
     long nfanode(Subre t) throws RegexException {
         long ret = 0;
@@ -465,7 +465,7 @@ class Compiler {
         Nfa newNfa = new Nfa(nfa);
         newNfa.dupnfa(t.begin, t.end, newNfa.init, newNfa.finalState);
         newNfa.specialcolors();
-        ret = optimize(newNfa);
+        ret = newNfa.optimize();
         t.cnfa = compact(newNfa);
 
         // freenfa ... depend on our friend the GC.
@@ -1410,19 +1410,9 @@ class Compiler {
 
     /**
      * dovec - fill in arcs for each element of a cvec
+     * all kinds of MCCE complexity removed.
      */
     void dovec(UnicodeSet set, State lp, State rp) throws RegexException {
-        int ce;
-        int i;
-        short co;
-        Arc a;
-        Arc pa;		/* arc in prototype */
-        State s;
-        State ps;	/* state in prototype */
-
-        /* need a place to store leaders, if any */
-        /* all 'mcce' processing dropped on the way to java */
-
 
         int rangeCount = set.getRangeCount();
         for (int rx = 0; rx < rangeCount; rx++) {
@@ -1435,13 +1425,6 @@ class Compiler {
         }
     }
 
-    /**
-     * optimize - optimize an NFA
-     */
-    long			/* re_info bits */
-    optimize(Nfa nfa) {
-        return 0;
-    }
 
     /**
      * compact - compact an NFA
@@ -1452,26 +1435,5 @@ class Compiler {
 
     boolean note(long b) {
         return re.info != b;
-    }
-
-    // The C version we use has no collation support generated in, so we get
-    // the following stub functions.
-    /*
-     - nmcces - how many distinct MCCEs are there?
-     ^ static int nmcces(struct vars *);
-     */
-    int nmcces() {
-    /*
-     * No multi-character collating elements defined at the moment.
-     */
-        return 0;
-    }
-
-    /*
-     - nleaders - how many chrs can be first chrs of MCCEs?
-     ^ static int nleaders(struct vars *);
-     */
-    int nleaders() {
-        return 0;
     }
 }

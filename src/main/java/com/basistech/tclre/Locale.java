@@ -139,9 +139,59 @@ final class Locale {
         return -1;
     }
 
+    /**
+     * eclass - supply cvec for an equivalence class
+     * Must include case counterparts on request.
+     */
+    static Cvec eclass(boolean fake, char c, boolean cases) {
+        Cvec cv;
 
+    /* crude fake equivalence class for testing */
+        if (fake && c == 'x') {
+            cv = new Cvec(4, 0);
+            cv.addchr('x');
+            cv.addchr('y');
+            if (cases) {
+                cv.addchr('X');
+                cv.addchr('Y');
+            }
+            return cv;
+        }
 
+    /* otherwise, none */
+        if (cases) {
+            return allcases(c);
+        }
+        cv = new Cvec(1, 0);
+        cv.addchr(c);
+        return cv;
+    }
 
+    /**
+     * allcases - supply cvec for all case counterparts of a chr (including itself)
+     * This is a shortcut, preferably an efficient one, for simple characters;
+     * messy cases are done via range().
+     */
+    static Cvec allcases(char c) {
+        Cvec cv;
+
+        // the following as usual are a possible source of stress.
+        char lc = Character.toLowerCase(c);
+        char uc = Character.toUpperCase(c);
+        char tc = Character.toTitleCase(c);
+
+        if (tc != uc) {
+            cv = new Cvec(3, 0);
+            cv.addchr(tc);
+        } else {
+            cv = new Cvec(2, 0);
+        }
+        cv.addchr(lc);
+        if (lc != uc) {
+            cv.addchr(uc);
+        }
+        return cv;
+    }
 
     private Locale() {
         //

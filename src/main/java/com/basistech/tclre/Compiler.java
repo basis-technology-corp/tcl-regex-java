@@ -1227,7 +1227,7 @@ class Compiler {
      * bracket - handle non-complemented bracket expression
      * Also called from cbracket for complemented bracket expressions.
      */
-    void bracket(State lp, State rp) {
+    void bracket(State lp, State rp) throws RegexException {
         assert see('[');
         lex.next();
         while (!see(']') && !see(EOS)) {
@@ -1240,8 +1240,147 @@ class Compiler {
     /**
      * brackpart - handle one item (or range) within a bracket expression
      */
-    void brackpart(State lp, State rp) {
+    void brackpart(State lp, State rp) throws RegexException {
+        Cvec cv;
+        char c;
+        int startp;
+        int endp;
+        char startc;
+        String itemName;
+        int ele;
+
+    /* parse something, get rid of special cases, take shortcuts */
+        switch (nexttype) {
+        case RANGE:			/* a-b-c or other botch */
+            throw new RegexException("REG_ERANGE");
+            return;
+        break;
+        case PLAIN:
+            c = (char)nextvalue;
+            lex.next();
+        /* shortcut for ordinary chr (not range, not MCCE leader) */
+            if (!see(RANGE) ) {
+                onechr(c, lp, rp);
+                return;
+            }
+            // since element returns the input char for a one-char element,
+            // and this is guaranteed to be a 1-char element ...
+            startc = c;
+            break;
+        case COLLEL:
+            startp = now;
+            endp = scanplain();
+            if (endp <= startp) {
+                throw new RegexException("REG_ECOLLATE");
+            }
+            // now we want a character name.
+            String charName = new String(pattern, startp, endp - startp);
+            ele = Locale.element(charName);
+            if (ele == -1) {
+                throw new RegexException("Unvalid character name " + charName);
+            } else {
+                startc = (char)ele;
+            }
+            break;
+        case ECLASS:
+            startp = now;
+            endp = scanplain();
+            if (endp <= startp) {
+                throw new RegexException("REG_ECOLLATE");
+            }
+            charName = new String(pattern, startp, endp - startp);
+            ele = Locale.element(charName);
+            if (ele == -1) {
+                throw new RegexException("Unvalid character name " + charName);
+            } else {
+                startc = (char)ele;
+            }
+            cv = Locale.eclass((cflags & Flags.REG_FAKE) != 0, startc, 0 != (cflags & Flags.REG_ICASE));
+            throw new RegexException("");
+            dovec(cv, lp, rp);
+            return;
+        break;
+        case CCLASS:
+            startp = now;
+            endp = scanplain();
+            if (endp <= startp) {
+                throw new RegexException("REG_ECTYPE");
+            }
+            cv = cclass(v, startp, endp, (cflags&REG_ICASE));
+            throw new RegexException("");
+            dovec(cv, lp, rp);
+            return;
+        break;
+        default:
+            throw new RegexException("REG_ASSERT");
+            return;
+        break;
+        }
+
+        if (see(RANGE)) {
+            lex.next();
+            switch (nexttype) {
+            case PLAIN:
+            case RANGE:
+                c = (char)nextvalue;
+                lex.next();
+                endc = element(v, c, c+1);
+                throw new RegexException("");
+                break;
+            case COLLEL:
+                startp = now;
+                endp = scanplain(v);
+                INSIST(startp < endp, REG_ECOLLATE);
+                throw new RegexException("");
+                endc = element(v, startp, endp);
+                throw new RegexException("");
+                break;
+            default:
+                throw new RegexException("REG_ERANGE");
+                return;
+            break;
+            }
+        } else
+            endc = startc;
+
+    /*
+     * Ranges are unportable.  Actually, standard C does
+     * guarantee that digits are contiguous, but making
+     * that an exception is just too complicated.
+     */
+        if (startc != endc)
+            NOTE(REG_UUNPORT);
+        cv = range(v, startc, endc, (cflags&REG_ICASE));
+        throw new RegexException("");
+        dovec(v, cv, lp, rp);
+
+
     }
+
+    /**
+     * scanplain - scan PLAIN contents of [. etc.
+     * Certain bits of trickery in lex.c know that this code does not try
+     * to look past the final bracket of the [. etc.
+     * @return pos past the sequence
+     */
+    int scanplain() {
+        int endp;
+
+        assert see(COLLEL) || see(ECLASS) || see(CCLASS);
+        lex.next();
+
+        endp = now;
+        while (see(PLAIN)) {
+            endp = now;
+            lex.next();
+        }
+
+        assert see(END);
+        lex.next();
+
+        return endp;
+    }
+
 
     /**
      * cbracket - handle complemented bracket expression
@@ -1299,31 +1438,7 @@ class Compiler {
         dovec(allcases(c), lp, rp);
     }
 
-    /**
-     * allcases - supply cvec for all case counterparts of a chr (including itself)
-     * This is a shortcut, preferably an efficient one, for simple characters;
-     * messy cases are done via range().
-     */
-    Cvec allcases(char c) {
-        Cvec cv;
 
-        // the following as usual are a possible source of stress.
-        char lc = Character.toLowerCase(c);
-        char uc = Character.toUpperCase(c);
-        char tc = Character.toTitleCase(c);
-
-        if (tc != uc) {
-            cv = new Cvec(3, 0);
-            cv.addchr(tc);
-        } else {
-            cv = new Cvec(2, 0);
-        }
-        cv.addchr(lc);
-        if (lc != uc) {
-            cv.addchr(uc);
-        }
-        return cv;
-    }
 
     /**
      * dovec - fill in arcs for each element of a cvec

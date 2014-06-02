@@ -15,13 +15,13 @@
 package com.basistech.tclre;
 
 /**
-* Created by benson on 5/30/14.
-*/
+ * Color descriptor.
+ */
 class ColorDesc {
     static final int FREECOL = 1; // currently free
     static final int PSEUDO = 2;  // pseudocolor, no real chars
 
-    char nchrs; // number of chars of this color
+    int nchrs; // number of chars of this color
 
     //TODO: sub puns a slot for two things, is this a good idea?
     short sub; // open subcolor (if any); free chain ptr */

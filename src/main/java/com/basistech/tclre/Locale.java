@@ -14,9 +14,6 @@
 
 package com.basistech.tclre;
 
-import java.util.Map;
-
-import com.google.common.collect.ImmutableMap;
 import com.ibm.icu.text.UnicodeSet;
 
 import it.unimi.dsi.fastutil.objects.Object2CharMap;
@@ -30,6 +27,7 @@ final class Locale {
 /* ASCII character-name table */
 
     static final Object2CharMap<String> CNAME;
+
     static {
         CNAME = new Object2CharOpenHashMap<String>();
 
@@ -131,6 +129,12 @@ final class Locale {
     }
 
 
+    private Locale() {
+        //
+    }
+
+    // from regc_locale
+
     static UnicodeSet range(char start, char end, boolean cases) {
         UnicodeSet set = new UnicodeSet(start, end);
         if (cases) {
@@ -138,8 +142,6 @@ final class Locale {
         }
         return set;
     }
-
-    // from regc_locale
 
     static int element(String what) {
         if (CNAME.containsKey(what)) {
@@ -149,7 +151,7 @@ final class Locale {
     }
 
     /**
-     * eclass - Because we have no MCCE support, this 
+     * eclass - Because we have no MCCE support, this
      * ends processing single characters.
      */
     static UnicodeSet eclass(boolean fake, char c, boolean cases) {
@@ -188,14 +190,11 @@ final class Locale {
         return set;
     }
 
-    private Locale() {
-        //
-    }
-
     /**
      * Return a UnicodeSet for a character class name.
      * It appears that the names that TCL accepts are also acceptable to ICU.
-     * @param s class name
+     *
+     * @param s        class name
      * @param casefold whether to include casefolding
      * @return set
      */

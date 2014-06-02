@@ -17,7 +17,7 @@ package com.basistech.tclre;
 /**
  * Created by benson on 5/29/14.
  */
-class Constants {
+final class Constants {
     static final int NOCELT = -1;
     static final int CHRBITS = 16;
     static final int CHR_MIN = 0;
@@ -29,6 +29,10 @@ class Constants {
     static final short COLORLESS = -1;
     static final short NOSUB = COLORLESS;
     static final short WHITE = 0;
+
+    private Constants() {
+        //
+    }
 
     static int chr(int c) {
         return c - '0';

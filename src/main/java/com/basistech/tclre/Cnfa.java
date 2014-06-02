@@ -15,19 +15,19 @@
 package com.basistech.tclre;
 
 /**
-* Created by benson on 5/29/14.
-*/
+ * Created by benson on 5/29/14.
+ */
 class Cnfa {
     static final int HASLACONS = 1;
-    int nstates;		/* number of states */
-    int ncolors;		/* number of colors */
+    int nstates;        /* number of states */
+    int ncolors;        /* number of colors */
     int flags;
-    int pre;		/* setup state number */
-    int post;		/* teardown state number */
-    short[] bos = new short[2];		/* colors, if any, assigned to BOS and BOL */
-    short[] eos = new short[2];		/* colors, if any, assigned to EOS and EOL */
-    Carc[][] states;	/* vector of pointers to outarc lists */
-    Carc[] arcs;	/* the area for the lists */
+    int pre;        /* setup state number */
+    int post;       /* teardown state number */
+    short[] bos = new short[2];     /* colors, if any, assigned to BOS and BOL */
+    short[] eos = new short[2];     /* colors, if any, assigned to EOS and EOL */
+    Carc[][] states;    /* vector of pointers to outarc lists */
+    Carc[] arcs;    /* the area for the lists */
 
     void zapcnfa() {
         nstates = 0;

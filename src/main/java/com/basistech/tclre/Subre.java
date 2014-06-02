@@ -17,23 +17,50 @@ package com.basistech.tclre;
 import com.google.common.base.Objects;
 
 /**
-* subexpression tree
-*/
+ * subexpression tree
+ */
 class Subre {
-    static final int	LONGER = 01;	/* prefers longer match */
-    static final int	SHORTER	= 02;	/* prefers shorter match */
-    static final int	MIXED = 04;	/* mixed preference below */
-    static final int	CAP = 010; /* capturing parens below */
-    static final int	BACKR = 020;	/* back reference below */
-    static final int	INUSE = 0100;	/* in use in final tree */
-    static final int	LOCAL = 03;	/* bits which may not propagate up */
+    static final int LONGER = 01;   /* prefers longer match */
+    static final int SHORTER = 02;  /* prefers shorter match */
+    static final int MIXED = 04;    /* mixed preference below */
+    static final int CAP = 010; /* capturing parens below */
+    static final int BACKR = 020;   /* back reference below */
+    static final int INUSE = 0100;  /* in use in final tree */
+    static final int LOCAL = 03;    /* bits which may not propagate up */
+    char op;        /* '|', '.' (concat), 'b' (backref), '(', '=' */
+    int flags;
+    short retry;        /* index into retry memory */
+    int subno;      /* subexpression number (for 'b' and '(') */
+    short min;      /* min repetitions, for backref only */
+    short max;      /* max repetitions, for backref only */
+    Subre left; /* left child, if any (also freelist chain) */
+    Subre right;    /* right child, if any */
+    State begin;    /* outarcs from here... */
+    State end;  /* ...ending in inarcs here */
+    Cnfa cnfa;  /* compacted NFA, if any */
+    Subre chain;    /* for bookkeeping and error cleanup */
+    Subre(char op, int flags, State initState, State finalState) {
+        assert "|.b(=".indexOf(op) != -1;
 
-    /** LONGER -> MIXED */
+        this.op = op;
+        this.flags = flags;
+        min = 1;
+        max = 1;
+        begin = initState;
+        end = finalState;
+        cnfa = new Cnfa();
+    }
+
+    /**
+     * LONGER -> MIXED
+     */
     static int lmix(int f) {
         return f << 2;
     }
 
-    /** SHORTER -> MIXED */
+    /**
+     * SHORTER -> MIXED
+     */
     static int smix(int f) {
         return f << 1;
     }
@@ -43,7 +70,7 @@ class Subre {
     }
 
     static boolean messy(int f) {
-        return 0 != (f & (MIXED|CAP|BACKR));
+        return 0 != (f & (MIXED | CAP | BACKR));
     }
 
     static int pref(int f) {
@@ -56,31 +83,6 @@ class Subre {
 
     static int combine(int f1, int f2) {
         return up(f1 | f2) | pref2(f1, f2);
-    }
-
-    char op;		/* '|', '.' (concat), 'b' (backref), '(', '=' */
-    int flags;
-    short retry;		/* index into retry memory */
-    int subno;		/* subexpression number (for 'b' and '(') */
-    short min;		/* min repetitions, for backref only */
-    short max;		/* max repetitions, for backref only */
-    Subre left;	/* left child, if any (also freelist chain) */
-    Subre right;	/* right child, if any */
-    State begin;	/* outarcs from here... */
-    State end;	/* ...ending in inarcs here */
-    Cnfa cnfa;	/* compacted NFA, if any */
-    Subre chain;	/* for bookkeeping and error cleanup */
-
-    Subre(char op, int flags, State initState, State finalState) {
-        assert "|.b(=".indexOf(op) != -1;
-
-        this.op = op;
-        this.flags = flags;
-        min = 1;
-        max = 1;
-        begin = initState;
-        end = finalState;
-        cnfa = new Cnfa();
     }
 
     @Override

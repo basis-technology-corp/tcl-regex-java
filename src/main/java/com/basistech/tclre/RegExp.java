@@ -33,7 +33,7 @@ class RegExp {
     static final int REG_UIMPOSSIBLE = 010000;
     static final int REG_USHORTEST = 020000;
     long info;
-    int nsub;		/* number of subexpressions */
-    int csize;		/* sizeof(character) */
+    int nsub;       /* number of subexpressions */
+    int csize;      /* sizeof(character) */
     Guts guts;
 }

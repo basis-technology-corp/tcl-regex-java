@@ -15,27 +15,27 @@
 package com.basistech.tclre;
 
 
-import com.google.common.collect.Lists;
-
 import java.util.Comparator;
 import java.util.List;
+
+import com.google.common.collect.Lists;
 
 /**
  * Data structures derived from regguts.h.
  * Note that this is built for 16-bit chars.
  */
 class Guts {
-    int cflags;		/* copy of compile flags */
-    long info;		/* copy of re_info */
-    int nsub;		/* copy of re_nsub */
+    int cflags;     /* copy of compile flags */
+    long info;      /* copy of re_info */
+    int nsub;       /* copy of re_nsub */
     Subre tree;
-    Cnfa search;	/* for fast preliminary search */
+    Cnfa search;    /* for fast preliminary search */
     int ntree;
     ColorMap cmap;
     // see guava support when it comes time to fill this in.
     Comparator<char[]> compare;
 
-    List<Subre> lacons;	/* lookahead-constraint vector */
+    List<Subre> lacons; /* lookahead-constraint vector */
 
     Guts() {
         lacons = Lists.newArrayList();

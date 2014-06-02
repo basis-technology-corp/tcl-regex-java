@@ -18,29 +18,29 @@ package com.basistech.tclre;
  * Error constant ints.
  */
 final class Errors {
-    static final int REG_OKAY = 0;	/* no errors detected */
-    static final int REG_NOMATCH = 1;	/* failed to match */
-    static final int REG_BADPAT = 2;	/* invalid regexp */
-    static final int REG_ECOLLATE = 3;	/* invalid collating element */
-    static final int REG_ECTYPE = 4;	/* invalid character class */
-    static final int REG_EESCAPE = 5;	/* invalid escape \ sequence */
-    static final int REG_ESUBREG = 6;	/* invalid backreference number */
-    static final int REG_EBRACK = 7;	/* brackets [] not balanced */
-    static final int REG_EPAREN = 8;	/* parentheses () not balanced */
-    static final int REG_EBRACE = 9;	/* braces {} not balanced */
-    static final int REG_BADBR = 10;	/* invalid repetition count(s) */
-    static final int REG_ERANGE = 11;	/* invalid character range */
-    static final int REG_ESPACE = 12;	/* out of memory */
-    static final int REG_BADRPT = 13;	/* quantifier operand invalid */
-    static final int REG_ASSERT = 15;	/* "can't happen" -- you found a bug */
-    static final int REG_INVARG = 16;	/* invalid argument to regex function */
-    static final int REG_MIXED = 17;	/* character widths of regex and string differ */
-    static final int REG_BADOPT = 18;	/* invalid embedded option */
+    static final int REG_OKAY = 0;  /* no errors detected */
+    static final int REG_NOMATCH = 1;   /* failed to match */
+    static final int REG_BADPAT = 2;    /* invalid regexp */
+    static final int REG_ECOLLATE = 3;  /* invalid collating element */
+    static final int REG_ECTYPE = 4;    /* invalid character class */
+    static final int REG_EESCAPE = 5;   /* invalid escape \ sequence */
+    static final int REG_ESUBREG = 6;   /* invalid backreference number */
+    static final int REG_EBRACK = 7;    /* brackets [] not balanced */
+    static final int REG_EPAREN = 8;    /* parentheses () not balanced */
+    static final int REG_EBRACE = 9;    /* braces {} not balanced */
+    static final int REG_BADBR = 10;    /* invalid repetition count(s) */
+    static final int REG_ERANGE = 11;   /* invalid character range */
+    static final int REG_ESPACE = 12;   /* out of memory */
+    static final int REG_BADRPT = 13;   /* quantifier operand invalid */
+    static final int REG_ASSERT = 15;   /* "can't happen" -- you found a bug */
+    static final int REG_INVARG = 16;   /* invalid argument to regex function */
+    static final int REG_MIXED = 17;    /* character widths of regex and string differ */
+    static final int REG_BADOPT = 18;   /* invalid embedded option */
     /* two specials for debugging and testing */
-    static final int REG_ATOI = 101;	/* convert error-code name to number */
-    static final int REG_ITOA = 102;	/* convert error-code number to name */
+    static final int REG_ATOI = 101;    /* convert error-code name to number */
+    static final int REG_ITOA = 102;    /* convert error-code number to name */
 
-    private void Errors() {
+    private Errors() {
         //
     }
 

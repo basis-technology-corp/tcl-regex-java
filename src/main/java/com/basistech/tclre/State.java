@@ -17,19 +17,19 @@ package com.basistech.tclre;
 import com.google.common.base.Objects;
 
 /**
-* Created by benson on 5/29/14.
-*/
+ * Created by benson on 5/29/14.
+ */
 class State {
     static final int FREESTATE = -1;
     int no;
-    int flag;		/* marks special states */
-    int nins;		/* number of inarcs */
-    Arc ins;	/* chain of inarcs */
-    int nouts;		/* number of outarcs */
-    Arc outs;	/* chain of outarcs */
-    State tmp;	/* temporary for traversal algorithms */
-    State next;	/* chain for traversing all */
-    State prev;	/* back chain */
+    int flag;       /* marks special states */
+    int nins;       /* number of inarcs */
+    Arc ins;    /* chain of inarcs */
+    int nouts;      /* number of outarcs */
+    Arc outs;   /* chain of outarcs */
+    State tmp;  /* temporary for traversal algorithms */
+    State next; /* chain for traversing all */
+    State prev; /* back chain */
 
     Arc findarc(int type, short co) {
         for (Arc a = outs; a != null; a = a.outchain) {

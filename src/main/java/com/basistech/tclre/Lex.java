@@ -22,63 +22,66 @@ package com.basistech.tclre;
 class Lex {
     /* lexical contexts */
     static final int L_ERE = 1; /* mainline ERE/ARE */
-    static final int L_BRE = 2;	/* mainline BRE */
-    static final int L_Q = 3;	/* Flags.REG_QUOTE */
-    static final int L_EBND = 4;/* ERE/ARE bound */
-    static final int L_BBND = 5;	/* BRE bound */
-    static final int L_BRACK = 6;	/* brackets */
-    static final int L_CEL = 7;	/* collating element */
-    static final int L_ECL = 8;	/* equivalence class */
-    static final int L_CCL = 9;	/* character class */
+    static final int L_BRE = 2; /* mainline BRE */
+    static final int L_Q = 3;   /* Flags.REG_QUOTE */
+    static final int L_EBND = 4; /* ERE/ARE bound */
+    static final int L_BBND = 5;    /* BRE bound */
+    static final int L_BRACK = 6;   /* brackets */
+    static final int L_CEL = 7; /* collating element */
+    static final int L_ECL = 8; /* equivalence class */
+    static final int L_CCL = 9; /* character class */
 
     /*
- * string constants to interpolate as expansions of things like \d
- */
-    static final char backd[] = {		/* \d */
+     * string constants to interpolate as expansions of things like \d
+     */
+    //CHECKSTYLE:OFF
+    static final char backd[] = {       /* \d */
             '[', '[', ':',
             'd', 'i', 'g', 'i', 't',
             ':', ']', ']'
     };
-    static final char backD[] = {		/* \D */
+
+    static final char backD[] = {       /* \D */
             '[', '^', '[', ':',
             'd', 'i', 'g', 'i', 't',
             ':', ']', ']'
     };
-    static final char brbackd[] = {	/* \d within brackets */
+    static final char brbackd[] = { /* \d within brackets */
             '[', ':',
             'd', 'i', 'g', 'i', 't',
             ':', ']'
     };
-    static final char backs[] = {		/* \s */
+    static final char backs[] = {       /* \s */
             '[', '[', ':',
             's', 'p', 'a', 'c', 'e',
             ':', ']', ']'
     };
-    static final char backS[] = {		/* \S */
+    static final char backS[] = {       /* \S */
             '[', '^', '[', ':',
             's', 'p', 'a', 'c', 'e',
             ':', ']', ']'
     };
-    static final char brbacks[] = {	/* \s within brackets */
+    static final char brbacks[] = { /* \s within brackets */
             '[', ':',
             's', 'p', 'a', 'c', 'e',
             ':', ']'
     };
-    static final char backw[] = {		/* \w */
+    static final char backw[] = {       /* \w */
             '[', '[', ':',
             'a', 'l', 'n', 'u', 'm',
             ':', ']', '_', ']'
     };
-    static final char backW[] = {		/* \W */
+    static final char backW[] = {       /* \W */
             '[', '^', '[', ':',
             'a', 'l', 'n', 'u', 'm',
             ':', ']', '_', ']'
     };
-    static final char brbackw[] = {	/* \w within brackets */
+    static final char brbackw[] = { /* \w within brackets */
             '[', ':',
             'a', 'l', 'n', 'u', 'm',
             ':', ']', '_'
     };
+    //CHECKSTYLE:ON
 
     private Compiler v;
 
@@ -172,7 +175,7 @@ class Lex {
      * lexstart - set up lexical stuff, scan leading options
      */
     void lexstart() throws RegexException {
-        prefixes();			/* may turn on new type bits etc. */
+        prefixes();         /* may turn on new type bits etc. */
 
         if (0 != (v.cflags & Flags.REG_QUOTE)) {
             assert 0 == (v.cflags & (Flags.REG_ADVANCED | Flags.REG_EXPANDED | Flags.REG_NEWLINE));
@@ -185,8 +188,8 @@ class Lex {
             intocon(L_BRE);
         }
 
-        v.nexttype = Compiler.EMPTY;		/* remember we were at the start */
-        next();			/* set up the first token */
+        v.nexttype = Compiler.EMPTY;        /* remember we were at the start */
+        next();         /* set up the first token */
     }
 
     boolean iscalpha(char c) {
@@ -217,20 +220,20 @@ class Lex {
     /* initial "***" gets special things */
         if (have(4) && next3('*', '*', '*')) {
             switch (charAtNowPlus(3)) {
-            case '?':		/* "***?" error, msg shows version */
+            case '?':       /* "***?" error, msg shows version */
                 throw new RegexException("REG_BADPAT");
-            case '=':		/* "***=" shifts to literal string */
+            case '=':       /* "***=" shifts to literal string */
                 v.note(Flags.REG_UNONPOSIX);
                 v.cflags |= Flags.REG_QUOTE;
                 v.cflags &= ~(Flags.REG_ADVANCED | Flags.REG_EXPANDED | Flags.REG_NEWLINE);
                 v.now += 4;
-                return;		/* and there can be no more prefixes */
-            case ':':		/* "***:" shifts to AREs */
+                return;     /* and there can be no more prefixes */
+            case ':':       /* "***:" shifts to AREs */
                 v.note(Flags.REG_UNONPOSIX);
                 v.cflags |= Flags.REG_ADVANCED;
                 v.now += 4;
                 break;
-            default:		/* otherwise *** is just an error */
+            default:        /* otherwise *** is just an error */
                 throw new RegexException("REG_BADRPT");
             }
         }
@@ -246,42 +249,42 @@ class Lex {
             v.now += 2;
             for (; !ateos() && iscalpha(charAtNow()); v.now++) {
                 switch (charAtNow()) {
-                case 'b':		/* BREs (but why???) */
+                case 'b':       /* BREs (but why???) */
                     v.cflags &= ~(Flags.REG_ADVANCED | Flags.REG_QUOTE);
                     break;
-                case 'c':		/* case sensitive */
+                case 'c':       /* case sensitive */
                     v.cflags &= ~Flags.REG_ICASE;
                     break;
-                case 'e':		/* plain EREs */
+                case 'e':       /* plain EREs */
                     v.cflags |= Flags.REG_EXTENDED;
                     v.cflags &= ~(Flags.REG_ADVF | Flags.REG_QUOTE);
                     break;
-                case 'i':		/* case insensitive */
+                case 'i':       /* case insensitive */
                     v.cflags |= Flags.REG_ICASE;
                     break;
-                case 'm':		/* Perloid synonym for n */
-                case 'n':		/* \n affects ^ $ . [^ */
+                case 'm':       /* Perloid synonym for n */
+                case 'n':       /* \n affects ^ $ . [^ */
                     v.cflags |= Flags.REG_NEWLINE;
                     break;
-                case 'p':		/* ~Perl, \n affects . [^ */
+                case 'p':       /* ~Perl, \n affects . [^ */
                     v.cflags |= Flags.REG_NLSTOP;
                     v.cflags &= ~Flags.REG_NLANCH;
                     break;
-                case 'q':		/* literal string */
+                case 'q':       /* literal string */
                     v.cflags |= Flags.REG_QUOTE;
                     v.cflags &= ~Flags.REG_ADVANCED;
                     break;
-                case 's':		/* single line, \n ordinary */
+                case 's':       /* single line, \n ordinary */
                     v.cflags &= ~Flags.REG_NEWLINE;
                     break;
-                case 't':		/* tight syntax */
+                case 't':       /* tight syntax */
                     v.cflags &= ~Flags.REG_EXPANDED;
                     break;
-                case 'w':		/* weird, \n affects ^ $ only */
+                case 'w':       /* weird, \n affects ^ $ only */
                     v.cflags &= ~Flags.REG_NLSTOP;
                     v.cflags |= Flags.REG_NLANCH;
                     break;
-                case 'x':		/* expanded syntax */
+                case 'x':       /* expanded syntax */
                     v.cflags |= Flags.REG_EXPANDED;
                     break;
                 default:
@@ -305,7 +308,7 @@ class Lex {
      * implicit assumptions about what sorts of strings can be subroutines.
      */
     void lexnest(char[] interpolated) {
-        assert v.savepattern == null;	/* only one level of nesting */
+        assert v.savepattern == null;   /* only one level of nesting */
         v.savepattern = v.pattern;
         v.savenow = v.now;
         v.savestop = v.stop;
@@ -343,14 +346,15 @@ class Lex {
     /* REG_BOSONLY */
         if (v.nexttype == Compiler.EMPTY && (0 != (v.cflags & Flags.REG_BOSONLY))) {
         /* at start of a REG_BOSONLY RE */
-            return retv(Compiler.SBEGIN, (char)0);		/* same as \A */
+            return retv(Compiler.SBEGIN, (char)0);      /* same as \A */
         }
 
     /* if we're nested and we've hit end, return to outer level */
         if (v.savepattern != null && ateos()) {
             v.now = v.savenow;
             v.stop = v.savestop;
-            v.savenow = v.savestop = 0;
+            v.savenow = 0;
+            v.savestop = 0;
             v.pattern = v.savepattern;
         }
 
@@ -390,13 +394,13 @@ class Lex {
 
     /* deal with the easy contexts, punt EREs to code below */
         switch (v.lexcon) {
-        case L_BRE:			/* punt BREs to separate function */
+        case L_BRE:         /* punt BREs to separate function */
             return brenext(c);
-        case L_ERE:			/* see below */
+        case L_ERE:         /* see below */
             break;
-        case L_Q:			/* literal strings are easy */
+        case L_Q:           /* literal strings are easy */
             return retv(Compiler.PLAIN, c);
-        case L_BBND:			/* bounds are fairly simple */
+        case L_BBND:            /* bounds are fairly simple */
         case L_EBND:
             switch (c) {
             case '0':
@@ -412,7 +416,7 @@ class Lex {
                 return retv(Compiler.DIGIT, digitval(c));
             case ',':
                 return ret(',');
-            case '}':		/* ERE bound ends with } */
+            case '}':       /* ERE bound ends with } */
                 if (incon(L_EBND)) {
                     intocon(L_ERE);
                     if (0 != (v.cflags & Flags.REG_ADVF) && next1('?')) {
@@ -424,7 +428,7 @@ class Lex {
                 } else {
                     throw new RegexException("Errors.REG_BADBR");
                 }
-            case '\\':		/* BRE bound ends with \} */
+            case '\\':      /* BRE bound ends with \} */
                 if (incon(L_BBND) && next1('}')) {
                     v.now++;
                     intocon(L_BRE);
@@ -436,7 +440,7 @@ class Lex {
                 throw new RegexException("Errors.REG_BADBR");
             }
 
-        case L_BRACK:			/* brackets are not too hard */
+        case L_BRACK:           /* brackets are not too hard */
             switch (c) {
             case ']':
                 if (lasttype('[')) {
@@ -456,7 +460,7 @@ class Lex {
                 }
                 lexescape();
 
-                switch (v.nexttype) {	/* not all escapes okay here */
+                switch (v.nexttype) {   /* not all escapes okay here */
                 case Compiler.PLAIN:
                     return true;
 
@@ -510,7 +514,7 @@ class Lex {
                     note(Flags.REG_ULOCALE);
                     return ret(Compiler.CCLASS);
 
-                default:			/* oops */
+                default:            /* oops */
                     v.now--;
                     return retv(Compiler.PLAIN, c);
 
@@ -521,7 +525,7 @@ class Lex {
 
             }
 
-        case L_CEL:			/* collating elements are easy */
+        case L_CEL:         /* collating elements are easy */
             if (c == '.' && next1(']')) {
                 v.now++;
                 intocon(L_BRACK);
@@ -530,7 +534,7 @@ class Lex {
                 return retv(Compiler.PLAIN, c);
             }
 
-        case L_ECL:			/* ditto equivalence classes */
+        case L_ECL:         /* ditto equivalence classes */
             if (c == '=' && next1(']')) {
                 v.now++;
                 intocon(L_BRACK);
@@ -539,7 +543,7 @@ class Lex {
                 return retv(Compiler.PLAIN, c);
             }
 
-        case L_CCL:			/* ditto character classes */
+        case L_CCL:         /* ditto character classes */
             if (c == ':' && next1(']')) {
                 v.now++;
                 intocon(L_BRACK);
@@ -554,7 +558,7 @@ class Lex {
         }
 
     /* that got rid of everything except EREs and AREs */
-        assert (incon(L_ERE));
+        assert incon(L_ERE);
 
     /* deal with EREs and AREs, except for backslashes */
         switch (c) {
@@ -585,7 +589,7 @@ class Lex {
             }
             return retv('?', 1);
 
-        case '{':		/* bounds start or plain character */
+        case '{':       /* bounds start or plain character */
             if (0 != (v.cflags & Flags.REG_EXPANDED)) {
                 skip();
             }
@@ -599,29 +603,29 @@ class Lex {
                 return ret('{');
             }
 
-        case '(':		/* parenthesis, or advanced extension */
+        case '(':       /* parenthesis, or advanced extension */
             if (0 != (v.cflags & Flags.REG_ADVF) && next1('?')) {
                 note(Flags.REG_UNONPOSIX);
                 v.now++;
                 switch (charAtNowAdvance()) {
-                case ':':		/* non-capturing paren */
+                case ':':       /* non-capturing paren */
                     return retv('(', 0);
 
-                case '#':		/* comment */
+                case '#':       /* comment */
                     while (!ateos() && charAtNow() != ')') {
                         v.now++;
                     }
                     if (!ateos()) {
                         v.now++;
                     }
-                    assert (v.nexttype == v.lasttype);
+                    assert v.nexttype == v.lasttype;
                     return next();
 
-                case '=':		/* positive lookahead */
+                case '=':       /* positive lookahead */
                     note(Flags.REG_ULOOKAHEAD);
                     return retv(Compiler.LACON, 1);
 
-                case '!':		/* negative lookahead */
+                case '!':       /* negative lookahead */
                     note(Flags.REG_ULOOKAHEAD);
                     return retv(Compiler.LACON, 0);
 
@@ -631,7 +635,7 @@ class Lex {
                 }
             }
             if (0 != (v.cflags & Flags.REG_NOSUB) || 0 != (v.cflags & Flags.REG_NOCAPT)) {
-                return retv('(', 0);		/* all parens non-capturing */
+                return retv('(', 0);        /* all parens non-capturing */
             } else {
                 return retv('(', 1);
             }
@@ -642,7 +646,7 @@ class Lex {
             }
             return retv(')', c);
 
-        case '[':		/* easy except for [[:<:]] and [[:>:]] */
+        case '[':       /* easy except for [[:<:]] and [[:>:]] */
             if (have(6) && charAtNow() == '['
                     && charAtNowPlus(1) == ':'
                     && (charAtNowPlus(2) == '<' || charAtNowPlus(2) == '>')
@@ -670,19 +674,19 @@ class Lex {
         case '$':
             return ret('$');
 
-        case '\\':		/* mostly punt backslashes to code below */
+        case '\\':      /* mostly punt backslashes to code below */
             if (ateos()) {
                 throw new RegexException("REG_EESCAPE");
             }
             break;
-        default:		/* ordinary character */
+        default:        /* ordinary character */
             return retv(Compiler.PLAIN, c);
 
         }
 
     /* ERE/ARE backslash handling; backslash already eaten */
-        assert (!ateos());
-        if (0 == (v.cflags & Flags.REG_ADVF)) {	/* only AREs have non-trivial escapes */
+        assert !ateos();
+        if (0 == (v.cflags & Flags.REG_ADVF)) { /* only AREs have non-trivial escapes */
             if (iscalnum(charAtNow())) {
                 note(Flags.REG_UBSALNUM);
                 note(Flags.REG_UUNSPEC);
@@ -692,7 +696,7 @@ class Lex {
 
         lexescape();
 
-        if (v.nexttype == Compiler.CCLASS) {	/* fudge at lexical level */
+        if (v.nexttype == Compiler.CCLASS) {    /* fudge at lexical level */
             switch (v.nextvalue) {
             case 'd':
                 lexnest(backd);
@@ -738,13 +742,12 @@ class Lex {
             }
             return ret('*');
         case '[':
-            if (have(6) && charAtNow() == '[' &&
-                    charAtNowPlus(1) == ':' &&
-                    (charAtNowPlus(2) == '<' ||
-                            charAtNowPlus(2) == '>') &&
-                    charAtNowPlus(3) == ':' &&
-                    charAtNowPlus(4) == ']' &&
-                    charAtNowPlus(5) == ']') {
+            if (have(6) && charAtNow() == '[' 
+                && charAtNowPlus(1) == ':' 
+                && (charAtNowPlus(2) == '<' || charAtNowPlus(2) == '>') 
+                &&  charAtNowPlus(3) == ':'
+                &&  charAtNowPlus(4) == ']' 
+                &&  charAtNowPlus(5) == ']') {
                 c = charAtNowPlus(2);
                 v.now += 6;
                 note(Flags.REG_UNONPOSIX);
@@ -783,7 +786,7 @@ class Lex {
             return retv(Compiler.PLAIN, c);
 
         case '\\':
-            break;		/* see below */
+            break;      /* see below */
         default:
             return retv(Compiler.PLAIN, c);
 
@@ -792,7 +795,7 @@ class Lex {
         assert c == '\\';
 
         if (ateos()) {
-           throw new RegexException("REG_EESCAPE");
+            throw new RegexException("REG_EESCAPE");
         }
 
         c = charAtNowAdvance();
@@ -848,7 +851,7 @@ class Lex {
                 v.now++;
             }
             if (ateos() || charAtNow() != '#') {
-                break;				/* NOTE BREAK OUT */
+                break;              /* NOTE BREAK OUT */
             }
             assert next1('#');
             while (!ateos() && charAtNow() != '\n') {
@@ -872,7 +875,7 @@ class Lex {
 
         assert 0 == (v.cflags & Flags.REG_ADVF);
 
-        assert (!ateos());
+        assert !ateos();
         c = charAtNowAdvance();
         if (!iscalnum(c)) {
             return retv(Compiler.PLAIN, c);
@@ -958,7 +961,7 @@ class Lex {
 
         case 'x':
             note(Flags.REG_UUNPORT);
-            c = lexdigits(16, 1, 255);	/* REs >255 long outside spec */
+            c = lexdigits(16, 1, 255);  /* REs >255 long outside spec */
             return retv(Compiler.PLAIN, c);
 
         case 'y':
@@ -982,8 +985,8 @@ class Lex {
         case '8':
         case '9':
             save = v.now;
-            v.now--;	/* put first digit back */
-            c = lexdigits(10, 1, 255);	/* REs >255 long outside spec */
+            v.now--;    /* put first digit back */
+            c = lexdigits(10, 1, 255);  /* REs >255 long outside spec */
         /* ugly heuristic (first test is "exactly 1 digit?") */
             if (v.now - save == 0 || (int)c <= v.subs.size()) {
                 note(Flags.REG_UBACKREF);
@@ -994,7 +997,7 @@ class Lex {
         /* and fall through into octal number */
         case '0':
             note(Flags.REG_UUNPORT);
-            v.now--;	/* put first digit back */
+            v.now--;    /* put first digit back */
             c = lexdigits(8, 1, 3);
 
             return retv(Compiler.PLAIN, c);
@@ -1009,9 +1012,9 @@ class Lex {
  - lexdigits - slurp up digits and return chr value
  ^ static chr lexdigits(struct vars *, int, int, int);
  */
-    char 			/* chr value; errors signalled via ERR */
+    char            /* chr value; errors signalled via ERR */
     lexdigits(int base, int minlen, int maxlen) throws RegexException {
-        int n;			/* unsigned to avoid overflow misbehavior */
+        int n;          /* unsigned to avoid overflow misbehavior */
         int len;
         char c;
         int d;
@@ -1058,17 +1061,17 @@ class Lex {
                 d = 15;
                 break;
             default:
-                v.now--;	/* oops, not a digit at all */
+                v.now--;    /* oops, not a digit at all */
                 d = -1;
                 break;
             }
 
-            if (d >= base) {	/* not a plausible digit */
+            if (d >= base) {    /* not a plausible digit */
                 v.now--;
                 d = -1;
             }
             if (d < 0) {
-                break;		/* NOTE BREAK OUT */
+                break;      /* NOTE BREAK OUT */
             }
             n = n * ub + d;
         }

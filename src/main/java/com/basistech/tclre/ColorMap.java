@@ -14,41 +14,27 @@
 
 package com.basistech.tclre;
 
+import java.util.List;
+
 import com.google.common.collect.Lists;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 /**
-* code from regc_color.c.
-*/
+ * code from regc_color.c.
+ */
 class ColorMap {
     static final Logger LOG = LoggerFactory.getLogger(ColorMap.class);
-    /**
-     * Color tree
-     */
-    /* C unions this. We use more memory instead, and trust that clever punning of pointers and shorts is not
-     * happening.
-     */
-    static class Tree {
-        short[] ccolor = new short[Constants.BYTTAB];
-        Tree[] ptrs = new Tree[Constants.BYTTAB];
-    }
-
     // this is called 'v' in the C code.
     Compiler compiler; // for compile error reporting
-
     // replaced by the use of a list.
     //int ncds; // number of ColorDesc's
     int free; // beginning of free chain (if non-zero)
-
     // colorDescs is 'cd' in the C code.
     List<ColorDesc> colorDescs; // all the color descs. A list for resizability.
     // cdspace replaced by usr of list.
     Tree[] tree;
-
     ColorMap(Compiler compiler) {
         this.compiler = compiler;
         colorDescs = Lists.newArrayList();
@@ -60,7 +46,7 @@ class ColorMap {
         colorDescs.add(white);
         assert colorDescs.size() == 1;
         white.sub = Constants.NOSUB;
-        white.nchrs = (char) (Constants.CHR_MAX - Constants.CHR_MIN + 1);
+        white.nchrs = (char)(Constants.CHR_MAX - Constants.CHR_MIN + 1);
 
         // allocate top-level array of tree objects.
         for (int tx = 0; tx < tree.length; tx++) {
@@ -85,9 +71,17 @@ class ColorMap {
         white.block = t;
     }
 
+    static short b0(char c) {
+        return (short)(c & Constants.BYTMASK);
+    }
+
+    static short b1(char c) {
+        return (short)((c >>> Constants.BYTBITS) & Constants.BYTMASK);
+    }
+
     /**
      * setcolor - set the color of a character in a colormap
-    */
+     */
     short setcolor(char c, short co) {
         char uc = c;
         int b;
@@ -99,8 +93,8 @@ class ColorMap {
         Tree t = tree[0];
         Tree lastt;
         for (int level = 0, shift = Constants.BYTBITS * (Constants.NBYTS - 1);
-             shift > 0;
-             level++, shift -= Constants.BYTBITS) {
+                shift > 0;
+                level++, shift -= Constants.BYTBITS) {
             b = (uc >>> shift) & Constants.BYTMASK;
             lastt = t;
             t = lastt.ptrs[b];
@@ -109,7 +103,7 @@ class ColorMap {
             Tree fillt = tree[level + 1];
             boolean bottom = shift <= Constants.BYTBITS;
             Tree cb = bottom ? colorDescs.get(t.ccolor[0]).block : fillt;
-            if (t == fillt || t == cb) {	/* must allocate a new block */
+            if (t == fillt || t == cb) {    /* must allocate a new block */
                 Tree newt = new Tree();
                 if (bottom) {
                     newt.ccolor = t.ccolor.clone();
@@ -127,20 +121,21 @@ class ColorMap {
         return prev;
     }
 
-    /**
-     * Maximum valid color, which might encompass some free colors.
-     * @return
-     */
-    short maxcolor() {
-        return (short)(colorDescs.size() - 1);
-    }
-
     /*
      * The C code goes to lengths to compress the array of
      * color descs in various ways. This code preserves the
      * concept of a color value as an index into the array,
      * but takes a simpler approach to storage.
      */
+
+    /**
+     * Maximum valid color, which might encompass some free colors.
+     *
+     * @return
+     */
+    short maxcolor() {
+        return (short)(colorDescs.size() - 1);
+    }
 
     short newcolor() {
         if (free != 0) {
@@ -150,12 +145,12 @@ class ColorMap {
             assert cd.arcs == null;
             free = cd.sub;
             cd.reset();
-            return (short) free;
+            return (short)free;
         } else {
             ColorDesc newcd = new ColorDesc();
             int colorIndex = colorDescs.size();
             colorDescs.add(newcd);
-            return (short) colorIndex;
+            return (short)colorIndex;
         }
     }
 
@@ -179,14 +174,15 @@ class ColorMap {
         cd.markFree();
 
         if (free != 0) {
-            colorDescs.get(free).sub = co;
+            final ColorDesc colorDesc = colorDescs.get(free);
+            colorDesc.sub = co;
         }
-
         free = co;
     }
 
     /**
      * pseudocolor - allocate a false color to be managed by other means.
+     *
      * @return
      */
     short pseudocolor() {
@@ -201,15 +197,16 @@ class ColorMap {
      * subcolor - allocate a new subcolor (if necessary) to this chr
      */
     short subcolor(char c) throws RegexException {
-        short co;			/* current color of c */
-        short sco;			/* new subcolor */
+        short co;           /* current color of c */
+        short sco;          /* new subcolor */
 
         co = getcolor(c);
         sco = newsub(co);
         assert sco != Constants.COLORLESS;
 
-        if (co == sco)		/* already in an open subcolor */
-            return co;	/* rest is redundant */
+        if (co == sco)      /* already in an open subcolor */ {
+            return co;  /* rest is redundant */
+        }
 
         ColorDesc cd = colorDescs.get(co);
         cd.nchrs--;
@@ -228,18 +225,18 @@ class ColorMap {
         ColorDesc cd = colorDescs.get(co);
 
         sco = colorDescs.get(co).sub;
-        if (sco == Constants.NOSUB) {		/* color has no open subcolor */
+        if (sco == Constants.NOSUB) {       /* color has no open subcolor */
             if (cd.nchrs == 1) { /* optimization */
                 return co;
             }
-            sco = newcolor();	/* must create subcolor */
+            sco = newcolor();   /* must create subcolor */
             if (sco == Constants.COLORLESS) {
                 throw new RegexException("Invalid color allocation");
             }
 
             ColorDesc subcd = colorDescs.get(sco);
             cd.sub = sco;
-            subcd.sub = sco;	/* open subcolor points to self */
+            subcd.sub = sco;    /* open subcolor points to self */
         }
 
         return sco;
@@ -261,7 +258,7 @@ class ColorMap {
             compiler.nfa.newarc(Compiler.PLAIN, subcolor(from), lp, rp);
         }
 
-        if (from > to) {			/* didn't reach a boundary */
+        if (from > to) {            /* didn't reach a boundary */
             return;
         }
 
@@ -300,14 +297,14 @@ class ColorMap {
         t = tree[0]; //
         fillt = null;
         for (level = 0, shift = Constants.BYTBITS * (Constants.NBYTS - 1); shift > 0;
-             level++, shift -= Constants.BYTBITS) {
+                level++, shift -= Constants.BYTBITS) {
             b = (uc >>> shift) & Constants.BYTMASK;
             lastt = t;
             t = lastt.ptrs[b];
 
             assert t != null;
             fillt = tree[level + 1];
-            if (t == fillt && shift > Constants.BYTBITS) {	/* need new ptr block */
+            if (t == fillt && shift > Constants.BYTBITS) {  /* need new ptr block */
                 t = new Tree();
                 t.ptrs = fillt.ptrs.clone();
                 lastt.ptrs[b] = t;
@@ -323,7 +320,7 @@ class ColorMap {
             sco = newsub(co);
             ColorDesc scd = colorDescs.get(sco);
             t = scd.block;
-            if (t == null) {	/* must set it up */
+            if (t == null) {    /* must set it up */
                 t = new Tree();
                 for (i = 0; i < Constants.BYTTAB; i++) {
                     t.ccolor[i] = sco;
@@ -357,9 +354,8 @@ class ColorMap {
         }
     }
 
-
     /**
-     *okcolors - promote subcolors to full colors
+     * okcolors - promote subcolors to full colors
      */
     void okcolors(Nfa nfa) {
         ColorDesc cd;
@@ -414,7 +410,7 @@ class ColorMap {
 
     /**
      * colorchain - add this arc to the color chain of its color
-    */
+     */
     void colorchain(Arc a) {
         ColorDesc cd = colorDescs.get(a.co);
         a.colorchain = cd.arcs;
@@ -429,7 +425,7 @@ class ColorMap {
         Arc aa;
 
         aa = cd.arcs;
-        if (aa == a) {		/* easy case */
+        if (aa == a) {      /* easy case */
             cd.arcs = a.colorchain;
         } else {
             for (; aa != null && aa.colorchain != a; aa = aa.colorchain) {
@@ -439,14 +435,14 @@ class ColorMap {
             aa.colorchain = a.colorchain;
         }
 
-        a.colorchain = null;	/* paranoia */
+        a.colorchain = null;    /* paranoia */
     }
 
     /**
      * singleton - is this character in its own color?
      */
     boolean singleton(char c) {
-        short co;			/* color of c */
+        short co;           /* color of c */
 
         co = getcolor(c);
         ColorDesc cd = colorDescs.get(co);
@@ -454,7 +450,8 @@ class ColorMap {
     }
 
     /**
-      * rainbow - add arcs of all full colors (but one) between specified states
+     * rainbow - add arcs of all full colors (but one) between specified states
+     *
      * @param but is COLORLESS if no exceptions
      */
     void rainbow(Nfa nfa, int type, short but, State from, State to) {
@@ -475,6 +472,7 @@ class ColorMap {
     /**
      * colorcomplement - add arcs of complementary colors
      * The calling sequence ought to be reconciled with cloneouts().
+     *
      * @param of complements of this guy's PLAIN outarcs
      */
     void colorcomplement(Nfa nfa, int type, State of, State from, State to) {
@@ -484,10 +482,11 @@ class ColorMap {
         assert of != from;
         for (co = 0; co < colorDescs.size(); co++) {
             cd = colorDescs.get(co);
-            if (!cd.unusedColor() && !cd.pseudo())
+            if (!cd.unusedColor() && !cd.pseudo()) {
                 if (of.findarc(Compiler.PLAIN, co) == null) {
                     nfa.newarc(type, co, from, to);
                 }
+            }
         }
     }
 
@@ -495,14 +494,6 @@ class ColorMap {
         // take the first tree item in the map, then go down two levels.
         // why the extra level?
         return tree[0].ptrs[b1(c)].ccolor[b0(c)];
-    }
-
-    static short b0(char c) {
-        return (short) (c & Constants.BYTMASK);
-    }
-
-    static short b1(char c) {
-        return (short) ((c >>> Constants.BYTBITS) & Constants.BYTMASK);
     }
 
     /**
@@ -522,43 +513,49 @@ class ColorMap {
             if (!cd.unusedColor()) {
                 assert cd.nchrs > 0;
                 has = cd.block != null ? "#" : "";
+                StringBuilder msg = new StringBuilder();
                 if (cd.pseudo()) {
-                    LOG.debug(String.format("#%2d%s(ps): ", co, has));
+                    msg.append(String.format("#%2d%s(pseudo): ", (int)co, has));
                 } else {
-                    LOG.debug(String.format("#%2d%s(%2d): ", co, has, cd.nchrs));
+                    msg.append(String.format("#%2d%s(%d): ", (int)co, has, cd.nchrs));
                 }
             /* it's hard to do this more efficiently */
                 for (c = Constants.CHR_MIN; c < Constants.CHR_MAX; c++) {
                     if (getcolor(c) == co) {
-                        dumpchr(c);
+                        msg.append(dumpchr(c));
+                        msg.append(' ');
                     }
                 }
 
                 assert c == Constants.CHR_MAX;
                 if (getcolor(c) == co) {
-                    dumpchr(c);
+                    msg.append(dumpchr(c));
+                    msg.append(' ');
                 }
+                LOG.debug(msg.toString());
             }
         }
     }
 
     /**
-     - fillcheck - check proper filling of a tree
+     * - fillcheck - check proper filling of a tree
      */
     void fillcheck(int level) {
         int i;
         Tree t;
-        Tree fillt = tree[level+1];
+        Tree fillt = tree[level + 1];
 
-        assert level < Constants.NBYTS - 1;	/* this level has pointers */
+        assert level < Constants.NBYTS - 1; /* this level has pointers */
 
         for (i = Constants.BYTTAB - 1; i >= 0; i--) {
             t = tree[0].ptrs[i];
             if (t == null) {
                 LOG.debug("NULL found in filled tree!\n");
             } else if (t == fillt) {
-            } else if (level < Constants.NBYTS - 2)	/* more pointer blocks below */
+                // do nothing
+            } else if (level < Constants.NBYTS - 2) /* more pointer blocks below */ {
                 fillcheck(level + 1);
+            }
         }
     }
 
@@ -573,8 +570,19 @@ class ColorMap {
         } else if (c > ' ' && c <= '~') {
             return Character.toString(c);
         } else {
-            return String.format("\\u%04x", (int) c);
+            return String.format("\\u%04x", (int)c);
         }
+    }
+
+    /**
+     * Color tree
+     */
+    /* C unions this. We use more memory instead, and trust that clever punning of pointers and shorts is not
+     * happening.
+     */
+    static class Tree {
+        short[] ccolor = new short[Constants.BYTTAB];
+        Tree[] ptrs = new Tree[Constants.BYTTAB];
     }
 
 }

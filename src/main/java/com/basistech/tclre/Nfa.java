@@ -21,22 +21,24 @@ import org.slf4j.LoggerFactory;
  * Nfa representation.
  */
 class Nfa {
+    static final int INCOMPATIBLE = 1;
+    static final int SATISFIED = 2;
+    static final int COMPATIBLE = 3;
     private static final Logger LOG = LoggerFactory.getLogger(Nfa.class);
-
-    State pre;	/* pre-initial state */
-    State init;	/* initial state */
-    State finalState;	/* final state */
-    State post;	/* post-final state */
-    int nstates;		/* for numbering states */
-    State states;	/* state-chain header */
-    State slast;	/* tail of the chain */
-    ColorMap cm;	/* the color map */
-    short[] bos = new short[2];		/* colors, if any, assigned to BOS and BOL */
-    short[] eos = new short[2];		/* colors, if any, assigned to EOS and EOL */
+    State pre;  /* pre-initial state */
+    State init; /* initial state */
+    State finalState;   /* final state */
+    State post; /* post-final state */
+    int nstates;        /* for numbering states */
+    State states;   /* state-chain header */
+    State slast;    /* tail of the chain */
+    ColorMap cm;    /* the color map */
+    short[] bos = new short[2];     /* colors, if any, assigned to BOS and BOL */
+    short[] eos = new short[2];     /* colors, if any, assigned to EOS and EOL */
     //
     // may not be wanted ...
-    Compiler v;		/* simplifies compile error reporting */
-    Nfa parent;	/* parent NFA, if any */
+    Compiler v;     /* simplifies compile error reporting */
+    Nfa parent; /* parent NFA, if any */
 
     /**
      * New Nfa at the top level.
@@ -45,11 +47,32 @@ class Nfa {
      */
     Nfa(ColorMap cm) {
         this.cm = cm;
+        commoninit();
     }
 
     Nfa(Nfa parent) {
         this.parent = parent;
         this.cm = parent.cm;
+        commoninit();
+    }
+
+    private void commoninit() {
+        nstates = 0;
+        bos[1] = Constants.COLORLESS;
+        bos[0] = bos[1];
+        eos[1] = Constants.COLORLESS;
+        eos[0] = eos[1];
+        post = newstate('@');   /* number 0 */
+        pre = newstate('>');        /* number 1 */
+
+        init = newstate();      /* may become invalid later */
+        finalState = newstate();
+        cm.rainbow(this, Compiler.PLAIN, Constants.COLORLESS, pre, init);
+        newarc('^', (short)1, pre, init);
+        newarc('^', (short)0, pre, init);
+        cm.rainbow(this, Compiler.PLAIN, Constants.COLORLESS, finalState, post);
+        newarc('$', (short)1, finalState, post);
+        newarc('$', (short)0, finalState, post);
     }
 
     void newarc(int t, short co, State from, State to) {
@@ -253,7 +276,7 @@ class Nfa {
         assert to != null;
         assert to.ins != null;
         a = to.ins;
-        if (a == victim) {		/* simple case:  first in chain */
+        if (a == victim) {      /* simple case:  first in chain */
             to.ins = victim.inchain;
         } else {
             for (; a != null && a.inchain != victim; a = a.inchain) {
@@ -264,7 +287,6 @@ class Nfa {
         }
         to.nins--;
     }
-
 
     /**
      * cparc - allocate a new arc within an NFA, copying details from old one
@@ -305,7 +327,7 @@ class Nfa {
         Arc a;
 
         if (s.tmp != null) {
-            return;		/* already done */
+            return;     /* already done */
         }
 
         s.tmp = (stmp == null) ? newstate() : stmp;
@@ -336,7 +358,6 @@ class Nfa {
         }
     }
 
-
     /**
      * specialcolors - fill in special colors for an NFA
      */
@@ -348,13 +369,13 @@ class Nfa {
             eos[0] = cm.pseudocolor();
             eos[1] = cm.pseudocolor();
         } else {
-            assert (parent.bos[0] != Constants.COLORLESS);
+            assert parent.bos[0] != Constants.COLORLESS;
             bos[0] = parent.bos[0];
-            assert (parent.bos[1] != Constants.COLORLESS);
+            assert parent.bos[1] != Constants.COLORLESS;
             bos[1] = parent.bos[1];
-            assert (parent.eos[0] != Constants.COLORLESS);
+            assert parent.eos[0] != Constants.COLORLESS;
             eos[0] = parent.eos[0];
-            assert (parent.eos[1] != Constants.COLORLESS);
+            assert parent.eos[1] != Constants.COLORLESS;
             eos[1] = parent.eos[1];
         }
     }
@@ -367,17 +388,18 @@ class Nfa {
 
         LOG.debug(String.format("pre %d, post %d", pre.no, post.no));
         if (bos[0] != Constants.COLORLESS) {
-            LOG.debug(String.format(", bos [%d]", bos[0]));
+            LOG.debug(String.format(", bos[0] [%d]", bos[0]));
         }
         if (bos[1] != Constants.COLORLESS) {
-            LOG.debug(String.format(", bol [%d]", bos[1]));
+            LOG.debug(String.format(", bol[1] [%d]", bos[1]));
         }
         if (eos[0] != Constants.COLORLESS) {
-            LOG.debug(String.format(", eos [%d]", eos[0]));
+            LOG.debug(String.format(", eos[0] [%d]", eos[0]));
         }
         if (eos[1] != Constants.COLORLESS) {
-            LOG.debug(String.format(", eol [%d]", eos[1]));
+            LOG.debug(String.format(", eol[1] [%d]", eos[1]));
         }
+
         for (s = states; s != null; s = s.next) {
             dumpstate(s);
         }
@@ -392,8 +414,8 @@ class Nfa {
     void dumpstate(State s) {
         Arc a;
 
-        LOG.debug(String.format("%d%s%c", s.no, (s.tmp != null) ? "T" : "",
-                (s.flag != 0) ? s.flag : '.'));
+        LOG.debug(String.format("State %d%s%c", s.no, (s.tmp != null) ? "T" : "",
+                (s.flag != 0) ? (char)s.flag : '.'));
         if (s.prev != null && s.prev.next != s) {
             LOG.debug(String.format("\tstate chain bad\n"));
         }
@@ -448,48 +470,56 @@ class Nfa {
      * dumparc - dump one outarc in readable form, including prefixing tab
      */
     void dumparc(Arc a, State s) {
+
+        if (!LOG.isDebugEnabled()) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+
         switch (a.type) {
         case Compiler.PLAIN:
-            LOG.debug(String.format("[%d]", a.co));
+            sb.append(String.format("[%d]", a.co));
             break;
         case Compiler.AHEAD:
-            LOG.debug(String.format(">%d>", a.co));
+            sb.append(String.format(">%d>", a.co));
             break;
         case Compiler.BEHIND:
-            LOG.debug(String.format("<%d<", a.co));
+            sb.append(String.format("<%d<", a.co));
             break;
         case Compiler.LACON:
-            LOG.debug(String.format(":%d:", a.co));
+            sb.append(String.format(":%d:", a.co));
             break;
         case '^':
         case '$':
-            LOG.debug(String.format("%c%d", (char)a.type, a.co));
+            sb.append(String.format("%c%d", (char)a.type, a.co));
             break;
         case Compiler.EMPTY:
             break;
         default:
-            LOG.debug(String.format("0x%x/0%lo", a.type, a.co));
+            sb.append(String.format("0x%x/0%lo", a.type, a.co));
             break;
         }
         if (a.from != s) {
-            LOG.debug(String.format("?%d?", a.from.no));
+            sb.append(String.format("?%d?", a.from.no));
         }
-        LOG.debug("->");
+        sb.append("->");
         if (a.to == null) {
-            LOG.debug("null");
-            return;
-        }
-        LOG.debug(String.format("%d", a.to.no));
-
-        Arc aa;
-        for (aa = a.to.ins; aa != null; aa = aa.inchain) {
-            if (aa == a) {
-                break;		/* NOTE BREAK OUT */
+            sb.append("null");
+            Arc aa;
+            for (aa = a.to.ins; aa != null; aa = aa.inchain) {
+                if (aa == a) {
+                    break;      /* NOTE BREAK OUT */
+                }
             }
+            if (aa == null) {
+                LOG.debug("?!?");   /* missing from in-chain */
+            }
+        } else {
+            sb.append(String.format("%d", a.to.no));
         }
-        if (aa == null) {
-            LOG.debug("?!?");	/* missing from in-chain */
-        }
+        LOG.debug(sb.toString());
+
     }
 
     /**
@@ -499,23 +529,23 @@ class Nfa {
      */
     long optimize() throws RegexException {
         LOG.debug("initial cleanup");
-        cleanup();		/* may simplify situation */
+        cleanup();      /* may simplify situation */
         dumpnfa();
         LOG.debug("empties");
-        fixempties();	/* get rid of EMPTY arcs */
+        fixempties();   /* get rid of EMPTY arcs */
         LOG.debug("constraints");
-        pullback();	/* pull back constraints backward */
-        pushfwd();	/* push fwd constraints forward */
+        pullback(); /* pull back constraints backward */
+        pushfwd();  /* push fwd constraints forward */
         LOG.debug("final cleanup");
-        cleanup();		/* final tidying */
-        return analyze();	/* and analysis */
+        cleanup();      /* final tidying */
+        return analyze();   /* and analysis */
     }
-
 
     /**
      * analyze - ascertain potentially-useful facts about an optimized NFA
+     *
      * @return re_info bits.
- */
+     */
     long analyze() {
         Arc a;
         Arc aa;
@@ -573,12 +603,12 @@ class Nfa {
         }
     }
 
-
     /**
-     - pull - pull a back constraint backward past its source state
+     * - pull - pull a back constraint backward past its source state
      * A significant property of this function is that it deletes at most
      * one state -- the constraint's from state -- and only if the constraint
      * was that state's last outarc.
+     *
      * @return success
      */
     boolean pull(Arc con) throws RegexException {
@@ -588,14 +618,14 @@ class Nfa {
         Arc nexta;
         State s;
 
-        if (from == to) {	/* circular constraint is pointless */
+        if (from == to) {   /* circular constraint is pointless */
             freearc(con);
             return true;
         }
-        if (0 != from.flag) {	/* can't pull back beyond start */
+        if (0 != from.flag) {   /* can't pull back beyond start */
             return false;
         }
-        if (from.nins == 0) {	/* unreachable */
+        if (from.nins == 0) {   /* unreachable */
             freearc(con);
             return true;
         }
@@ -604,9 +634,9 @@ class Nfa {
         if (from.nouts > 1) {
             s = newstate();
 
-            assert(to != from);		/* con is not an inarc */
-            copyins(from, s);		/* duplicate inarcs */
-            cparc(con, s, to);		/* move constraint arc */
+            assert (to != from);        /* con is not an inarc */
+            copyins(from, s);       /* duplicate inarcs */
+            cparc(con, s, to);      /* move constraint arc */
             freearc(con);
             from = s;
             con = from.outs;
@@ -617,14 +647,14 @@ class Nfa {
         for (a = from.ins; a != null; a = nexta) {
             nexta = a.inchain;
             switch (combine(con, a)) {
-            case INCOMPATIBLE:	/* destroy the arc */
+            case INCOMPATIBLE:  /* destroy the arc */
                 freearc(a);
                 break;
-            case SATISFIED:		/* no action needed */
+            case SATISFIED:     /* no action needed */
                 break;
-            case COMPATIBLE:	/* swap the two arcs, more or less */
+            case COMPATIBLE:    /* swap the two arcs, more or less */
                 s = newstate();
-                cparc(a, s, to);		/* anticipate move */
+                cparc(a, s, to);        /* anticipate move */
                 cparc(con, a.from, s);
                 freearc(a);
                 break;
@@ -635,7 +665,7 @@ class Nfa {
 
     /* remaining inarcs, if any, incorporate the constraint */
         moveins(from, to);
-        dropstate(from);		/* will free the constraint */
+        dropstate(from);        /* will free the constraint */
         return true;
     }
 
@@ -692,14 +722,14 @@ class Nfa {
         Arc nexta;
         State s;
 
-        if (to == from) {	/* circular constraint is pointless */
+        if (to == from) {   /* circular constraint is pointless */
             freearc(con);
             return true;
         }
-        if (0 != to.flag) {		/* can't push forward beyond end */
+        if (0 != to.flag) {     /* can't push forward beyond end */
             return false;
         }
-        if (to.nouts == 0) {	/* dead end */
+        if (to.nouts == 0) {    /* dead end */
             freearc(con);
             return true;
         }
@@ -708,8 +738,8 @@ class Nfa {
         if (to.nins > 1) {
             s = newstate();
 
-            copyouts(to, s);		/* duplicate outarcs */
-            cparc(con, from, s);	/* move constraint */
+            copyouts(to, s);        /* duplicate outarcs */
+            cparc(con, from, s);    /* move constraint */
             freearc(con);
             to = s;
             con = to.ins;
@@ -720,14 +750,14 @@ class Nfa {
         for (a = to.outs; a != null; a = nexta) {
             nexta = a.outchain;
             switch (combine(con, a)) {
-            case INCOMPATIBLE:	/* destroy the arc */
+            case INCOMPATIBLE:  /* destroy the arc */
                 freearc(a);
                 break;
-            case SATISFIED:		/* no action needed */
+            case SATISFIED:     /* no action needed */
                 break;
-            case COMPATIBLE:	/* swap the two arcs, more or less */
+            case COMPATIBLE:    /* swap the two arcs, more or less */
                 s = newstate();
-                cparc(con, s, a.to);	/* anticipate move */
+                cparc(con, s, a.to);    /* anticipate move */
                 cparc(a, from, s);
                 freearc(a);
                 break;
@@ -738,45 +768,42 @@ class Nfa {
 
     /* remaining outarcs, if any, incorporate the constraint */
         moveouts(to, from);
-        dropstate(to);		/* will free the constraint */
+        dropstate(to);      /* will free the constraint */
         return true;
     }
 
-    static final int INCOMPATIBLE = 1;
-    static final int SATISFIED = 2;
-    static final int COMPATIBLE = 3;
-
     /**
      * combine - constraint lands on an arc, what happens?
+     *
      * @return result
      */
     int combine(Arc con, Arc a) throws RegexException {
-        //#	define	CA(ct,at)	(((ct)<<CHAR_BIT) | (at))
+        //# define  CA(ct,at)   (((ct)<<CHAR_BIT) | (at))
 
         //CA(con->type, a->type)) {
         switch ((con.type << 8) | a.type) {
 
-        case '^' << 8 | Compiler.PLAIN:		/* newlines are handled separately */
+        case '^' << 8 | Compiler.PLAIN:     /* newlines are handled separately */
         case '$' << 8 | Compiler.PLAIN:
             return INCOMPATIBLE;
 
-        case Compiler.AHEAD << 8 | Compiler.PLAIN:		/* color constraints meet colors */
+        case Compiler.AHEAD << 8 | Compiler.PLAIN:      /* color constraints meet colors */
         case Compiler.BEHIND << 8 | Compiler.PLAIN:
             if (con.co == a.co) {
                 return SATISFIED;
             }
             return INCOMPATIBLE;
 
-        case '^' << 8 | '^':		/* collision, similar constraints */
+        case '^' << 8 | '^':        /* collision, similar constraints */
         case '$' << 8 | '$':
-        case Compiler.AHEAD << 8  | Compiler.AHEAD:
+        case Compiler.AHEAD << 8 | Compiler.AHEAD:
         case Compiler.BEHIND << 8 | Compiler.BEHIND:
-            if (con.co == a.co) {		/* true duplication */
+            if (con.co == a.co) {       /* true duplication */
                 return SATISFIED;
             }
             return INCOMPATIBLE;
 
-        case '^' << 8 | Compiler.BEHIND:		/* collision, dissimilar constraints */
+        case '^' << 8 | Compiler.BEHIND:        /* collision, dissimilar constraints */
         case Compiler.BEHIND << 8 | '^':
         case '$' << 8 | Compiler.AHEAD:
         case Compiler.AHEAD << 8 | '$':
@@ -798,7 +825,6 @@ class Nfa {
         }
         throw new RegexException("REG_ASSERT");
     }
-
 
 
     /**
@@ -908,18 +934,18 @@ class Nfa {
     boolean unempty(Arc a) {
         State from = a.from;
         State to = a.to;
-        boolean usefrom;		/* work on from, as opposed to to? */
+        boolean usefrom;        /* work on from, as opposed to to? */
 
         assert a.type == Compiler.EMPTY;
         assert from != pre && to != post;
 
-        if (from == to) {		/* vacuous loop */
+        if (from == to) {       /* vacuous loop */
             freearc(a);
             return true;
         }
 
     /* decide which end to work on */
-        usefrom = true;			/* default:  attack from */
+        usefrom = true;         /* default:  attack from */
         if (from.nouts > to.nins) {
             usefrom = false;
         } else if (from.nouts == to.nins) {

@@ -18,6 +18,6 @@ package com.basistech.tclre;
  * definitions for compacted NFA
  */
 class Carc {
-    short co;		/* COLORLESS is list terminator */
-    int to;			/* state number */
+    short co;       /* COLORLESS is list terminator */
+    int to;         /* state number */
 }

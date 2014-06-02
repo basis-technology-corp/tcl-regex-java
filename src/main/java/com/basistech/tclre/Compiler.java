@@ -179,7 +179,7 @@ class Compiler {
     /* can sacrifice main NFA now, so use it as work area */
         nfa.optimize();
         makesearch(nfa);
-        re.guts.search = compact(nfa);
+        re.guts.search = nfa.compact();
 
     /* looks okay, package it up */
         re.nsub = subs.size();
@@ -466,7 +466,7 @@ class Compiler {
         newNfa.dupnfa(t.begin, t.end, newNfa.init, newNfa.finalState);
         newNfa.specialcolors();
         ret = newNfa.optimize();
-        t.cnfa = compact(newNfa);
+        t.cnfa = newNfa.compact();
 
         // freenfa ... depend on our friend the GC.
         return ret;
@@ -1425,13 +1425,6 @@ class Compiler {
         }
     }
 
-
-    /**
-     * compact - compact an NFA
-     */
-    Cnfa compact(Nfa nfa) {
-        return null;
-    }
 
     boolean note(long b) {
         return re.info != b;

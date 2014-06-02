@@ -278,10 +278,11 @@ class Nfa {
      * Another recursive traversal, this time using tmp to point to duplicates
      * as well as mark already-seen states.  (You knew there was a reason why
      * it's a state pointer, didn't you? :-))
+     *
      * @param start duplicate starting here
-     * @param stop ending here.
-     * @param from stringing dup from here
-     * @param to here.
+     * @param stop  ending here.
+     * @param from  stringing dup from here
+     * @param to    here.
      */
     void dupnfa(State start, State stop, State from, State to) {
         if (start == stop) {
@@ -425,6 +426,7 @@ class Nfa {
 
     /**
      * dumprarcs - dump remaining outarcs, recursively, in reverse order
+     *
      * @return resulting print position
      */
     int
@@ -481,19 +483,21 @@ class Nfa {
 
         Arc aa;
         for (aa = a.to.ins; aa != null; aa = aa.inchain) {
-            if (aa == a)
+            if (aa == a) {
                 break;		/* NOTE BREAK OUT */
+            }
         }
-        if (aa ==null) {
+        if (aa == null) {
             LOG.debug("?!?");	/* missing from in-chain */
         }
     }
 
     /**
      * optimize - optimize an NFA
+     *
      * @return re_info bits
      */
-    long optimize() {
+    long optimize() throws RegexException {
         LOG.debug("initial cleanup");
         cleanup();		/* may simplify situation */
         dumpnfa();
@@ -506,6 +510,296 @@ class Nfa {
         cleanup();		/* final tidying */
         return analyze();	/* and analysis */
     }
+
+
+    /**
+     * analyze - ascertain potentially-useful facts about an optimized NFA
+     * @return re_info bits.
+ */
+    long analyze() {
+        Arc a;
+        Arc aa;
+
+        if (pre.outs == null) {
+            return Flags.REG_UIMPOSSIBLE;
+        }
+        for (a = pre.outs; a != null; a = a.outchain) {
+            for (aa = a.to.outs; aa != null; aa = aa.outchain) {
+                if (aa.to == post) {
+                    return Flags.REG_UEMPTYMATCH;
+                }
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * pullback - pull back constraints backward to (with luck) eliminate them
+     */
+    void pullback() throws RegexException {
+        State s;
+        State nexts;
+        Arc a;
+        Arc nexta;
+        boolean progress;
+
+    /* find and pull until there are no more */
+        do {
+            progress = false;
+            for (s = states; s != null; s = nexts) {
+                nexts = s.next;
+                for (a = s.outs; a != null; a = nexta) {
+                    nexta = a.outchain;
+                    if (a.type == '^' || a.type == Compiler.BEHIND) {
+                        if (pull(a)) {
+                            progress = true;
+                        }
+                    }
+                    assert nexta == null || s.no != State.FREESTATE;
+                }
+            }
+            if (progress) {
+                dumpnfa();
+            }
+        } while (progress);
+
+        for (a = pre.outs; a != null; a = nexta) {
+            nexta = a.outchain;
+            if (a.type == '^') {
+                assert a.co == 0 || a.co == 1;
+                newarc(Compiler.PLAIN, bos[a.co], a.from, a.to);
+                freearc(a);
+            }
+        }
+    }
+
+
+    /**
+     - pull - pull a back constraint backward past its source state
+     * A significant property of this function is that it deletes at most
+     * one state -- the constraint's from state -- and only if the constraint
+     * was that state's last outarc.
+     * @return success
+     */
+    boolean pull(Arc con) throws RegexException {
+        State from = con.from;
+        State to = con.to;
+        Arc a;
+        Arc nexta;
+        State s;
+
+        if (from == to) {	/* circular constraint is pointless */
+            freearc(con);
+            return true;
+        }
+        if (0 != from.flag) {	/* can't pull back beyond start */
+            return false;
+        }
+        if (from.nins == 0) {	/* unreachable */
+            freearc(con);
+            return true;
+        }
+
+    /* first, clone from state if necessary to avoid other outarcs */
+        if (from.nouts > 1) {
+            s = newstate();
+
+            assert(to != from);		/* con is not an inarc */
+            copyins(from, s);		/* duplicate inarcs */
+            cparc(con, s, to);		/* move constraint arc */
+            freearc(con);
+            from = s;
+            con = from.outs;
+        }
+        assert from.nouts == 1;
+
+    /* propagate the constraint into the from state's inarcs */
+        for (a = from.ins; a != null; a = nexta) {
+            nexta = a.inchain;
+            switch (combine(con, a)) {
+            case INCOMPATIBLE:	/* destroy the arc */
+                freearc(a);
+                break;
+            case SATISFIED:		/* no action needed */
+                break;
+            case COMPATIBLE:	/* swap the two arcs, more or less */
+                s = newstate();
+                cparc(a, s, to);		/* anticipate move */
+                cparc(con, a.from, s);
+                freearc(a);
+                break;
+            default:
+                throw new RegexException("REG_ASSERT");
+            }
+        }
+
+    /* remaining inarcs, if any, incorporate the constraint */
+        moveins(from, to);
+        dropstate(from);		/* will free the constraint */
+        return true;
+    }
+
+    /**
+     * pushfwd - push forward constraints forward to (with luck) eliminate them
+     */
+    void pushfwd() throws RegexException {
+        State s;
+        State nexts;
+        Arc a;
+        Arc nexta;
+        boolean progress;
+
+    /* find and push until there are no more */
+        do {
+            progress = false;
+            for (s = states; s != null; s = nexts) {
+                nexts = s.next;
+                for (a = s.ins; a != null; a = nexta) {
+                    nexta = a.inchain;
+                    if (a.type == '$' || a.type == Compiler.AHEAD) {
+                        if (push(a)) {
+                            progress = true;
+                        }
+                    }
+                    assert nexta == null || s.no != State.FREESTATE;
+                }
+            }
+            if (progress) {
+                dumpnfa();
+            }
+        } while (progress);
+
+        for (a = post.ins; a != null; a = nexta) {
+            nexta = a.inchain;
+            if (a.type == '$') {
+                assert a.co == 0 || a.co == 1;
+                newarc(Compiler.PLAIN, eos[a.co], a.from, a.to);
+                freearc(a);
+            }
+        }
+    }
+
+    /**
+     * push - push a forward constraint forward past its destination state
+     * A significant property of this function is that it deletes at most
+     * one state -- the constraint's to state -- and only if the constraint
+     * was that state's last inarc.
+     */
+    boolean push(Arc con) throws RegexException {
+        State from = con.from;
+        State to = con.to;
+        Arc a;
+        Arc nexta;
+        State s;
+
+        if (to == from) {	/* circular constraint is pointless */
+            freearc(con);
+            return true;
+        }
+        if (0 != to.flag) {		/* can't push forward beyond end */
+            return false;
+        }
+        if (to.nouts == 0) {	/* dead end */
+            freearc(con);
+            return true;
+        }
+
+    /* first, clone to state if necessary to avoid other inarcs */
+        if (to.nins > 1) {
+            s = newstate();
+
+            copyouts(to, s);		/* duplicate outarcs */
+            cparc(con, from, s);	/* move constraint */
+            freearc(con);
+            to = s;
+            con = to.ins;
+        }
+        assert to.nins == 1;
+
+    /* propagate the constraint into the to state's outarcs */
+        for (a = to.outs; a != null; a = nexta) {
+            nexta = a.outchain;
+            switch (combine(con, a)) {
+            case INCOMPATIBLE:	/* destroy the arc */
+                freearc(a);
+                break;
+            case SATISFIED:		/* no action needed */
+                break;
+            case COMPATIBLE:	/* swap the two arcs, more or less */
+                s = newstate();
+                cparc(con, s, a.to);	/* anticipate move */
+                cparc(a, from, s);
+                freearc(a);
+                break;
+            default:
+                throw new RegexException("REG_ASSERT");
+            }
+        }
+
+    /* remaining outarcs, if any, incorporate the constraint */
+        moveouts(to, from);
+        dropstate(to);		/* will free the constraint */
+        return true;
+    }
+
+    static final int INCOMPATIBLE = 1;
+    static final int SATISFIED = 2;
+    static final int COMPATIBLE = 3;
+
+    /**
+     * combine - constraint lands on an arc, what happens?
+     * @return result
+     */
+    int combine(Arc con, Arc a) throws RegexException {
+        //#	define	CA(ct,at)	(((ct)<<CHAR_BIT) | (at))
+
+        //CA(con->type, a->type)) {
+        switch ((con.type << 8) | a.type) {
+
+        case '^' << 8 | Compiler.PLAIN:		/* newlines are handled separately */
+        case '$' << 8 | Compiler.PLAIN:
+            return INCOMPATIBLE;
+
+        case Compiler.AHEAD << 8 | Compiler.PLAIN:		/* color constraints meet colors */
+        case Compiler.BEHIND << 8 | Compiler.PLAIN:
+            if (con.co == a.co) {
+                return SATISFIED;
+            }
+            return INCOMPATIBLE;
+
+        case '^' << 8 | '^':		/* collision, similar constraints */
+        case '$' << 8 | '$':
+        case Compiler.AHEAD << 8  | Compiler.AHEAD:
+        case Compiler.BEHIND << 8 | Compiler.BEHIND:
+            if (con.co == a.co) {		/* true duplication */
+                return SATISFIED;
+            }
+            return INCOMPATIBLE;
+
+        case '^' << 8 | Compiler.BEHIND:		/* collision, dissimilar constraints */
+        case Compiler.BEHIND << 8 | '^':
+        case '$' << 8 | Compiler.AHEAD:
+        case Compiler.AHEAD << 8 | '$':
+            return INCOMPATIBLE;
+
+        case '^' << 8 | Compiler.AHEAD:
+        case Compiler.BEHIND << 8 | '$':
+        case Compiler.BEHIND << 8 | Compiler.AHEAD:
+        case '$' << 8 | '^':
+        case '$' << 8 | Compiler.BEHIND:
+        case Compiler.AHEAD << 8 | '^':
+        case Compiler.AHEAD << 8 | Compiler.BEHIND:
+        case '^' << 8 | Compiler.LACON:
+        case Compiler.BEHIND << 8 | Compiler.LACON:
+        case '$' << 8 | Compiler.LACON:
+        case Compiler.AHEAD << 8 | Compiler.LACON:
+            return COMPATIBLE;
+
+        }
+        throw new RegexException("REG_ASSERT");
+    }
+
+
 
     /**
      * cleanup - clean up NFA after optimizations
@@ -521,8 +815,9 @@ class Nfa {
         markcanreach(post, pre, post);
         for (s = states; s != null; s = nexts) {
             nexts = s.next;
-            if (s.tmp != post && 0 == s.flag)
+            if (s.tmp != post && 0 == s.flag) {
                 dropstate(s);
+            }
         }
         assert post.nins == 0 || post.tmp == post;
 
@@ -541,10 +836,11 @@ class Nfa {
 
     /**
      * markreachable - recursive marking of reachable states
-     * @param s a state
+     *
+     * @param s    a state
      * @param okay consider only states with this mark.
      * @param mark the value to mark with
- */
+     */
     void markreachable(State s, State okay, State mark) {
         Arc a;
 
@@ -590,10 +886,11 @@ class Nfa {
             progress = false;
             for (s = states; s != null; s = nexts) {
                 nexts = s.next;
-                for (a = s.outs; a !=null; a = nexta) {
+                for (a = s.outs; a != null; a = nexta) {
                     nexta = a.outchain;
-                    if (a.type == Compiler.EMPTY && unempty(a))
+                    if (a.type == Compiler.EMPTY && unempty(a)) {
                         progress = true;
+                    }
                     assert nexta == null || s.no != State.FREESTATE;
                 }
             }
@@ -638,17 +935,23 @@ class Nfa {
             /* was the state's only outarc */
                 moveins(from, to);
                 freestate(from);
-            } else
+            } else {
                 copyins(from, to);
+            }
         } else {
             if (to.nins == 0) {
             /* was the state's only inarc */
                 moveouts(to, from);
                 freestate(to);
-            } else
+            } else {
                 copyouts(to, from);
+            }
         }
 
         return true;
+    }
+
+    Cnfa compact() {
+        return null;
     }
 }

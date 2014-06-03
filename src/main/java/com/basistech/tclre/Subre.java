@@ -42,7 +42,8 @@ class Subre {
 
     Subre(char op, int flags, State initState, State finalState) {
 
-        assert "|.b(=".indexOf(op) != -1;
+        // 0 is valid for lacons.
+        assert  "\u0000|.b(=".indexOf(op) != -1 : "invalid op " + Integer.toHexString((int)op);
 
         this.op = op;
         this.flags = flags;

@@ -469,7 +469,7 @@ class Compiler {
      * @return results of {@link Nfa#optimize()}
      */
     long nfanode(Subre t) throws RegexException {
-        long ret = 0;
+        long ret;
 
         assert t.begin != null;
 

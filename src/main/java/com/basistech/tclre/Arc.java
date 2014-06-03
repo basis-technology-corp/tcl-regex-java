@@ -43,9 +43,6 @@ class Arc {
                 .add("co", co)
                 .add("from", from)
                 .add("to", to)
-                .add("outchain", outchain)
-                .add("inchain", inchain)
-                .add("colorchain", colorchain)
                 .toString();
     }
 }

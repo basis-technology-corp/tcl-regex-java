@@ -254,7 +254,8 @@ class Nfa {
         State to = victim.to;
         assert victim.type != 0;
 
-        if (victim.colored() && parent != null) {
+        // only maintain colorchain on top-level NFA
+        if (victim.colored() && parent == null) {
             cm.uncolorchain(victim);
         }
 

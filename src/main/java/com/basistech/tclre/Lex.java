@@ -873,7 +873,7 @@ class Lex {
         char c;
         int save;
 
-        assert 0 == (v.cflags & Flags.REG_ADVF);
+        assert 0 != (v.cflags & Flags.REG_ADVF);
 
         assert !ateos();
         c = charAtNowAdvance();

@@ -64,7 +64,7 @@ public final class Grep {
     private void go() throws IOException, RegexException {
         // For now, internal hack to experiment with.
         RegExp regexp = new RegExp(); // dummy
-        Compiler compiler = new Compiler(regexp, pattern, 0);
+        Compiler compiler = new Compiler(regexp, pattern, Flags.REG_ADVANCED);
         compiler.compile();
 
         for (File input : inputs) {

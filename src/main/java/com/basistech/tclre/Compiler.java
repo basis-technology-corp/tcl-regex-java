@@ -177,11 +177,11 @@ class Compiler {
 
     /* build compacted NFAs for tree and lacons */
         re.info |= nfatree(tree);
-        //tree.
 
-        for (int i = 0; i < lacons.size(); i++) {
+        // lacons start at 1.
+        for (int i = 1; i < lacons.size(); i++) {
             LOG.debug(String.format("========= LA%d ==========", i));
-            nfanode(lacons.get(0));
+            nfanode(lacons.get(i));
         }
 
         if (0 != (tree.flags & Subre.SHORTER)) {

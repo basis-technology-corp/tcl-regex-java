@@ -210,6 +210,7 @@ class Compiler {
         }
 
         re.guts.lacons = lacons;
+
     }
 
     /**
@@ -283,8 +284,6 @@ class Compiler {
             s2 = s.tmp;
             s.tmp = null;       /* clean up while we're at it */
         }
-
-
     }
 
     /**

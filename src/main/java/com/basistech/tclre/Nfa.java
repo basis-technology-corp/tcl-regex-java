@@ -986,6 +986,64 @@ class Nfa {
     }
 
     Cnfa compact() {
-        return null;
+
+        State s;
+        Arc a;
+        int nstates;
+        int narcs;
+        nstates = 0;
+        narcs = 0;
+
+        for (s = states; s != null; s = s.next) {
+            nstates++;
+            narcs += 1 + s.nouts + 1;
+            /* 1 as a fake for flags, nouts for arcs, 1 as endmarker */
+        }
+
+        int arcIndex = 0;
+        Cnfa cnfa = new Cnfa(nstates, narcs, pre.no, post.no, bos, eos, cm.maxcolor() + 1, 0);
+        for (s = states; s != null; s = s.next) {
+            assert s.no < nstates;
+            cnfa.setState(s.no, arcIndex);
+            /* clear and skip flags "arc", by preparing to set arc at index 1 */
+            arcIndex++;
+            long arcValue = 0;
+            int first = arcIndex;
+            for (a = s.outs; a != null; a = a.outchain) {
+                switch (a.type) {
+                case Compiler.PLAIN:
+                    arcValue = Cnfa.packCarc(a.co, a.to.no);
+                    cnfa.setArc(arcIndex, arcValue);
+                    arcIndex++;
+                    break;
+                case Compiler.LACON:
+                    assert s.no != cnfa.pre;
+                    arcValue = Cnfa.packCarc((short)(cnfa.ncolors + a.co), a.to.no);
+                    cnfa.setArc(arcIndex, arcValue);
+                    cnfa.flags |= Cnfa.HASLACONS;
+                    break;
+                default:
+                    assert false;
+                }
+            }
+            cnfa.carcsort(first, arcIndex - 1);
+            cnfa.setArc(arcIndex++, Cnfa.packCarc(Constants.COLORLESS, 0));
+        }
+
+        assert (arcIndex == narcs);
+        assert cnfa.nstates != 0;
+
+    /* mark no-progress states */
+        for (a = pre.outs; a != null; a = a.outchain) {
+            int ax = cnfa.states[a.to.no];
+            // replace color in this arc with '1'.
+            long newArcValue = Cnfa.packCarc((short)1, Cnfa.carcTarget(cnfa.arcs[ax]));
+            cnfa.arcs[ax] = newArcValue;
+        }
+        arcIndex = pre.no;
+        long newArcValue = Cnfa.packCarc((short)1, Cnfa.carcTarget(cnfa.arcs[pre.no]));
+        cnfa.arcs[arcIndex] = newArcValue;
+
+        return cnfa;
     }
 }

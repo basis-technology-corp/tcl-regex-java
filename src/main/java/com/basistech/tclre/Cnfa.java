@@ -15,7 +15,7 @@
 package com.basistech.tclre;
 
 /**
- * Created by benson on 5/29/14.
+ * Compacted (runtime) NFA.
  */
 class Cnfa {
     static final int HASLACONS = 1;
@@ -26,15 +26,88 @@ class Cnfa {
     int post;       /* teardown state number */
     short[] bos = new short[2];     /* colors, if any, assigned to BOS and BOL */
     short[] eos = new short[2];     /* colors, if any, assigned to EOS and EOL */
-    Carc[][] states;    /* vector of pointers to outarc lists */
-    Carc[] arcs;    /* the area for the lists */
+    long[] arcs;
+    // each state is an index of an arc.
+    int[] states;
 
-    void zapcnfa() {
-        nstates = 0;
+
+    Cnfa(int nstates,
+         int narcs,
+         int preNo,
+         int postNo, short[] bos,
+         short[] eos, int maxcolors, int flags) {
+        this.pre = preNo;
+        this.post = postNo;
+        this.nstates = nstates;
+        this.bos = bos;
+        this.eos = eos;
+        this.ncolors = maxcolors;
+        this.flags = flags;
+
+        this.arcs = new long[narcs];
+        this.states = new int[nstates];
     }
 
     boolean nullcnfa() {
         return nstates == 0;
+    }
+
+    /*
+ * definitions for compacted NFA
+    struct carc {
+        color co;		 COLORLESS is list terminator
+        int to;			 state number
+    };
+     */
+
+
+    void setState(int index, int arcIndex) {
+        states[index] = arcIndex;
+    }
+
+    void setArc(int index, long arcValue) {
+        arcs[index] = arcValue;
+    }
+
+    static long packCarc(short color, int targetState) {
+        return (color << 32) | targetState;
+    }
+
+    static short carcColor(long packed) {
+        return (short)(packed >>> 32);
+    }
+
+    static int carcTarget(long packed) {
+        return (int)packed;
+    }
+
+    /**
+     * carcsort - sort compacted-NFA arcs by color
+     * Really dumb algorithm, but if the list is long enough for that to matter,
+     * you're in real trouble anyway.
+     */
+    void carcsort(int first, int last) {
+        int p;
+        int q;
+        long tmp;
+
+        if (last - first <= 1)
+            return;
+
+        for (p = first; p <= last; p++) {
+            for (q = p; q <= last; q++) {
+                short pco = carcColor(arcs[p]);
+                short qco = carcColor(arcs[q]);
+                int pto = carcTarget(arcs[p]);
+                int qto = carcTarget(arcs[q]);
+                if (pco > qco || (pco == qco && pto > qto)) {
+                    assert p != q;
+                    tmp = arcs[p];
+                    arcs[p] = arcs[q];
+                    arcs[q] = tmp;
+                }
+            }
+        }
     }
 
 }

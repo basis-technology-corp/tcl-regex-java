@@ -37,8 +37,7 @@ class Subre {
     Subre right;    /* right child, if any */
     State begin;    /* outarcs from here... */
     State end;  /* ...ending in inarcs here */
-    Cnfa cnfa;  /* compacted NFA, if any */
-    Subre chain;    /* for bookkeeping and error cleanup */
+    Cnfa cnfa;
 
     Subre(char op, int flags, State initState, State finalState) {
 
@@ -51,7 +50,6 @@ class Subre {
         max = 1;
         begin = initState;
         end = finalState;
-        cnfa = new Cnfa();
     }
 
     /**
@@ -141,12 +139,6 @@ class Subre {
         }
         if (right != null) {
             sb.append(String.format(" R:%s", right.toString()));
-        }
-
-        if (cnfa != null) {
-            sb.append("\n");
-            //dumpcnfa(&t->cnfa, f);
-            //fprintf(f, "\n");
         }
 
         sb.append("\n");

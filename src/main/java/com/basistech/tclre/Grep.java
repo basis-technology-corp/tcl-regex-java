@@ -62,6 +62,11 @@ public final class Grep {
     }
 
     private void go() throws IOException, RegexException {
+        // For now, internal hack to experiment with.
+        RegExp regexp = new RegExp(); // dummy
+        Compiler compiler = new Compiler(regexp, pattern, 0);
+        compiler.compile();
+
         for (File input : inputs) {
             processFile(input);
         }
@@ -81,10 +86,6 @@ public final class Grep {
     }
 
     private void processOneLine(String line) throws RegexException {
-        // For now, internal hack to experiment with.
-        RegExp regexp = new RegExp(); // dummy
-        Compiler compiler = new Compiler(regexp, line, 0);
-        compiler.compile();
-
+        // not trying to match yet.
     }
 }

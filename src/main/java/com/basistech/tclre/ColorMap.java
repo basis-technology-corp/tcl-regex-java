@@ -429,7 +429,7 @@ class ColorMap {
             cd.arcs = a.colorchain;
         } else {
             for (; aa != null && aa.colorchain != a; aa = aa.colorchain) {
-                continue;
+                //
             }
             assert aa != null;
             aa.colorchain = a.colorchain;
@@ -523,14 +523,12 @@ class ColorMap {
                 for (c = Constants.CHR_MIN; c < Constants.CHR_MAX; c++) {
                     if (getcolor(c) == co) {
                         msg.append(dumpchr(c));
-                        msg.append(' ');
                     }
                 }
 
                 assert c == Constants.CHR_MAX;
                 if (getcolor(c) == co) {
                     msg.append(dumpchr(c));
-                    msg.append(' ');
                 }
                 LOG.debug(msg.toString());
             }

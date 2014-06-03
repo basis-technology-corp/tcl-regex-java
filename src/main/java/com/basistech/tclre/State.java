@@ -45,8 +45,6 @@ class State {
         return Objects.toStringHelper(this)
                 .add("no", no)
                 .add("flag", flag)
-                .add("nins", nins)
-                .add("nouts", nouts)
                 .toString();
     }
 }

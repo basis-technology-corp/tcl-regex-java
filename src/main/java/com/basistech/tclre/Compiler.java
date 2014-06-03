@@ -166,16 +166,18 @@ class Compiler {
 
         LOG.debug("========= RAW ==========");
         nfa.dumpnfa();
-        //dumpst(tree, debug, 1);
+        LOG.debug(tree.dumpst(true));
 
         optst(tree);
         ntree = numst(tree, 1);
         markst(tree);
         cleanst();
         LOG.debug("========= TREE FIXED ==========");
+        LOG.debug(tree.dumpst(true));
 
     /* build compacted NFAs for tree and lacons */
         re.info |= nfatree(tree);
+        //tree.
 
         for (int i = 0; i < lacons.size(); i++) {
             LOG.debug(String.format("========= LA%d ==========", i));
@@ -471,7 +473,7 @@ class Compiler {
 
         assert t.begin != null;
 
-        LOG.debug(String.format("========= TREE NODE %s ==========", t));
+        LOG.debug(String.format("========= TREE NODE %s ==========", t.shortId()));
 
         Nfa newNfa = new Nfa(nfa);
         newNfa.dupnfa(t.begin, t.end, newNfa.init, newNfa.finalState);

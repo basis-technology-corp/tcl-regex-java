@@ -158,6 +158,8 @@
                             <goal>junit4</goal>
                         </goals>
                         <configuration>
+                            <assertions>true</assertions>
+                            <skipTests>true</skipTests>
                             <maxMemory>2g</maxMemory>
                             <systemProperties>
                                 <java.awt.headless>true</java.awt.headless>

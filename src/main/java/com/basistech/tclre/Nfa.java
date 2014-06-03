@@ -386,19 +386,26 @@ class Nfa {
     void dumpnfa() {
         State s;
 
-        LOG.debug(String.format("pre %d, post %d", pre.no, post.no));
+        if (!LOG.isDebugEnabled()) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("pre %d, post %d", pre.no, post.no));
+
         if (bos[0] != Constants.COLORLESS) {
-            LOG.debug(String.format(", bos[0] [%d]", bos[0]));
+            sb.append(String.format(", bos [%d]", bos[0]));
         }
         if (bos[1] != Constants.COLORLESS) {
-            LOG.debug(String.format(", bol[1] [%d]", bos[1]));
+            sb.append(String.format(", bol [%d]", bos[1]));
         }
         if (eos[0] != Constants.COLORLESS) {
-            LOG.debug(String.format(", eos[0] [%d]", eos[0]));
+            sb.append(String.format(", eos [%d]", eos[0]));
         }
         if (eos[1] != Constants.COLORLESS) {
-            LOG.debug(String.format(", eol[1] [%d]", eos[1]));
+            sb.append(String.format(", eol [%d]", eos[1]));
         }
+        LOG.debug(sb.toString());
 
         for (s = states; s != null; s = s.next) {
             dumpstate(s);
@@ -414,19 +421,26 @@ class Nfa {
     void dumpstate(State s) {
         Arc a;
 
-        LOG.debug(String.format("State %d%s%c", s.no, (s.tmp != null) ? "T" : "",
+        if (!LOG.isDebugEnabled()) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%d%s%c", s.no, (s.tmp != null) ? "T" : "",
                 (s.flag != 0) ? (char)s.flag : '.'));
         if (s.prev != null && s.prev.next != s) {
-            LOG.debug(String.format("\tstate chain bad\n"));
+            sb.append(String.format("\tstate chain bad"));
         }
         if (s.nouts == 0) {
-            LOG.debug("\tno out arcs\n");
+            sb.append("\tno out arcs");
         } else {
-            dumparcs(s);
+            dumparcs(s, sb);
         }
+
+        LOG.debug(sb.toString());
         for (a = s.ins; a != null; a = a.inchain) {
             if (a.to != s) {
-                LOG.debug(String.format("\tlink from %d to %d on %d's in-chain\n",
+                LOG.debug(String.format("\tlink from %d to %d on %d's in-chain",
                         a.from.no, a.to.no, s.no));
             }
         }
@@ -435,14 +449,14 @@ class Nfa {
     /**
      * dumparcs - dump out-arcs in human-readable form
      */
-    void dumparcs(State s) {
+    void dumparcs(State s, StringBuilder sb) {
         int pos;
 
         assert s.nouts > 0;
     /* printing arcs in reverse order is usually clearer */
-        pos = dumprarcs(s.outs, s, 1);
+        pos = dumprarcs(s.outs, s, 1, sb);
         if (pos != 1) {
-            LOG.debug("");
+            //sb.append("\n");
         }
     }
 
@@ -452,13 +466,13 @@ class Nfa {
      * @return resulting print position
      */
     int
-    dumprarcs(Arc a, State s, int pos) {
+    dumprarcs(Arc a, State s, int pos, StringBuilder sb) {
         if (a.outchain != null) {
-            pos = dumprarcs(a.outchain, s, pos);
+            pos = dumprarcs(a.outchain, s, pos, sb);
         }
-        dumparc(a, s);
+        dumparc(a, s, sb);
         if (pos == 5) {
-            LOG.debug("");
+            sb.append("\n");
             pos = 1;
         } else {
             pos++;
@@ -469,14 +483,9 @@ class Nfa {
     /**
      * dumparc - dump one outarc in readable form, including prefixing tab
      */
-    void dumparc(Arc a, State s) {
+    void dumparc(Arc a, State s, StringBuilder sb) {
 
-        if (!LOG.isDebugEnabled()) {
-            return;
-        }
-
-        StringBuilder sb = new StringBuilder();
-
+        sb.append("\t");
         switch (a.type) {
         case Compiler.PLAIN:
             sb.append(String.format("[%d]", a.co));
@@ -518,8 +527,6 @@ class Nfa {
         } else {
             sb.append(String.format("%d", a.to.no));
         }
-        LOG.debug(sb.toString());
-
     }
 
     /**

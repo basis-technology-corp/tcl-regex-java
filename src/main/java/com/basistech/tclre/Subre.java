@@ -39,7 +39,9 @@ class Subre {
     State end;  /* ...ending in inarcs here */
     Cnfa cnfa;  /* compacted NFA, if any */
     Subre chain;    /* for bookkeeping and error cleanup */
+
     Subre(char op, int flags, State initState, State finalState) {
+
         assert "|.b(=".indexOf(op) != -1;
 
         this.op = op;
@@ -83,6 +85,78 @@ class Subre {
 
     static int combine(int f1, int f2) {
         return up(f1 | f2) | pref2(f1, f2);
+    }
+
+    String shortId() {
+        String id;
+        if (retry != 0) {
+            id = Integer.toString(retry);
+        } else {
+            id = toString();
+        }
+        return id;
+    }
+
+    /**
+     * dumpst - dump a subRE tree
+     */
+    String dumpst(boolean nfapresent) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%s. `%c'", shortId(), op));
+
+        if (0 != (flags & LONGER)) {
+            sb.append(" longest");
+        }
+        if (0 != (flags & SHORTER)) {
+            sb.append(" shortest");
+        }
+        if (0 != (flags & MIXED)) {
+            sb.append(" hasmixed");
+        }
+        if (0 != (flags & CAP)) {
+            sb.append(" hascapture");
+        }
+        if (0 != (flags & BACKR)) {
+            sb.append(" hasbackref");
+        }
+        if (0 == (flags & INUSE)) {
+            sb.append(" UNUSED");
+        }
+        if (subno != 0) {
+            sb.append(String.format(" (#%d)", subno));
+        }
+        if (min != 1 || max != 1) {
+            sb.append(String.format(" {%d,",min));
+            if (max != Compiler.INFINITY) {
+                sb.append(String.format("%d", max));
+            }
+            sb.append("}");
+        }
+        if (nfapresent) {
+            sb.append(String.format(" %d-%d", begin.no, end.no));
+        }
+        if (left != null) {
+            sb.append(String.format(" L:%s", left.toString()));
+        }
+        if (right != null) {
+            sb.append(String.format(" R:%s", right.toString()));
+        }
+
+        if (cnfa != null) {
+            sb.append("\n");
+            //dumpcnfa(&t->cnfa, f);
+            //fprintf(f, "\n");
+        }
+
+        sb.append("\n");
+        if (left != null) {
+            left.dumpst(nfapresent);
+        }
+        if (right != null) {
+            right.dumpst(nfapresent);
+        }
+
+        return sb.toString();
     }
 
     @Override

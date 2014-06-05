@@ -14,35 +14,15 @@
 
 package com.basistech.tclre;
 
-
-import java.util.Comparator;
-import java.util.List;
-
-import com.google.common.collect.Lists;
-
 /**
- * Data structures derived from regguts.h.
- * Note that this is built for 16-bit chars.
+ * Arc pointer used in DFA.
  */
-class Guts {
-    int cflags;     /* copy of compile flags */
-    long info;      /* copy of re_info */
-    int nsub;       /* copy of re_nsub */
-    Subre tree;
-    Cnfa search;    /* for fast preliminary search */
-    int ntree;
-    ColorMap cm;
-    // see guava support when it comes time to fill this in.
-    Comparator<char[]> compare;
+class Arcp {
+    final StateSet ss;
+    final short co;
 
-    List<Subre> lacons; /* lookahead-constraint vector */
-
-    Guts() {
-        lacons = Lists.newArrayList();
-    }
-
-    // length of above is nlacons.
-    int nlacons() {
-        return lacons.size();
+    Arcp(StateSet ss, short co) {
+        this.ss = ss;
+        this.co = co;
     }
 }

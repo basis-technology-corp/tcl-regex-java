@@ -14,35 +14,34 @@
 
 package com.basistech.tclre;
 
-
-import java.util.Comparator;
+import java.util.BitSet;
 import java.util.List;
 
-import com.google.common.collect.Lists;
-
 /**
- * Data structures derived from regguts.h.
- * Note that this is built for 16-bit chars.
+ * Runtime state set.
+ * regexec.c
  */
-class Guts {
-    int cflags;     /* copy of compile flags */
-    long info;      /* copy of re_info */
-    int nsub;       /* copy of re_nsub */
-    Subre tree;
-    Cnfa search;    /* for fast preliminary search */
-    int ntree;
-    ColorMap cm;
-    // see guava support when it comes time to fill this in.
-    Comparator<char[]> compare;
+class StateSet {
+    static final int STARTER = 1;
+    static final int POSTSTATE = 2;
+    static final int LOCKED = 4;
+    static final int NOPROGRESS = 8;
 
-    List<Subre> lacons; /* lookahead-constraint vector */
+    /* Using BitSet and it's hash/equals
+     * is probably going to be slower than we want
+     * assuming that we get this to work at all. */
+    BitSet states; // states -- we would really like this to be final.
+    int flags;
+    Arcp ins;
+    int lastseen; // index of last entered on arrival here
+    StateSet[] outs;
+    Arcp[] inchain;
 
-    Guts() {
-        lacons = Lists.newArrayList();
+    StateSet(int nsets, int ncolors) {
+        states = new BitSet(nsets);
+        // if colors are sparse these will need to be otherwise.
+        outs = new StateSet[ncolors];
+        inchain = new Arcp[ncolors];
     }
 
-    // length of above is nlacons.
-    int nlacons() {
-        return lacons.size();
-    }
 }

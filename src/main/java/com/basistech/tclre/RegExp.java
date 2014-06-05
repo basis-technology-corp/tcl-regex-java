@@ -32,6 +32,9 @@ class RegExp {
     static final int REG_UEMPTYMATCH = 004000;
     static final int REG_UIMPOSSIBLE = 010000;
     static final int REG_USHORTEST = 020000;
+
+    static final int REG_NOTBOL =  0001;    /* BOS is not BOL */
+    static final int REG_NOTEOL =  0002;    /* EOS is not EOL */
     long info;
     int nsub;       /* number of subexpressions */
     int csize;      /* sizeof(character) */

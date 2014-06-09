@@ -21,6 +21,10 @@ import java.util.List;
  * name for some presentable API.
  */
 class Runtime {
+    static final int UNTRIED = 0; 	/* not yet tried at all */
+    static final int TRYING = 1;    /* top matched, trying submatches */
+    static final int TRIED = 2;     /* top didn't match or submatches exhausted */
+
     RegExp re;
     Guts g;
     int eflags;
@@ -34,7 +38,7 @@ class Runtime {
     /**
      * exec - match regular expression
      */
-    int exec(RegExp re, char[] data, int startIndex, int endIndex, int flags) {
+    boolean exec(RegExp re, char[] data, int startIndex, int endIndex, int flags) throws RegexException {
         this.re = re;
         this.g = re.guts;
 
@@ -42,7 +46,7 @@ class Runtime {
     /* setup */
 
         if (0 != (g.info & Flags.REG_UIMPOSSIBLE)) {
-            return -1;
+            throw new RegexException("Regex marked impossible");
         }
 
         eflags = flags;
@@ -56,20 +60,17 @@ class Runtime {
     /* do it */
         assert g.tree != null;
 
-        int st;
         if (0 != (g.info & Flags.REG_UBACKREF)) {
-            st = cfind(g.tree.cnfa);
+            return cfind(g.tree.cnfa);
         } else {
-            st = find(g.tree.cnfa);
+            return find(g.tree.cnfa);
         }
-        mem =  null;
-        return st;
     }
 
     /**
      * find - find a match for the main NFA (no-complications case)
      */
-    int find(Cnfa cnfa) {
+    boolean find(Cnfa cnfa) {
         Dfa s;
         Dfa d;
         int begin;
@@ -96,10 +97,11 @@ class Runtime {
             }
             details = new RegMatch(dtstart, endIndex);
         }
-        if (close == -1)		/* not found */
-            return Errors.REG_NOMATCH;
+        if (close == -1) {		/* not found */
+            return false;
+        }
         if (match.size() == 0) {	/* found, don't need exact location */
-            return Errors.REG_OKAY;
+            return true;
         }
 
     /* find starting point and match */
@@ -140,7 +142,7 @@ class Runtime {
         }
 
         if (match.size() == 1) { /* no need for submatches */
-            return Errors.REG_OKAY;
+            return true;
         }
 
         return dissect(g.tree, begin, end);
@@ -150,16 +152,15 @@ class Runtime {
     /**
      * cfind - find a match for the main NFA (with complications)
      */
-    int cfind(Cnfa cnfa) {
+    boolean cfind(Cnfa cnfa) {
         Dfa s;
         Dfa d;
         int[] cold = new int[1];
-        int ret;
 
         s = new Dfa(this, g.search);
         d = new Dfa(this, cnfa);
 
-        ret = cfindloop(cnfa, d, s, cold);
+        boolean ret = cfindloop(cnfa, d, s, cold);
 
         int dtstart;
         if (cold[0] != -1) {
@@ -175,7 +176,7 @@ class Runtime {
     /**
      * cfindloop - the heart of cfind
      */
-    int cfindloop(Cnfa cnfa, Dfa d, Dfa s, int[] coldp) {
+    boolean cfindloop(Cnfa cnfa, Dfa d, Dfa s, int[] coldp) {
         int begin;
         int end;
         int cold;
@@ -222,19 +223,16 @@ class Runtime {
 
                     int maxsubno = getMaxSubno(g.tree, 0);
                     mem = new int[maxsubno + 1];
-                    er = cdissect(g.tree, begin, end);
-                    if (er == Errors.REG_OKAY) {
+                    boolean matched = cdissect(g.tree, begin, end);
+                    if (matched) {
                         match.add(new RegMatch(begin, end));
                         coldp[0] = cold;
-                        return Errors.REG_OKAY;
-                    }
-                    if (er != Errors.REG_NOMATCH) {
-                        return er;
+                        return true;
                     }
                     if ((shorter) ? end == estop : end == begin) {
                         /* no point in trying again */
                         coldp[0] = cold;
-                        return Errors.REG_NOMATCH;
+                        return false;
                     }
                     /* go around and try again */
                     if (shorter) {
@@ -247,7 +245,7 @@ class Runtime {
         } while (close < endIndex);
 
         coldp[0] = cold;
-        return Errors.REG_NOMATCH;
+        return false;
     }
 
     /**
@@ -268,11 +266,11 @@ class Runtime {
     /**
      * dissect - determine subexpression matches (uncomplicated case)
      */
-    int dissect(Subre t, int begin, int end) {
+    boolean dissect(Subre t, int begin, int end) {
         switch (t.op) {
         case '=':		/* terminal node */
             assert t.left == null && t.right == null;
-            return Errors.REG_OKAY;	/* no action, parent did the work */
+            return true;	/* no action, parent did the work */
 
         case '|':		/* alternation */
             assert t.left != null;
@@ -301,11 +299,10 @@ class Runtime {
     /**
      * condissect - determine concatenation subexpression matches (uncomplicated)
      */
-    int condissect(Subre t, int begin, int end) {
+    boolean condissect(Subre t, int begin, int end) {
         Dfa d;
         Dfa d2;
         int mid;
-        int i;
         boolean shorter = (t.left.flags & Subre.SHORTER) != 0;
         int stop = (shorter) ? end : begin;
 
@@ -344,9 +341,9 @@ class Runtime {
     }
 
     /* satisfaction */
-        i = dissect(t.left, begin, mid);
-        if (i != Errors.REG_OKAY) {
-            return i;
+        boolean dissectMatch = dissect(t.left, begin, mid);
+        if (dissectMatch) {
+            return true;
         }
         return dissect(t.right, mid, end);
     }
@@ -354,7 +351,7 @@ class Runtime {
     /**
      * altdissect - determine alternative subexpression matches (uncomplicated)
      */
-    int altdissect(Subre t, int begin, int end) {
+    boolean altdissect(Subre t, int begin, int end) {
         Dfa d;
         int i;
 
@@ -378,7 +375,7 @@ class Runtime {
      * The retry memory stores the offset of the trial midpoint from begin,
      * plus 1 so that 0 uniquely means "clean slate".
      */
-    int cdissect(Subre t, int begin, int end) {
+    boolean cdissect(Subre t, int begin, int end) {
         int er;
 
         assert t != null;
@@ -386,7 +383,7 @@ class Runtime {
         switch (t.op) {
         case '=':		/* terminal node */
             assert t.left == null && t.right == null;
-            return Errors.REG_OKAY;	/* no action, parent did the work */
+            return true;	/* no action, parent did the work */
 
         case '|':		/* alternation */
             assert (t.left != null);
@@ -403,16 +400,15 @@ class Runtime {
         case '(':		/* capturing */
             assert (t.left != null && t.right == null);
             assert (t.subno > 0);
-            er = cdissect(t.left, begin, end);
-            if (er == Errors.REG_OKAY) {
+            boolean cdmatch = cdissect(t.left, begin, end);
+            if (cdmatch) {
                 subset(t, begin, end);
             }
-            return er;
+            return cdmatch;
 
         default:
-            assert false;
+            throw new RuntimeException("Impossible op");
         }
-        return 0;
     }
 
     /**
@@ -420,11 +416,10 @@ class Runtime {
      * The retry memory stores the offset of the trial midpoint from begin,
      * plus 1 so that 0 uniquely means "clean slate".
      */
-    int ccondissect(Subre t, int begin, int end) {
+    boolean ccondissect(Subre t, int begin, int end) {
         Dfa d;
         Dfa d2;
         int mid;
-        int er;
 
         assert t.op == '.';
         assert t.left != null && t.left.cnfa.nstates > 0;
@@ -441,7 +436,7 @@ class Runtime {
         if (mem[t.retry] == 0) {
             mid = d.longest(begin, end, null);
             if (mid == -1) {
-                return Errors.REG_NOMATCH;
+                return false;
             }
             mem[t.retry] = (mid - begin) + 1;
         } else {
@@ -451,26 +446,22 @@ class Runtime {
     /* iterate until satisfaction or failure */
         for (; ; ) {
         /* try this midpoint on for size */
-            er = cdissect(t.left, begin, mid);
-            if (er == Errors.REG_OKAY &&
-                    d2.longest(mid, end, null) == end &&
-                    (er = cdissect(t.right, mid, end)) ==
-                            Errors.REG_OKAY) {
+            boolean cdmatch = cdissect(t.left, begin, mid);
+            if (cdmatch && d2.longest(mid, end, null) == end
+                    && (cdmatch = cdissect(t.right, mid, end))) {
                 break;			/* NOTE BREAK OUT */
-            }
-            if (er != Errors.REG_OKAY && er != Errors.REG_NOMATCH) {
-                return er;
+
             }
 
         /* that midpoint didn't work, find a new one */
             if (mid == begin) {
             /* all possibilities exhausted */
-                return Errors.REG_NOMATCH;
+                return false;
             }
             mid = d.longest(begin, mid - 1, null);
             if (mid == -1) {
             /* failed to find a new one */
-                return Errors.REG_NOMATCH;
+                return false;
             }
             mem[t.retry] = (mid - begin) + 1;
             zapmem(t.left);
@@ -478,23 +469,31 @@ class Runtime {
         }
 
     /* satisfaction */
-        return Errors.REG_OKAY;
+        return true;
     }
 
     void zapmem(Subre t) {
+        mem[t.retry] = 0;
+        while (match.size() < t.subno + 1) {
+            match.add(null);
+        }
+        if (t.left != null) {
+            zapmem(t.left);
+        } if (t.right != null) {
+            zapmem(t.right);
+        }
+    }
 
-    }    static final int UNTRIED = 0; 	/* not yet tried at all */
 
     /**
      * crevdissect - determine backref shortest-first subexpression matches
      * The retry memory stores the offset of the trial midpoint from begin,
      * plus 1 so that 0 uniquely means "clean slate".
      */
-    int crevdissect(Subre t, int begin, int end) {
+    boolean crevdissect(Subre t, int begin, int end) {
         Dfa d;
         Dfa d2;
         int mid;
-        int er;
 
         assert t.op == '.';
         assert t.left != null && t.left.cnfa.nstates > 0;
@@ -509,7 +508,7 @@ class Runtime {
         if (mem[t.retry] == 0) {
             mid = d.shortest(begin, begin, end, null, null);
             if (mid == -1) {
-                return Errors.REG_NOMATCH;
+                return false;
             }
             mem[t.retry] = (mid - begin) + 1;
         } else {
@@ -519,26 +518,22 @@ class Runtime {
     /* iterate until satisfaction or failure */
         for (; ; ) {
         /* try this midpoint on for size */
-            er = cdissect(t.left, begin, mid);
-            if (er == Errors.REG_OKAY &&
-                    d2.longest(mid, end, null) == end &&
-                    (er = cdissect(t.right, mid, end)) ==
-                            Errors.REG_OKAY) {
+            boolean cdmatch = cdissect(t.left, begin, mid);
+            if (cdmatch
+                    && d2.longest(mid, end, null) == end
+                    && (cdissect(t.right, mid, end))) {
                 break;			/* NOTE BREAK OUT */
-            }
-            if (er != Errors.REG_OKAY && er != Errors.REG_NOMATCH) {
-                return er;
             }
 
         /* that midpoint didn't work, find a new one */
             if (mid == end) {
             /* all possibilities exhausted */
-                return Errors.REG_NOMATCH;
+                return false;
             }
             mid = d.shortest(begin, mid + 1, end, null, null);
             if (mid == -1) {
             /* failed to find a new one */
-                return Errors.REG_NOMATCH;
+                return false;
             }
             mem[t.retry] = (mid - begin) + 1;
             zapmem(t.left);
@@ -546,13 +541,15 @@ class Runtime {
         }
 
     /* satisfaction */
-        return Errors.REG_OKAY;
-    }    static final int TRYING = 1;    /* top matched, trying submatches */
+        return true;
+    }
+
+
 
     /**
      * cbrdissect - determine backref subexpression matches
      */
-    int cbrdissect(Subre t, int begin, int end) {
+    boolean cbrdissect(Subre t, int begin, int end) {
         int i;
         int n = t.subno;
         int len;
@@ -567,29 +564,29 @@ class Runtime {
 
 
         if (match.get(n).start == -1) {
-            return Errors.REG_NOMATCH;
+            return false;
         }
         paren = startIndex + match.get(n).start;
         len = match.get(n).end - match.get(n).start;
 
     /* no room to maneuver -- retries are pointless */
         if (0 != mem[t.retry]) {
-            return Errors.REG_NOMATCH;
+            return false;
         }
         mem[t.retry] = 1;
 
     /* special-case zero-length string */
         if (len == 0) {
             if (begin == end) {
-                return Errors.REG_OKAY;
+                return true;
             }
-            return Errors.REG_NOMATCH;
+            return false;
         }
 
     /* and too-short string */
         assert (end >= begin);
         if ((end - begin) < len) {
-            return Errors.REG_NOMATCH;
+            return false;
         }
         stop = end - len;
 
@@ -606,23 +603,22 @@ class Runtime {
 
     /* and sort it out */
         if (p != end) {			/* didn't consume all of it */
-            return Errors.REG_NOMATCH;
+            return false;
         }
         if (min <= i && (i <= max || max == Compiler.INFINITY)) {
-            return Errors.REG_OKAY;
+            return true;
         }
-        return Errors.REG_NOMATCH;		/* out of range */
-    }    static final int TRIED = 2;     /* top didn't match or submatches exhausted */
+        return false;		/* out of range */
+    }
 
     /*
      - caltdissect - determine alternative subexpression matches (w. complications)
      ^ static int caltdissect(struct vars *, struct Subre , int , int );
      */
-    int caltdissect(Subre t, int begin, int end) {
+    boolean caltdissect(Subre t, int begin, int end) {
         Dfa d;
-        int er;
         if (t == null) {
-            return Errors.REG_NOMATCH;
+            return false;
         }
         assert (t.op == '|');
         if (mem[t.retry] == TRIED) {
@@ -638,9 +634,9 @@ class Runtime {
             mem[t.retry] = TRYING;
         }
 
-        er = cdissect(t.left, begin, end);
-        if (er != Errors.REG_NOMATCH) {
-            return er;
+        boolean cdmatch = cdissect(t.left, begin, end);
+        if (cdmatch) {
+            return true;
         }
 
         mem[t.retry] = TRIED;

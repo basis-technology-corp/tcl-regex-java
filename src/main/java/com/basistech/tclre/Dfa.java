@@ -204,6 +204,8 @@ class Dfa {
         StateSet css;
         int post;
 
+        LOG.debug("+++ startup +++");
+
     /* initialize */
         css = initialize(start);
         cp = start;
@@ -243,11 +245,15 @@ class Dfa {
         }
 
     /* shutdown */
+
+        LOG.debug(String.format("+++ shutdown +++ at %s", css));
+
         if (cp == runtime.endIndex && stop == runtime.endIndex) {
             if (hitstopp != null) {
                 hitstopp[0] = true;
             }
             co = cnfa.eos[0 != (runtime.eflags & Flags.REG_NOTEOL) ? 0 : 1];
+            LOG.debug(String.format("color %d", co));
             ss = miss(css, co, cp);
         /* special case:  match ended at eol? */
             if (ss != null && (0 != (ss.flags & StateSet.POSTSTATE))) {

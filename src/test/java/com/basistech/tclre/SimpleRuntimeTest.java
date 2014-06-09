@@ -40,4 +40,10 @@ public class SimpleRuntimeTest extends Assert {
         assertFalse(doMatch(exp, "b"));
     }
 
+    @Test
+    public void testSingleCharMatch() throws Exception {
+        RegExp exp = compile("a", EnumSet.of(PatternFlags.BASIC));
+        assertTrue(doMatch(exp, "a"));
+    }
+
 }

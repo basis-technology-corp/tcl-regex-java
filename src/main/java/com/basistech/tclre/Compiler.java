@@ -17,6 +17,7 @@ package com.basistech.tclre;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import com.ibm.icu.text.UTF16;
 import com.ibm.icu.text.UnicodeSet;
 
 import org.slf4j.Logger;
@@ -71,11 +72,8 @@ class Compiler {
     Subre treechain;    /* all tree nodes allocated */
     Subre treefree;     /* any free tree nodes */
     int ntree;      /* number of tree nodes */
-    State mccepbegin;   /* in nfa, start of MCCE prototypes */
-    State mccepend; /* in nfa, end of MCCE prototypes */
     List<Subre> lacons; /* lookahead-constraint vector */
     Lex lex;
-    // int nlacons;     /* size of lacons */
 
     /**
      * Constructor does minimal setup; construct, then call compile().
@@ -204,13 +202,34 @@ class Compiler {
         re.guts.tree = tree;
         re.guts.ntree = ntree;
         if (0 != (cflags & Flags.REG_ICASE)) {
-            // TODO: fill in comparators.
+            re.guts.compare = new Comparer(true);
         } else {
-            // TODO: more of same.
+            re.guts.compare = new Comparer(false);
         }
 
         re.guts.lacons = lacons;
 
+    }
+
+    static class Comparer implements SubstringComparator {
+        private UTF16.StringComparator comparator;
+
+        Comparer(boolean caseInsensitive) {
+            if (caseInsensitive) {
+                comparator = new UTF16.StringComparator(true, true,
+                        UTF16.StringComparator.FOLD_CASE_DEFAULT);
+            } else {
+                comparator = new UTF16.StringComparator(true, false,
+                        UTF16.StringComparator.FOLD_CASE_DEFAULT);
+            }
+        }
+
+        @Override
+        public int compare(char[] data, int start1, int start2, int length) {
+            String s1 = new String(data, start1, length);
+            String s2 = new String(data, start2, length);
+            return comparator.compare(s1, s2);
+        }
     }
 
     /**

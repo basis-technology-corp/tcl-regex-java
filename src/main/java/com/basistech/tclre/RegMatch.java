@@ -18,6 +18,11 @@ package com.basistech.tclre;
  * Created by benson on 6/5/14.
  */
 class RegMatch {
-    int start;
-    int end;
+    final int start;
+    final int end;
+
+    RegMatch(int start, int end) {
+        this.start = start;
+        this.end = end;
+    }
 }

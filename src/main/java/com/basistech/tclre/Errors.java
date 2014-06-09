@@ -32,7 +32,6 @@ final class Errors {
     static final int REG_ERANGE = 11;   /* invalid character range */
     static final int REG_ESPACE = 12;   /* out of memory */
     static final int REG_BADRPT = 13;   /* quantifier operand invalid */
-    static final int REG_ASSERT = 15;   /* "can't happen" -- you found a bug */
     static final int REG_INVARG = 16;   /* invalid argument to regex function */
     static final int REG_MIXED = 17;    /* character widths of regex and string differ */
     static final int REG_BADOPT = 18;   /* invalid embedded option */

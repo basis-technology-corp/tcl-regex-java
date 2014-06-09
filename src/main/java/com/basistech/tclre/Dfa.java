@@ -72,6 +72,7 @@ class Dfa {
 
     /**
      * 'miss' -- the state set was not found in the stateSets.
+     *
      * @param co
      * @param cp
      * @param start
@@ -95,9 +96,10 @@ class Dfa {
                 int ax;
                 short caco;
                 int catarget;
-                for (ax = cnfa.states[i] + 1, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca);
-                     caco != Constants.COLORLESS;
-                    ax++) {
+                for (ax = cnfa.states[i] + 1, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa
+                        .carcTarget(ca);
+                        caco != Constants.COLORLESS;
+                        ax++) {
                     if (caco == co) {
                         work.set(catarget, true);
                         gotstate = true;
@@ -108,7 +110,7 @@ class Dfa {
                         if (0 == Cnfa.carcColor(cnfa.arcs[cnfa.states[catarget]])) {
                             noprogress = false;
                         }
-                        LOG.debug(String.format("%d -> %d", i, catarget));
+                        LOG.debug(String.format("%d . %d", i, catarget));
                     }
                 }
             }
@@ -189,6 +191,7 @@ class Dfa {
 
     /**
      * longest - longest-preferred matching engine
+     *
      * @return endpoint or -1
      */
     int longest(int start, int stop, boolean[] hitstopp) {
@@ -264,5 +267,125 @@ class Dfa {
             return post - 1;
         }
         return -1;
-    }}
+    }
+
+
+    /**
+     * shortest - shortest-preferred matching engine
+     *
+     * @param start   where the match should start
+     * @param min     match must end at or after here
+     * @param max     match must end at or before here
+     * @param coldp   store coldstart pointer here, if non-null
+     * @param hitstop record whether hit end of total input/
+     * @return endpoint or -1
+     */
+    int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop) {
+        int cp;
+        int realmin = min == runtime.endIndex ? min : max + 1;
+        int realmax = max == runtime.endIndex ? max : max + 1;
+        short co;
+        StateSet ss;
+        StateSet css;
+
+    /* initialize */
+        css = initialize(start);
+        cp = start;
+        if (hitstop != null) {
+            hitstop[0] = true;
+        }
+
+    /* startup */
+        if (cp == runtime.startIndex) {
+            co = cnfa.bos[0 != (runtime.eflags & RegExp.REG_NOTBOL) ? 0 : 1];
+        } else {
+            co = cm.getcolor(runtime.data[cp - 1]);
+        }
+        css = miss(css, co, cp, start);
+        if (css == null) {
+            return -1;
+        }
+        css.lastseen = cp;
+        ss = css;
+
+    /* main loop */
+        while (cp < realmax) {
+            co = cm.getcolor(runtime.data[cp]);
+            ss = css.outs[co];
+            if (ss == null) {
+                ss = miss(css, co, cp + 1, start);
+                if (ss == null) {
+                    break;	/* NOTE BREAK OUT */
+                }
+            }
+            cp++;
+            ss.lastseen = cp;
+            css = ss;
+            if (0 != (ss.flags & StateSet.POSTSTATE) && cp >= realmin) {
+                break;		/* NOTE BREAK OUT */
+            }
+        }
+
+
+        if (ss == null) {
+            return -1;
+        }
+
+        if (coldp != null) {	/* report last no-progress state set, if any */
+            coldp[0] = lastcold();
+        }
+
+        if (0 != (ss.flags & StateSet.POSTSTATE) && cp > min) {
+            assert cp >= realmin;
+            cp--;
+        } else if (cp == runtime.endIndex && max == runtime.endIndex) {
+            co = cnfa.eos[0 != (runtime.eflags & RegExp.REG_NOTEOL) ? 0 : 1];
+            ss = miss(css, co, cp, start);
+        /* match might have ended at eol */
+            if ((ss == null || (0 == (ss.flags & StateSet.POSTSTATE)))
+                    && hitstop != null) {
+                hitstop[0] = true;
+            }
+        }
+
+        if (ss == null || 0 == (ss.flags & StateSet.POSTSTATE)) {
+            return -1;
+        }
+
+        return cp;
+    }
+
+
+    /**
+     * lastcold - determine last point at which no progress had been made
+     *
+     * @return offset or -1
+     */
+    int lastcold() {
+
+        int nopr = lastnopr;
+        if (nopr == -1) {
+            nopr = runtime.startIndex;
+        }
+
+        for (StateSet ss : stateSets.values()) {
+            if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.lastseen) {
+                nopr = ss.lastseen;
+            }
+        }
+        return nopr;
+    }
+
+
+    /**
+     * pickss - pick the next stateset to be used
+     * This just makes a new one until and unless we decide
+     * to reinvent the cache.
+     */
+    StateSet pickss(int cp, int start) {
+        StateSet result = new StateSet(nstates, ncolors);
+        result.ins = new Arcp(null, Constants.WHITE);
+        return result;
+    }
+}
 

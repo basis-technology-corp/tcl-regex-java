@@ -14,16 +14,21 @@
 
 package com.basistech.tclre;
 
-import java.util.List;
-
 /**
- * Created by benson on 5/29/14.
+ * the flags.
+ *
+ * Note that most things that want ADVANCED also want EXTENDED, and most
+ * things that use the NL options want them both.
  */
-class RegExp {
-
-    long info;
-    int nsub;       /* number of subexpressions */
-    Guts guts;
-    List<RegMatch> matches;
-    RegMatch details;
+public enum PatternFlags {
+    BASIC,
+    EXTENDED,
+    ADVANCED,
+    QUOTE,
+    ICASE,
+    NOSUB,
+    EXPANDED,
+    NLSTOP,
+    NLANCH,
+    EXPECT;
 }

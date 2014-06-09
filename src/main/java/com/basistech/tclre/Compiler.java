@@ -14,6 +14,7 @@
 
 package com.basistech.tclre;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import com.google.common.collect.Lists;
@@ -51,7 +52,6 @@ class Compiler {
     static final int SOME = 2;
     static final int INF = 3;
     private static final Logger LOG = LoggerFactory.getLogger(Compiler.class);
-    RegExp re;
     char[] pattern;
     int now;        /* scan pointer into string */
     int stop;       /* end of string */
@@ -74,32 +74,68 @@ class Compiler {
     int ntree;      /* number of tree nodes */
     List<Subre> lacons; /* lookahead-constraint vector */
     Lex lex;
+    RegExp re;
 
     /**
      * Constructor does minimal setup; construct, then call compile().
      * The entire effect is a side-effect on 're'.
      *
-     * @param re
      * @param pattern
      * @param flags
      */
-    Compiler(RegExp re, String pattern, int flags) {
-        if (re == null) {
-            throw new NullPointerException();
-        }
+    Compiler(String pattern, EnumSet<PatternFlags> flags) {
 
-        if (0 != (flags & Flags.REG_QUOTE) 
-            && 0 != (flags & (Flags.REG_ADVANCED | Flags.REG_EXPANDED | Flags.REG_NEWLINE))) {
+        if (flags.contains(PatternFlags.QUOTE)
+                && (flags.contains(PatternFlags.ADVANCED)
+                    || flags.contains(PatternFlags.EXPANDED)
+                    || flags.contains(PatternFlags.NLANCH)
+                    || flags.contains(PatternFlags.NLSTOP))) {
             throw new IllegalArgumentException("Invalid flag combination");
         }
 
-        if (0 == (flags & Flags.REG_EXTENDED) && 0 != (flags & Flags.REG_ADVF)) {
-            throw new IllegalArgumentException("Invalid flag combination (!extended && advf");
+        this.pattern = pattern.toCharArray();
+
+        // Map from EnumSet, which is how we want users to see this some time, to bitflags.
+        // At some point we might push the enum sets all the way down.
+        for (PatternFlags f : flags) {
+            switch (f) {
+            case BASIC:
+                this.cflags |= Flags.REG_BASIC;
+                break;
+            case EXTENDED:
+                this.cflags |= Flags.REG_EXPANDED;
+                break;
+            case ADVANCED:
+                this.cflags |= Flags.REG_ADVF;
+                this.cflags |= Flags.REG_EXTENDED;
+                break;
+            case QUOTE:
+                this.cflags |= Flags.REG_QUOTE;
+                break;
+            case ICASE:
+                this.cflags |= Flags.REG_ICASE;
+                break;
+            case NOSUB:
+                this.cflags |= Flags.REG_NOSUB;
+                break;
+            case EXPANDED:
+                this.cflags |= Flags.REG_EXPANDED;
+                break;
+            case NLSTOP:
+                this.cflags |= Flags.REG_NLSTOP;
+                break;
+            case NLANCH:
+                this.cflags |= Flags.REG_NLANCH;
+                break;
+            case EXPECT:
+                this.cflags |= Flags.REG_EXPECT;
+                break;
+            default:
+                throw new RuntimeException("Can't handle " + f);
+            }
+
         }
 
-        this.re = re;
-        this.pattern = pattern.toCharArray();
-        this.cflags = flags;
         subs = Lists.newArrayListWithCapacity(10);
         lacons = Lists.newArrayList();
         // the lexer is 'over there' but shared state here, for now at least.
@@ -120,10 +156,6 @@ class Compiler {
         }
     }
 
-    int nlacons() {
-        return lacons.size();
-    }
-
     char newline() {
         return '\n';
     }
@@ -132,11 +164,11 @@ class Compiler {
         return nexttype == t;
     }
 
-    void compile() throws RegexException {
+    RegExp compile() throws RegexException {
         stop = pattern.length;
         nlcolor = Constants.COLORLESS;
+        re = new RegExp();
         re.info = 0;
-        re.csize = 2;
         re.guts = new Guts();
 
         cm = new ColorMap(this);
@@ -195,7 +227,7 @@ class Compiler {
 
     /* looks okay, package it up */
         re.nsub = subs.size();
-
+        re.guts.cm = cm;
         re.guts.cflags = cflags;
         re.guts.info = re.info;
         re.guts.nsub = re.nsub;
@@ -208,7 +240,7 @@ class Compiler {
         }
 
         re.guts.lacons = lacons;
-
+        return re;
     }
 
     static class Comparer implements SubstringComparator {

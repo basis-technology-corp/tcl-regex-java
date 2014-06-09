@@ -75,10 +75,9 @@ class Dfa {
      *
      * @param co
      * @param cp
-     * @param start
      * @return
      */
-    StateSet miss(StateSet css, short co, int cp, int start) {
+    StateSet miss(StateSet css, short co, int cp) {
         if (css.outs[co] != null) {
             LOG.debug("hit!");
             return css.outs[co];
@@ -96,10 +95,10 @@ class Dfa {
                 int ax;
                 short caco;
                 int catarget;
-                for (ax = cnfa.states[i] + 1, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa
-                        .carcTarget(ca);
+                for (ax = cnfa.states[i] + 1, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca);
                         caco != Constants.COLORLESS;
-                        ax++) {
+                        ax++, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca)) {
+
                     if (caco == co) {
                         work.set(catarget, true);
                         gotstate = true;
@@ -200,7 +199,6 @@ class Dfa {
         short co;
         StateSet css;
         int post;
-        int i;
 
     /* initialize */
         css = initialize(start);
@@ -212,13 +210,13 @@ class Dfa {
 
     /* startup */
         if (cp == runtime.startIndex) {
-            co = cnfa.bos[0 != (runtime.eflags & RegExp.REG_NOTBOL) ? 0 : 1];
+            co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
             LOG.debug("color %d", co);
         } else {
             co = cm.getcolor(runtime.data[cp - 1]);
             LOG.debug("char %c, color %d\n", runtime.data[cp - 1], co);
         }
-        css = miss(css, co, cp, start);
+        css = miss(css, co, cp);
         if (css == null) {
             return -1;
         }
@@ -230,7 +228,7 @@ class Dfa {
             co = cm.getcolor(runtime.data[cp]);
             ss = css.outs[co];
             if (ss == null) {
-                ss = miss(css, co, cp + 1, start);
+                ss = miss(css, co, cp + 1);
                 if (ss == null) {
                     break;	/* NOTE BREAK OUT */
                 }
@@ -245,8 +243,8 @@ class Dfa {
             if (hitstopp != null) {
                 hitstopp[0] = true;
             }
-            co = cnfa.eos[0 != (runtime.eflags & RegExp.REG_NOTEOL) ? 0 : 1];
-            ss = miss(css, co, cp, start);
+            co = cnfa.eos[0 != (runtime.eflags & Flags.REG_NOTEOL) ? 0 : 1];
+            ss = miss(css, co, cp);
         /* special case:  match ended at eol? */
             if (ss != null && (0 != (ss.flags & StateSet.POSTSTATE))) {
                 return cp;
@@ -282,7 +280,7 @@ class Dfa {
      */
     int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop) {
         int cp;
-        int realmin = min == runtime.endIndex ? min : max + 1;
+        int realmin = min == runtime.endIndex ? min : min + 1;
         int realmax = max == runtime.endIndex ? max : max + 1;
         short co;
         StateSet ss;
@@ -297,11 +295,11 @@ class Dfa {
 
     /* startup */
         if (cp == runtime.startIndex) {
-            co = cnfa.bos[0 != (runtime.eflags & RegExp.REG_NOTBOL) ? 0 : 1];
+            co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
         } else {
             co = cm.getcolor(runtime.data[cp - 1]);
         }
-        css = miss(css, co, cp, start);
+        css = miss(css, co, cp);
         if (css == null) {
             return -1;
         }
@@ -313,7 +311,7 @@ class Dfa {
             co = cm.getcolor(runtime.data[cp]);
             ss = css.outs[co];
             if (ss == null) {
-                ss = miss(css, co, cp + 1, start);
+                ss = miss(css, co, cp + 1);
                 if (ss == null) {
                     break;	/* NOTE BREAK OUT */
                 }
@@ -339,8 +337,8 @@ class Dfa {
             assert cp >= realmin;
             cp--;
         } else if (cp == runtime.endIndex && max == runtime.endIndex) {
-            co = cnfa.eos[0 != (runtime.eflags & RegExp.REG_NOTEOL) ? 0 : 1];
-            ss = miss(css, co, cp, start);
+            co = cnfa.eos[0 != (runtime.eflags & Flags.REG_NOTEOL) ? 0 : 1];
+            ss = miss(css, co, cp);
         /* match might have ended at eol */
             if ((ss == null || (0 == (ss.flags & StateSet.POSTSTATE)))
                     && hitstop != null) {

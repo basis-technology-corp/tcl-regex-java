@@ -14,11 +14,15 @@
 
 package com.basistech.tclre;
 
+import java.util.EnumSet;
 import java.util.List;
+
+import com.google.common.collect.Lists;
 
 /**
  * Runtime matcher. Not called 'matcher' to save that
  * name for some presentable API.
+ * TODO: merge this into RegExp.
  */
 class Runtime {
     static final int UNTRIED = 0; 	/* not yet tried at all */
@@ -38,32 +42,48 @@ class Runtime {
     /**
      * exec - match regular expression
      */
-    boolean exec(RegExp re, char[] data, int startIndex, int endIndex, int flags) throws RegexException {
-        this.re = re;
-        this.g = re.guts;
-
+    boolean exec(RegExp re, char[] data, int startIndex, int endIndex, EnumSet<ExecFlags> execFlags) throws RegexException {
     /* sanity checks */
     /* setup */
 
-        if (0 != (g.info & Flags.REG_UIMPOSSIBLE)) {
+        if (0 != (re.guts.info & Flags.REG_UIMPOSSIBLE)) {
             throw new RegexException("Regex marked impossible");
         }
 
-        eflags = flags;
+        eflags = 0;
+        for (ExecFlags ef : execFlags) {
+            switch(ef) {
+            case NOTBOL:
+                eflags |= Flags.REG_NOTBOL;
+                break;
+            case NOTEOL:
+                eflags |= Flags.REG_NOTEOL;
+                break;
+            }
+        }
 
+        this.re = re;
+        this.g = re.guts;
         this.data = data;
         this.startIndex = startIndex;
         this.endIndex = endIndex;
+        this.match = Lists.newArrayList();
         match.add(null); // make room for 1.
         mem = new int[g.ntree];
        
     /* do it */
         assert g.tree != null;
 
-        if (0 != (g.info & Flags.REG_UBACKREF)) {
-            return cfind(g.tree.cnfa);
-        } else {
-            return find(g.tree.cnfa);
+        // This silly try-finally is until we rationalize the classes.
+        try {
+            if (0 != (g.info & Flags.REG_UBACKREF)) {
+                return cfind(g.tree.cnfa);
+            } else {
+                return find(g.tree.cnfa);
+            }
+        } finally {
+            re.matches = match;
+            re.details = details;
         }
     }
 
@@ -97,6 +117,7 @@ class Runtime {
             }
             details = new RegMatch(dtstart, endIndex);
         }
+
         if (close == -1) {		/* not found */
             return false;
         }
@@ -126,6 +147,7 @@ class Runtime {
                 break;		/* NOTE BREAK OUT */
             }
         }
+
         assert end != -1;		/* search RE succeeded so loop should */
 
         /* and pin down details */
@@ -278,7 +300,6 @@ class Runtime {
 
         case 'b':		/* back ref -- shouldn't be calling us! */
             throw new RuntimeException("impossible backref");
-
 
         case '.':		/* concatenation */
             assert t.left != null && t.right != null;

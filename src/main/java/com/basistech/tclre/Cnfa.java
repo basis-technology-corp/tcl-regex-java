@@ -36,6 +36,7 @@ class Cnfa {
          int preNo,
          int postNo, short[] bos,
          short[] eos, int maxcolors, int flags) {
+
         this.pre = preNo;
         this.post = postNo;
         this.nstates = nstates;
@@ -70,7 +71,7 @@ class Cnfa {
     }
 
     static long packCarc(short color, int targetState) {
-        return (color << 32) | targetState;
+        return ((long)color << 32) | targetState;
     }
 
     static short carcColor(long packed) {

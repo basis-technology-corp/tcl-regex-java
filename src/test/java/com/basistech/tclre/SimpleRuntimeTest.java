@@ -14,16 +14,30 @@
 
 package com.basistech.tclre;
 
-import java.util.List;
+import java.util.EnumSet;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * Created by benson on 5/29/14.
+ * some 'pons asinorum' tests to see if the runtime works at all.
  */
-class RegExp {
+public class SimpleRuntimeTest extends Assert {
 
-    long info;
-    int nsub;       /* number of subexpressions */
-    Guts guts;
-    List<RegMatch> matches;
-    RegMatch details;
+    RegExp compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
+        Compiler compiler = new Compiler(pattern, flags);
+        return compiler.compile();
+    }
+
+    boolean doMatch(RegExp exp, String input) throws RegexException {
+        Runtime runtime = new Runtime();
+        return runtime.exec(exp, input.toCharArray(), 0, input.length(), EnumSet.noneOf(ExecFlags.class));
+    }
+
+    @Test
+    public void testDontMatch() throws Exception {
+        RegExp exp = compile("fnord", EnumSet.of(PatternFlags.BASIC));
+        assertFalse(doMatch(exp, "boston"));
+    }
+
 }

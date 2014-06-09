@@ -17,6 +17,7 @@ package com.basistech.tclre;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 
 import com.google.common.base.Charsets;
@@ -63,8 +64,7 @@ public final class Grep {
 
     private void go() throws IOException, RegexException {
         // For now, internal hack to experiment with.
-        RegExp regexp = new RegExp(); // dummy
-        Compiler compiler = new Compiler(regexp, pattern, Flags.REG_ADVANCED);
+        Compiler compiler = new Compiler(pattern, EnumSet.of(PatternFlags.EXTENDED, PatternFlags.ADVANCED));
         compiler.compile();
 
         for (File input : inputs) {

@@ -52,6 +52,10 @@ final class Flags {
     static final int REG_UEMPTYMATCH = 004000;
     static final int REG_UIMPOSSIBLE = 010000;
     static final int REG_USHORTEST = 020000;
+
+    static final int REG_NOTBOL =  1;    /* BOS is not BOL */
+    static final int REG_NOTEOL =  2;    /* EOS is not EOL */
+
     private Flags() {
         //
     }

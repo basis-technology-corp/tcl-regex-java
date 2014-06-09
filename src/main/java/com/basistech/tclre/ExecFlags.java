@@ -14,16 +14,10 @@
 
 package com.basistech.tclre;
 
-import java.util.List;
-
 /**
- * Created by benson on 5/29/14.
+ * Created by benson on 6/9/14.
  */
-class RegExp {
-
-    long info;
-    int nsub;       /* number of subexpressions */
-    Guts guts;
-    List<RegMatch> matches;
-    RegMatch details;
+public enum ExecFlags {
+    NOTBOL,	/** BOS is not BOL */
+    NOTEOL; /** EOS is not EOL */
 }

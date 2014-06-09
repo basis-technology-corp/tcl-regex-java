@@ -78,6 +78,7 @@ class Dfa {
      * @return
      */
     StateSet miss(StateSet css, short co, int cp) {
+        LOG.debug(String.format("miss: %s %d %d", css, co, cp));
         if (css.outs[co] != null) {
             LOG.debug("hit!");
             return css.outs[co];
@@ -95,9 +96,12 @@ class Dfa {
                 int ax;
                 short caco;
                 int catarget;
-                for (ax = cnfa.states[i] + 1, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca);
-                        caco != Constants.COLORLESS;
-                        ax++, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca)) {
+                for (ax = cnfa.states[i] + 1,
+                        ca = cnfa.arcs[ax],
+                        caco = Cnfa.carcColor(ca),
+                        catarget = Cnfa.carcTarget(ca);
+                     caco != Constants.COLORLESS;
+                     ax++, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca)) {
 
                     if (caco == co) {
                         work.set(catarget, true);
@@ -109,7 +113,7 @@ class Dfa {
                         if (0 == Cnfa.carcColor(cnfa.arcs[cnfa.states[catarget]])) {
                             noprogress = false;
                         }
-                        LOG.debug(String.format("%d . %d", i, catarget));
+                        LOG.debug(String.format("%d -> %d", i, catarget));
                     }
                 }
             }
@@ -127,7 +131,7 @@ class Dfa {
                     for (ax = cnfa.states[i] + 1, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget
                             = Cnfa.carcTarget(ca);
                             caco != Constants.COLORLESS;
-                            ax++) {
+                            ax++, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca)) {
                         if (caco <= ncolors) {
                             continue; /* NOTE CONTINUE */
                         }
@@ -162,7 +166,7 @@ class Dfa {
             existingSet.states = work;
             existingSet.flags = ispost ? StateSet.POSTSTATE : 0;
             if (noprogress) {
-                existingSet.flags |= StateSet.POSTSTATE;
+                existingSet.flags |= StateSet.NOPROGRESS;
             }
             /* lastseen to be dealt with by caller */
             stateSets.put(work, existingSet);
@@ -211,10 +215,10 @@ class Dfa {
     /* startup */
         if (cp == runtime.startIndex) {
             co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
-            LOG.debug("color %d", co);
+            LOG.debug(String.format("color %d", co));
         } else {
             co = cm.getcolor(runtime.data[cp - 1]);
-            LOG.debug("char %c, color %d\n", runtime.data[cp - 1], co);
+            LOG.debug(String.format("char %c, color %d\n", runtime.data[cp - 1], co));
         }
         css = miss(css, co, cp);
         if (css == null) {
@@ -286,6 +290,8 @@ class Dfa {
         StateSet ss;
         StateSet css;
 
+        LOG.debug(" --- startup ---");
+
     /* initialize */
         css = initialize(start);
         cp = start;
@@ -296,8 +302,10 @@ class Dfa {
     /* startup */
         if (cp == runtime.startIndex) {
             co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
+            LOG.debug(String.format("color %d", co));
         } else {
             co = cm.getcolor(runtime.data[cp - 1]);
+            LOG.debug(String.format("char %c, color %d\n", runtime.data[cp - 1], co));
         }
         css = miss(css, co, cp);
         if (css == null) {

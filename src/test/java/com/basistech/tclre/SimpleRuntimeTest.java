@@ -36,8 +36,8 @@ public class SimpleRuntimeTest extends Assert {
 
     @Test
     public void testDontMatch() throws Exception {
-        RegExp exp = compile("fnord", EnumSet.of(PatternFlags.BASIC));
-        assertFalse(doMatch(exp, "boston"));
+        RegExp exp = compile("a", EnumSet.of(PatternFlags.BASIC));
+        assertFalse(doMatch(exp, "b"));
     }
 
 }

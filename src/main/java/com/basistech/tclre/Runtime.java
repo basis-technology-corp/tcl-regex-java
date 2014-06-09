@@ -107,7 +107,6 @@ class Runtime {
         close = s.shortest(startIndex, startIndex, endIndex, coldp, null);
         cold = coldp[0];
 
-
         if (0 != (g.cflags & Flags.REG_EXPECT)) {
             int dtstart;
             if (cold != -1) {

@@ -17,6 +17,8 @@ package com.basistech.tclre;
 import java.util.BitSet;
 import java.util.List;
 
+import com.google.common.base.Objects;
+
 /**
  * Runtime state set.
  * regexec.c
@@ -44,4 +46,11 @@ class StateSet {
         inchain = new Arcp[ncolors];
     }
 
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("states", states)
+                .add("flags", flags)
+                .toString();
+    }
 }

@@ -814,6 +814,9 @@ class Compiler {
             lex.next();
 
             if (cap != 0) {
+                while (subno >= subs.size()) {
+                    subs.add(null);
+                }
                 subs.set(subno, atom);
                 t = new Subre('(', atom.flags | Subre.CAP, lp, rp);
                 t.subno = subno;
@@ -875,7 +878,7 @@ class Compiler {
                     n = INFINITY;
                 }
                 if (m > n) {
-                    throw new RegexException("REG_BADBR");
+                    throw new RegexException("First quantity is larger than second quantity in {m,n} quantifier.");
                 }
             /* {m,n} exercises preference, even if it's {m,m} */
                 qprefer = (nextvalue != 0) ? Subre.LONGER : Subre.SHORTER;
@@ -885,7 +888,7 @@ class Compiler {
                 qprefer = 0;
             }
             if (!see('}')) {    /* catches errors too */
-                throw new RegexException("REG_BADBR");
+                throw new RegexException("Invalid syntax for {m,n} quantifier.");
             }
             lex.next();
             break;

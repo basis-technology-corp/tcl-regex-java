@@ -25,4 +25,32 @@ class RegMatch {
         this.start = start;
         this.end = end;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        RegMatch regMatch = (RegMatch)o;
+
+        if (end != regMatch.end) {
+            return false;
+        }
+        if (start != regMatch.start) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = start;
+        result = 31 * result + end;
+        return result;
+    }
 }

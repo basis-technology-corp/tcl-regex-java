@@ -15,7 +15,7 @@
 package com.basistech.tclre;
 
 /**
- * Created by benson on 6/9/14.
+ * Flags that control runtime execution.
  */
 public enum ExecFlags {
     NOTBOL,	/** BOS is not BOL */

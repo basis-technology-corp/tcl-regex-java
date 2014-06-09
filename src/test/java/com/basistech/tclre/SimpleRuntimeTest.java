@@ -34,6 +34,11 @@ public class SimpleRuntimeTest extends Assert {
         return runtime.exec(exp, input.toCharArray(), 0, input.length(), EnumSet.noneOf(ExecFlags.class));
     }
 
+    boolean doMatch(RegExp exp, String input, EnumSet<ExecFlags> flags) throws RegexException {
+        Runtime runtime = new Runtime();
+        return runtime.exec(exp, input.toCharArray(), 0, input.length(), flags);
+    }
+
     @Test
     public void testDontMatch() throws Exception {
         RegExp exp = compile("a", EnumSet.of(PatternFlags.BASIC));
@@ -46,4 +51,67 @@ public class SimpleRuntimeTest extends Assert {
         assertTrue(doMatch(exp, "a"));
     }
 
+    @Test
+    public void testSingleDotMatch() throws Exception {
+        RegExp exp = compile(".", EnumSet.of(PatternFlags.BASIC));
+        assertTrue(doMatch(exp, "a"));
+    }
+
+    @Test
+    public void testAlternation() throws Exception {
+        RegExp exp = compile("a|b", EnumSet.of(PatternFlags.ADVANCED));
+        assertTrue(doMatch(exp, "a"));
+        assertTrue(doMatch(exp, "b"));
+        assertFalse(doMatch(exp, "c"));
+    }
+
+    @Test
+    public void testMoreDots() throws Exception {
+        RegExp exp = compile("a.b..c", EnumSet.of(PatternFlags.BASIC));
+        assertTrue(doMatch(exp, "aXbYYc"));
+        assertFalse(doMatch(exp, "abYYc"));
+    }
+
+    @Test
+    public void testQuest() throws Exception {
+        // ? is advanced?
+        RegExp exp = compile("ab?c", EnumSet.of(PatternFlags.ADVANCED));
+        assertTrue(doMatch(exp, "abc"));
+        assertTrue(doMatch(exp, "ac"));
+        assertFalse(doMatch(exp, "abbc"));
+    }
+
+    @Test
+    public void testQuant() throws Exception {
+        // ? is advanced?
+        RegExp exp = compile("ab{1,2}c", EnumSet.of(PatternFlags.ADVANCED));
+        assertTrue(doMatch(exp, "abc"));
+        assertTrue(doMatch(exp, "XabcY"));
+        assertTrue(doMatch(exp, "abbc"));
+        assertFalse(doMatch(exp, "ac"));
+        assertFalse(doMatch(exp, "abbbc"));
+    }
+
+    @Test
+    public void testAnchors() throws Exception {
+        RegExp exp = compile("^abc$", EnumSet.of(PatternFlags.ADVANCED));
+        assertTrue(doMatch(exp, "abc"));
+        assertFalse(doMatch(exp, "XabcY"));
+
+        assertFalse(doMatch(exp, "abc", EnumSet.of(ExecFlags.NOTBOL)));
+        assertFalse(doMatch(exp, "abc", EnumSet.of(ExecFlags.NOTEOL)));
+    }
+
+    @Test
+    public void testCapture() throws Exception {
+        RegExp exp = compile("a(?:nonc+ap)b(ca+p)c([1-9]+)$", EnumSet.of(PatternFlags.ADVANCED));
+        //..............................0000000000111111111122
+        //..............................0123456789012345678901
+        boolean matched = doMatch(exp, "Xanonccapbcaapc1234567");
+        assertTrue(matched);
+        assertEquals(3, exp.matches.size());
+        assertEquals(new RegMatch(1, 22), exp.matches.get(0));
+        assertEquals(new RegMatch(10, 14), exp.matches.get(1));
+        assertEquals(new RegMatch(15, 22), exp.matches.get(2));
+    }
 }

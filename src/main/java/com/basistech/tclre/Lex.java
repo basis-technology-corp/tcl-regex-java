@@ -593,7 +593,7 @@ class Lex {
             if (0 != (v.cflags & Flags.REG_EXPANDED)) {
                 skip();
             }
-            if (ateos() || !iscdigit(charAtNowAdvance())) {
+            if (ateos() || !iscdigit(charAtNow())) {
                 note(Flags.REG_UBRACES);
                 note(Flags.REG_UUNSPEC);
                 return retv(Compiler.PLAIN, c);

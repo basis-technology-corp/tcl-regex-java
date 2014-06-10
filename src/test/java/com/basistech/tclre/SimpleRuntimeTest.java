@@ -25,8 +25,7 @@ import org.junit.Test;
 public class SimpleRuntimeTest extends Assert {
 
     RegExp compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
-        Compiler compiler = new Compiler(pattern, flags);
-        return compiler.compile();
+        return Compiler.compile(pattern, flags);
     }
 
     boolean doMatch(RegExp exp, String input) throws RegexException {
@@ -113,5 +112,13 @@ public class SimpleRuntimeTest extends Assert {
         assertEquals(new RegMatch(1, 22), exp.matches.get(0));
         assertEquals(new RegMatch(10, 14), exp.matches.get(1));
         assertEquals(new RegMatch(15, 22), exp.matches.get(2));
+    }
+
+    @Test
+    public void testLookahead() throws Exception {
+        RegExp exp = compile("^[^:]+(?=.*\\.com$)", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        boolean matched = doMatch(exp, "http://www.activestate.com");
+        assertTrue(matched);
+        assertEquals(2, exp.matches.size());
     }
 }

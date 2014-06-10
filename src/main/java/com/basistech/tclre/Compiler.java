@@ -84,7 +84,7 @@ class Compiler {
      * @param pattern
      * @param flags
      */
-    Compiler(String pattern, EnumSet<PatternFlags> flags) {
+    private Compiler(String pattern, EnumSet<PatternFlags> flags) {
 
         if (flags.contains(PatternFlags.QUOTE)
                 && (flags.contains(PatternFlags.ADVANCED)
@@ -143,29 +143,19 @@ class Compiler {
         lex = new Lex(this);
     }
 
-    static int pair(int a, int b) {
-        return a * 4 + b;
+    /**
+     * The official API into this class.
+     * @param pattern the pattern
+     * @param flags the flags
+     * @return the regexp
+     * @throws RegexException
+     */
+    static RegExp compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
+        Compiler that = new Compiler(pattern, flags);
+        return that.compile();
     }
 
-    static int reduce(int x) {
-        if (x == INFINITY) {
-            return INF;
-        } else if (x > 1) {
-            return SOME;
-        } else {
-            return x;
-        }
-    }
-
-    char newline() {
-        return '\n';
-    }
-
-    boolean see(int t) {
-        return nexttype == t;
-    }
-
-    RegExp compile() throws RegexException {
+    private RegExp compile() throws RegexException {
         stop = pattern.length;
         nlcolor = Constants.COLORLESS;
         re = new RegExp();
@@ -242,6 +232,28 @@ class Compiler {
 
         re.guts.lacons = lacons;
         return re;
+    }
+
+    static int pair(int a, int b) {
+        return a * 4 + b;
+    }
+
+    static int reduce(int x) {
+        if (x == INFINITY) {
+            return INF;
+        } else if (x > 1) {
+            return SOME;
+        } else {
+            return x;
+        }
+    }
+
+    char newline() {
+        return '\n';
+    }
+
+    boolean see(int t) {
+        return nexttype == t;
     }
 
     static class Comparer implements SubstringComparator {
@@ -751,7 +763,7 @@ class Compiler {
             lex.next();
             s = nfa.newstate();
             s2 = nfa.newstate();
-            t = parse(')', LACON, s, s2);
+            parse(')', LACON, s, s2); // parse for side-effect.
             assert see(')');
             lex.next();
             n = newlacon(s, s2, pos);

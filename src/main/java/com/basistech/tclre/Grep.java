@@ -36,6 +36,7 @@ public final class Grep {
     String pattern;
     @Argument(index = 1)
     List<File> inputs;
+    private RegExp re;
 
     private Grep() {
         //
@@ -63,10 +64,7 @@ public final class Grep {
     }
 
     private void go() throws IOException, RegexException {
-        // For now, internal hack to experiment with.
-        Compiler compiler = new Compiler(pattern, EnumSet.of(PatternFlags.EXTENDED, PatternFlags.ADVANCED));
-        compiler.compile();
-
+        re = Compiler.compile(pattern, EnumSet.of(PatternFlags.EXTENDED, PatternFlags.ADVANCED));
         for (File input : inputs) {
             processFile(input);
         }

@@ -162,8 +162,11 @@ class Runtime {
             details = new RegMatch(dtstart, endIndex);
         }
 
-        // Unlike C, always find and return matches.
-        return dissect(g.tree, begin, end);
+        if (re.nsub > 0) { // no need to do the work.
+            return dissect(g.tree, begin, end);
+        } else {
+            return true;
+        }
     }
 
 

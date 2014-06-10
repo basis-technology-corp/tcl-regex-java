@@ -128,8 +128,7 @@ class Dfa {
                     int ax;
                     short caco;
                     int catarget;
-                    for (ax = cnfa.states[i] + 1, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget
-                            = Cnfa.carcTarget(ca);
+                    for (ax = cnfa.states[i] + 1, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca);
                             caco != Constants.COLORLESS;
                             ax++, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca)) {
                         if (caco <= ncolors) {
@@ -185,7 +184,7 @@ class Dfa {
         int end;
 
         int n = co - cnfa.ncolors;
-        assert n > runtime.g.lacons.size() && runtime.g.lacons.size() != 0;
+        assert n < runtime.g.lacons.size();
         Subre sub = runtime.g.lacons.get(n);
         Dfa d = new Dfa(runtime, sub.cnfa);
         end = d.longest(cp, runtime.endIndex, null);

@@ -20,20 +20,31 @@ import com.google.common.base.Objects;
  * Arc
  */
 class Arc {
-    int type;
+    final int type;
     short co;
-    State from; /* where it's from (and contained within) */
-    State to;   /* where it's to */
+    final State from; /* where it's from (and contained within) */
+    final State to;   /* where it's to */
     Arc outchain;   /* *from's outs chain or free chain */
     //define    freechain   outchain
     Arc inchain;    /* *to's ins chain */
     Arc colorchain; /* color's arc chain */
+
+    Arc(int type, short co, State from, State to) {
+        this.type = type;
+        this.co = co;
+        this.from = from;
+        this.to = to;
+    }
 
     /**
      * is an arc colored, and hence on a color chain?
      */
     boolean colored() {
         return type == Compiler.PLAIN || type == Compiler.AHEAD || type == Compiler.BEHIND;
+    }
+
+    void setColor(short co) {
+        this.co = co;
     }
 
     @Override

@@ -91,18 +91,16 @@ class Runtime {
      * find - find a match for the main NFA (no-complications case)
      */
     boolean find(Cnfa cnfa) {
-        Dfa s;
-        Dfa d;
         int begin;
         int end = -1;
         int cold;
         int open;		/* open and close of range of possible starts */
         int close;
         boolean hitend;
-        boolean shorter = 0 != (g.tree.flags & Subre.SHORTER);
+        boolean shorter = 0 == (g.tree.flags & Subre.SHORTER);
 
     /* first, a shot with the search RE */
-        s = new Dfa(this, g.search);
+        Dfa s = new Dfa(this, g.search);
         int[] coldp = new int[1];
         close = s.shortest(startIndex, startIndex, endIndex, coldp, null);
         cold = coldp[0];
@@ -120,16 +118,13 @@ class Runtime {
         if (close == -1) {		/* not found */
             return false;
         }
-        if (match.size() == 0) {	/* found, don't need exact location */
-            return true;
-        }
 
     /* find starting point and match */
         assert cold != -1;
         open = cold;
 
         cold = -1;
-        d = new Dfa(this, cnfa);
+        Dfa d = new Dfa(this, cnfa);
         for (begin = open; begin <= close; begin++) {
             boolean[] hitendp = new boolean[1];
             if (shorter) {
@@ -174,12 +169,10 @@ class Runtime {
      * cfind - find a match for the main NFA (with complications)
      */
     boolean cfind(Cnfa cnfa) {
-        Dfa s;
-        Dfa d;
         int[] cold = new int[1];
 
-        s = new Dfa(this, g.search);
-        d = new Dfa(this, cnfa);
+        Dfa s = new Dfa(this, g.search);
+        Dfa d = new Dfa(this, cnfa);
 
         boolean ret = cfindloop(cnfa, d, s, cold);
 

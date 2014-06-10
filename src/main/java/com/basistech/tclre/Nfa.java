@@ -87,11 +87,7 @@ class Nfa {
             }
         }
 
-        a = new Arc();
-        a.type = t;
-        a.co = co;
-        a.to = to;
-        a.from = from;
+        a = new Arc(t, co, from, to);
 
     /*
      * Put the new arc on the beginning, not the end, of the chains.
@@ -385,8 +381,6 @@ class Nfa {
      * dumpnfa - dump an NFA in human-readable form
      */
     void dumpnfa() {
-        State s;
-
         if (!LOG.isDebugEnabled()) {
             return;
         }
@@ -408,7 +402,7 @@ class Nfa {
         }
         LOG.debug(sb.toString());
 
-        for (s = states; s != null; s = s.next) {
+        for (State s = states; s != null; s = s.next) {
             dumpstate(s);
         }
         if (parent == null) {
@@ -466,8 +460,7 @@ class Nfa {
      *
      * @return resulting print position
      */
-    int
-    dumprarcs(Arc a, State s, int pos, StringBuilder sb) {
+    int dumprarcs(Arc a, State s, int pos, StringBuilder sb) {
         if (a.outchain != null) {
             pos = dumprarcs(a.outchain, s, pos, sb);
         }

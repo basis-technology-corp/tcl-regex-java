@@ -384,7 +384,7 @@ class ColorMap {
                     assert a.co == co;
                 /* uncolorchain(cm, a); */
                     cd.arcs = a.colorchain;
-                    a.co = sco;
+                    a.setColor(sco);
                 /* colorchain(cm, a); */
                     a.colorchain = scd.arcs;
                     scd.arcs = a;
@@ -505,7 +505,9 @@ class ColorMap {
         char c;
         String has;
 
-        LOG.debug("colorDescs.size() {}", colorDescs.size());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("colorDescs.size() {}", colorDescs.size());
+        }
         fillcheck(0);
 
         for (co = 1; co < colorDescs.size(); co++) {
@@ -548,7 +550,8 @@ class ColorMap {
         for (i = Constants.BYTTAB - 1; i >= 0; i--) {
             t = tree[0].ptrs[i];
             if (t == null) {
-                LOG.debug("NULL found in filled tree!\n");
+                // this might not be an error, it was just a debug message in c.
+                throw new RuntimeException("null in filled tree");
             } else if (t == fillt) {
                 // do nothing
             } else if (level < Constants.NBYTS - 2) /* more pointer blocks below */ {

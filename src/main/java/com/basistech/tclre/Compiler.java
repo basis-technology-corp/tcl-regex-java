@@ -185,16 +185,21 @@ class Compiler {
     /* finish setup of nfa and its subre tree */
         nfa.specialcolors();
 
-        LOG.debug("========= RAW ==========");
-        nfa.dumpnfa();
-        LOG.debug(tree.dumpst(true));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("========= RAW ==========");
+            nfa.dumpnfa();
+            LOG.debug(tree.dumpst(true));
+        }
 
         optst(tree);
         ntree = numst(tree, 1);
         markst(tree);
         cleanst();
-        LOG.debug("========= TREE FIXED ==========");
-        LOG.debug(tree.dumpst(true));
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("========= TREE FIXED ==========");
+            LOG.debug(tree.dumpst(true));
+        }
 
     /* build compacted NFAs for tree and lacons */
         re.info |= nfatree(tree);
@@ -210,7 +215,9 @@ class Compiler {
         }
 
     /* build compacted NFAs for tree, lacons, fast search */
-        LOG.debug("========= SEARCH ==========");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("========= SEARCH ==========");
+        }
     /* can sacrifice main NFA now, so use it as work area */
         nfa.optimize();
         makesearch(nfa);
@@ -536,7 +543,9 @@ class Compiler {
 
         assert t.begin != null;
 
-        LOG.debug(String.format("========= TREE NODE %s ==========", t.shortId()));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(String.format("========= TREE NODE %s ==========", t.shortId()));
+        }
 
         Nfa newNfa = new Nfa(nfa);
         newNfa.dupnfa(t.begin, t.end, newNfa.init, newNfa.finalState);
@@ -1450,7 +1459,7 @@ class Compiler {
         Subre sub = new Subre((char)0, 0, begin, end);
         sub.subno = pos;
         lacons.add(sub);
-        return lacons.size();
+        return lacons.size() - 1; // it's the index into the array, -1.
     }
 
     /**

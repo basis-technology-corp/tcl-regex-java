@@ -78,9 +78,13 @@ class Dfa {
      * @return
      */
     StateSet miss(StateSet css, short co, int cp) {
-        LOG.debug(String.format("miss: %s %d %d", css, co, cp));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(String.format("miss: %s %d %d", css, co, cp));
+        }
         if (css.outs[co] != null) {
-            LOG.debug("hit!");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("hit!");
+            }
             return css.outs[co];
         }
 
@@ -113,7 +117,9 @@ class Dfa {
                         if (0 == Cnfa.carcColor(cnfa.arcs[cnfa.states[catarget]])) {
                             noprogress = false;
                         }
-                        LOG.debug(String.format("%d -> %d", i, catarget));
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug(String.format("%d -> %d", i, catarget));
+                        }
                     }
                 }
             }
@@ -149,7 +155,10 @@ class Dfa {
                         if (0 == Cnfa.carcColor(cnfa.arcs[cnfa.states[catarget]])) {
                             noprogress = false;
                         }
-                        LOG.debug("%d :> %d", i, catarget);
+
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("%d :> %d", i, catarget);
+                        }
                     }
                 }
             }
@@ -184,6 +193,10 @@ class Dfa {
         int end;
 
         int n = co - cnfa.ncolors;
+        // compare this to com.basistech.tclre.Nfa.compact(), the LACONS case.
+        // that adds a.co to ncolors. So that means that you'd think that the lacons
+        // indexing would be related... The 'arc' should have a 'color' which is an index
+        // into lacon.
         assert n < runtime.g.lacons.size();
         Subre sub = runtime.g.lacons.get(n);
         Dfa d = new Dfa(runtime, sub.cnfa);
@@ -203,7 +216,9 @@ class Dfa {
         StateSet css;
         int post;
 
-        LOG.debug("+++ startup +++");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("+++ startup +++");
+        }
 
     /* initialize */
         css = initialize(start);
@@ -216,10 +231,14 @@ class Dfa {
     /* startup */
         if (cp == runtime.startIndex) {
             co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
-            LOG.debug(String.format("color %d", co));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("color %d", co));
+            }
         } else {
             co = cm.getcolor(runtime.data[cp - 1]);
-            LOG.debug(String.format("char %c, color %d\n", runtime.data[cp - 1], co));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("char %c, color %d\n", runtime.data[cp - 1], co));
+            }
         }
         css = miss(css, co, cp);
         if (css == null) {
@@ -244,15 +263,18 @@ class Dfa {
         }
 
     /* shutdown */
-
-        LOG.debug(String.format("+++ shutdown +++ at %s", css));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(String.format("+++ shutdown +++ at %s", css));
+        }
 
         if (cp == runtime.endIndex && stop == runtime.endIndex) {
             if (hitstopp != null) {
                 hitstopp[0] = true;
             }
             co = cnfa.eos[0 != (runtime.eflags & Flags.REG_NOTEOL) ? 0 : 1];
-            LOG.debug(String.format("color %d", co));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("color %d", co));
+            }
             ss = miss(css, co, cp);
         /* special case:  match ended at eol? */
             if (ss != null && (0 != (ss.flags & StateSet.POSTSTATE))) {
@@ -295,7 +317,9 @@ class Dfa {
         StateSet ss;
         StateSet css;
 
-        LOG.debug(" --- startup ---");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(" --- startup ---");
+        }
 
     /* initialize */
         css = initialize(start);
@@ -307,10 +331,14 @@ class Dfa {
     /* startup */
         if (cp == runtime.startIndex) {
             co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
-            LOG.debug(String.format("color %d", co));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("color %d", co));
+            }
         } else {
             co = cm.getcolor(runtime.data[cp - 1]);
-            LOG.debug(String.format("char %c, color %d\n", runtime.data[cp - 1], co));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("char %c, color %d\n", runtime.data[cp - 1], co));
+            }
         }
         css = miss(css, co, cp);
         if (css == null) {

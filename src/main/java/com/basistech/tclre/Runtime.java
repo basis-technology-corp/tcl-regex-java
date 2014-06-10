@@ -162,10 +162,7 @@ class Runtime {
             details = new RegMatch(dtstart, endIndex);
         }
 
-        if (match.size() == 1) { /* no need for submatches */
-            return true;
-        }
-
+        // Unlike C, always find and return matches.
         return dissect(g.tree, begin, end);
     }
 
@@ -362,8 +359,8 @@ class Runtime {
 
     /* satisfaction */
         boolean dissectMatch = dissect(t.left, begin, mid);
-        if (dissectMatch) {
-            return true;
+        if (!dissectMatch) {
+            return false;
         }
         return dissect(t.right, mid, end);
     }

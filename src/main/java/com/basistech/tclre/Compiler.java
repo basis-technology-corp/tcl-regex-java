@@ -63,6 +63,7 @@ class Compiler {
     int nexttype;       /* type of next token */
     int nextvalue;      /* value (if any) of next token */
     int lexcon;     /* lexical context type (see lex.c) */
+    int nsubs;     /* number of substitutions */
     List<Subre> subs;   /* subRE pointer vector */
     Nfa nfa;    /* the NFA */
     ColorMap cm;    /* character color map */
@@ -665,7 +666,7 @@ class Compiler {
         Subre atom; /* atom's subtree */
         Subre t;
 
-        int cap;        /* capturing parens? */
+        boolean cap;    /* capturing parens? */
         int pos;        /* positive lookahead? */
         int subno;      /* capturing-parens or backref number */
         int atomtype;
@@ -794,10 +795,13 @@ class Compiler {
             break;
     /* and finally the ugly stuff */
         case '(':   /* value flags as capturing or non */
-            cap = (type == LACON) ? 0 : nextvalue;
-            if (0 != cap) {
-                subs.add(null); // gets filled in.
-                subno = subs.size();
+            if (type == LACON) {
+                cap = false;
+            } else {
+                cap = nextvalue != 0;
+            }
+            if (cap) {
+                subno = subs.size() + 1; // first subno is 1.
             } else {
                 atomtype = PLAIN;   /* something that's not '(' */
             }
@@ -813,11 +817,9 @@ class Compiler {
             assert see(')');
             lex.next();
 
-            if (cap != 0) {
-                while (subno >= subs.size()) {
-                    subs.add(null);
-                }
-                subs.set(subno, atom);
+            if (cap) {
+                assert subs.size() == subno - 1;
+                subs.add(atom);
                 t = new Subre('(', atom.flags | Subre.CAP, lp, rp);
                 t.subno = subno;
                 t.left = atom;
@@ -903,7 +905,8 @@ class Compiler {
     /* annoying special case:  {0} or {0,0} cancels everything */
         if (m == 0 && n == 0) {
             if (atomtype == '(') {
-                subs.set(subno, null);
+                assert subno == subs.size() - 1;
+                subs.remove(subs.size() - 1);
             }
             delsub(nfa, lp, rp);
             nfa.emptyarc(lp, rp);

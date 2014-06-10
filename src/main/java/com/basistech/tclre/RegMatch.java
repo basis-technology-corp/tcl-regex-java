@@ -14,6 +14,8 @@
 
 package com.basistech.tclre;
 
+import com.google.common.base.Objects;
+
 /**
  * Created by benson on 6/5/14.
  */
@@ -52,5 +54,13 @@ class RegMatch {
         int result = start;
         result = 31 * result + end;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("start", start)
+                .add("end", end)
+                .toString();
     }
 }

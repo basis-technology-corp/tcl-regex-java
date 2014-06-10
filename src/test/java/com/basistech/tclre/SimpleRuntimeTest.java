@@ -17,6 +17,7 @@ package com.basistech.tclre;
 import java.util.EnumSet;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -115,9 +116,27 @@ public class SimpleRuntimeTest extends Assert {
     }
 
     @Test
+    public void testClasses() throws Exception {
+        //[[:digit:]]
+        RegExp exp = compile("[[:digit:]+]", EnumSet.of(PatternFlags.ADVANCED));
+        assertTrue(doMatch(exp, "1234567890"));
+        assertTrue(doMatch(exp, "1234567890a"));
+    }
+
+    @Ignore
+    @Test
     public void testLookahead() throws Exception {
         RegExp exp = compile("^[^:]+(?=.*\\.com$)", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED));
         boolean matched = doMatch(exp, "http://www.activestate.com");
+        assertTrue(matched);
+        assertEquals(2, exp.matches.size());
+    }
+
+    @Ignore
+    @Test
+    public void testSimpleLookahead() throws Exception {
+        RegExp exp = compile("^a(?=bc$)", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        boolean matched = doMatch(exp, "abc");
         assertTrue(matched);
         assertEquals(2, exp.matches.size());
     }

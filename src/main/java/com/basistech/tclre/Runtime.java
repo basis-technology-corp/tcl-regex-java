@@ -97,7 +97,7 @@ class Runtime {
         int open;		/* open and close of range of possible starts */
         int close;
         boolean hitend;
-        boolean shorter = 0 == (g.tree.flags & Subre.SHORTER);
+        boolean shorter = 0 != (g.tree.flags & Subre.SHORTER);
 
     /* first, a shot with the search RE */
         Dfa s = new Dfa(this, g.search);

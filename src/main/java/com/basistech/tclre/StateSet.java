@@ -15,7 +15,6 @@
 package com.basistech.tclre;
 
 import java.util.BitSet;
-import java.util.List;
 
 import com.google.common.base.Objects;
 
@@ -50,7 +49,8 @@ class StateSet {
     public String toString() {
         return Objects.toStringHelper(this)
                 .add("states", states)
-                .add("flags", flags)
+                .add("flags", Integer.toHexString(flags))
+                .add("lastseen", lastseen)
                 .toString();
     }
 }

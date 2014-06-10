@@ -15,12 +15,12 @@
 package com.basistech.tclre;
 
 import java.util.BitSet;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 /**
  * Runtime DFA.
@@ -32,7 +32,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  */
 class Dfa {
     static final Logger LOG = LoggerFactory.getLogger(Dfa.class);
-    Map<BitSet, StateSet> stateSets;
+
+    Object2ObjectLinkedOpenHashMap<BitSet, StateSet> stateSets;
     int nstates;
     int ncolors; // length of outarc and inchain vectors (really?)
     Cnfa cnfa;
@@ -46,7 +47,13 @@ class Dfa {
         this.runtime = runtime;
         this.cm = runtime.g.cm;
         this.cnfa = cnfa;
-        stateSets = new Object2ObjectOpenHashMap<BitSet, StateSet>();
+        /*
+         * To match the C behavior, we need to preserve insertion order.
+         * Note that there's a pretty big assumption here that we can punt
+         * the LRU-ish cache of C in favor of just letting them build up.
+         * When Regexing through a large text this may not work so well.
+         */
+        stateSets = new Object2ObjectLinkedOpenHashMap<BitSet, StateSet>();
         nstates = cnfa.nstates;
         ncolors = cnfa.ncolors;
     }
@@ -168,25 +175,26 @@ class Dfa {
             return null;
         }
 
-        StateSet existingSet = stateSets.get(work);
-        if (existingSet == null) {
-            existingSet = new StateSet(nstates, ncolors);
-            existingSet.states = work;
-            existingSet.flags = ispost ? StateSet.POSTSTATE : 0;
+        StateSet stateSet = stateSets.get(work);
+        if (stateSet == null) {
+            stateSet = new StateSet(nstates, ncolors);
+            stateSet.ins = new Arcp(null, Constants.WHITE);
+            stateSet.states = work;
+            stateSet.flags = ispost ? StateSet.POSTSTATE : 0;
             if (noprogress) {
-                existingSet.flags |= StateSet.NOPROGRESS;
+                stateSet.flags |= StateSet.NOPROGRESS;
             }
             /* lastseen to be dealt with by caller */
-            stateSets.put(work, existingSet);
+            stateSets.put(work, stateSet);
         }
 
         if (!sawlacons) {
-            css.outs[co] = existingSet;
-            css.inchain[co] = existingSet.ins;
-            existingSet.ins = new Arcp(css, co);
+            css.outs[co] = stateSet;
+            css.inchain[co] = stateSet.ins;
+            stateSet.ins = new Arcp(css, co);
         }
 
-        return existingSet;
+        return stateSet;
     }
 
     boolean lacon(int cp, short co) {
@@ -286,7 +294,10 @@ class Dfa {
 
     /* find last match, if any */
         post = lastpost;
-        for (StateSet thisSS : stateSets.values()) {
+        ObjectIterator<Object2ObjectMap.Entry<BitSet, StateSet>> it = stateSets.object2ObjectEntrySet().fastIterator();
+        while (it.hasNext()) {
+            StateSet thisSS = it.next().getValue();
+            System.out.println(thisSS);
             if (0 != (thisSS.flags & StateSet.POSTSTATE) && post != thisSS.lastseen
                     && (post == -1 || post < thisSS.lastseen)) {
                 post = thisSS.lastseen;
@@ -325,7 +336,7 @@ class Dfa {
         css = initialize(start);
         cp = start;
         if (hitstop != null) {
-            hitstop[0] = true;
+            hitstop[0] = false;
         }
 
     /* startup */
@@ -340,10 +351,12 @@ class Dfa {
                 LOG.debug(String.format("char %c, color %d\n", runtime.data[cp - 1], co));
             }
         }
+
         css = miss(css, co, cp);
         if (css == null) {
             return -1;
         }
+
         css.lastseen = cp;
         ss = css;
 
@@ -407,24 +420,15 @@ class Dfa {
             nopr = runtime.startIndex;
         }
 
-        for (StateSet ss : stateSets.values()) {
+        ObjectIterator<Object2ObjectMap.Entry<BitSet, StateSet>> it = stateSets.object2ObjectEntrySet().fastIterator();
+        while (it.hasNext()) {
+            Object2ObjectMap.Entry<BitSet, StateSet> entry = it.next();
+            StateSet ss = entry.getValue();
             if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.lastseen) {
                 nopr = ss.lastseen;
             }
         }
         return nopr;
-    }
-
-
-    /**
-     * pickss - pick the next stateset to be used
-     * This just makes a new one until and unless we decide
-     * to reinvent the cache.
-     */
-    StateSet pickss(int cp, int start) {
-        StateSet result = new StateSet(nstates, ncolors);
-        result.ins = new Arcp(null, Constants.WHITE);
-        return result;
     }
 }
 

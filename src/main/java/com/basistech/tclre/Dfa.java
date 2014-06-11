@@ -24,23 +24,18 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 /**
  * Runtime DFA.
- * Since we are not going to implement REG_SMALL,
- * the 'cache' in here is simply allowed to be a map
- * from state bitmaps to state sets. If we manage
- * to use enough memory to raise an eyebrow, we can
- * reconsider.
  */
 class Dfa {
     static final Logger LOG = LoggerFactory.getLogger(Dfa.class);
 
-    Object2ObjectLinkedOpenHashMap<BitSet, StateSet> stateSets;
-    int nstates;
-    int ncolors; // length of outarc and inchain vectors (really?)
-    Cnfa cnfa;
-    ColorMap cm;
+    final Object2ObjectLinkedOpenHashMap<BitSet, StateSet> stateSets;
+    final int nstates;
+    final int ncolors; // length of outarc and inchain vectors (really?)
+    final Cnfa cnfa;
+    final ColorMap cm;
     int lastpost; 	/* location of last cache-flushed success */
     int lastnopr; 	/* location of last cache-flushed NOPROGRESS */
-    Runtime runtime;
+    final Runtime runtime;
 
 
     Dfa(Runtime runtime, Cnfa cnfa) {
@@ -48,10 +43,11 @@ class Dfa {
         this.cm = runtime.g.cm;
         this.cnfa = cnfa;
         /*
-         * To match the C behavior, we need to preserve insertion order.
-         * Note that there's a pretty big assumption here that we can punt
-         * the LRU-ish cache of C in favor of just letting them build up.
-         * When Regexing through a large text this may not work so well.
+         * To match the C behavior, Benson convinced himself that we needed
+         * to preserve insertion order. He might have been wrong.
+         * Note that this isn't a cache;
+         * Benson believes that the maximum size here is proportional
+           * to the complexity of the machine, not to the input.
          */
         stateSets = new Object2ObjectLinkedOpenHashMap<BitSet, StateSet>();
         nstates = cnfa.nstates;

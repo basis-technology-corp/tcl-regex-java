@@ -49,19 +49,6 @@ class Cnfa {
         this.states = new int[nstates];
     }
 
-    boolean nullcnfa() {
-        return nstates == 0;
-    }
-
-    /*
- * definitions for compacted NFA
-    struct carc {
-        color co;		 COLORLESS is list terminator
-        int to;			 state number
-    };
-     */
-
-
     void setState(int index, int arcIndex) {
         states[index] = arcIndex;
     }

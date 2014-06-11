@@ -21,24 +21,23 @@ import org.slf4j.LoggerFactory;
  * Nfa representation.
  */
 class Nfa {
-    static final int INCOMPATIBLE = 1;
-    static final int SATISFIED = 2;
-    static final int COMPATIBLE = 3;
     private static final Logger LOG = LoggerFactory.getLogger(Nfa.class);
-    State pre;  /* pre-initial state */
-    State init; /* initial state */
-    State finalState;   /* final state */
-    State post; /* post-final state */
-    int nstates;        /* for numbering states */
-    State states;   /* state-chain header */
-    State slast;    /* tail of the chain */
-    ColorMap cm;    /* the color map */
-    short[] bos = new short[2];     /* colors, if any, assigned to BOS and BOL */
-    short[] eos = new short[2];     /* colors, if any, assigned to EOS and EOL */
+    private static final int INCOMPATIBLE = 1;
+    private static final int SATISFIED = 2;
+    private static final int COMPATIBLE = 3;
+
+    final State pre;  /* pre-initial state */
+    final State init; /* initial state */
+    final State finalState;   /* final state */
+    final State post; /* post-final state */
+    final ColorMap cm;    /* the color map */
+    final short[] bos = new short[2];     /* colors, if any, assigned to BOS and BOL */
+    final short[] eos = new short[2];     /* colors, if any, assigned to EOS and EOL */
     //
-    // may not be wanted ...
-    Compiler v;     /* simplifies compile error reporting */
-    Nfa parent; /* parent NFA, if any */
+    final Nfa parent; /* parent NFA, if any */
+    private State states;   /* state-chain header */
+    private State slast;    /* tail of the chain */
+    private int nstates;        /* for numbering states */
 
     /**
      * New Nfa at the top level.
@@ -46,17 +45,16 @@ class Nfa {
      * @param cm
      */
     Nfa(ColorMap cm) {
-        this.cm = cm;
-        commoninit();
+        this(null, cm);
     }
 
     Nfa(Nfa parent) {
-        this.parent = parent;
-        this.cm = parent.cm;
-        commoninit();
+        this(parent, parent.cm);
     }
 
-    private void commoninit() {
+    private Nfa(Nfa parent, ColorMap cm) {
+        this.parent = parent;
+        this.cm = cm;
         nstates = 0;
         bos[1] = Constants.COLORLESS;
         bos[0] = bos[1];

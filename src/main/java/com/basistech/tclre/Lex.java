@@ -379,12 +379,12 @@ class Lex {
                 return ret(Compiler.EOS);
             case L_EBND:
             case L_BBND:
-                throw new RegexException("REG_EBRACE");
+                throw new RegexException("Unbalanced braces.");
             case L_BRACK:
             case L_CEL:
             case L_ECL:
             case L_CCL:
-                throw new RegexException("REG_EBRACK");
+                throw new RegexException("Unbalanced brackets.");
             }
             assert false;
         }

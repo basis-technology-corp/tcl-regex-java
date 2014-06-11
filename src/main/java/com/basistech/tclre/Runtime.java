@@ -42,7 +42,8 @@ class Runtime {
     /**
      * exec - match regular expression
      */
-    boolean exec(RegExp re, char[] data, int startIndex, int endIndex, EnumSet<ExecFlags> execFlags) throws RegexException {
+    boolean exec(RegExp re, char[] data, int startIndex, int endIndex, EnumSet<ExecFlags> execFlags)
+            throws RegexException {
     /* sanity checks */
     /* setup */
 
@@ -52,7 +53,7 @@ class Runtime {
 
         eflags = 0;
         for (ExecFlags ef : execFlags) {
-            switch(ef) {
+            switch (ef) {
             case NOTBOL:
                 eflags |= Flags.REG_NOTBOL;
                 break;
@@ -105,15 +106,13 @@ class Runtime {
         close = s.shortest(startIndex, startIndex, endIndex, coldp, null);
         cold = coldp[0];
 
-        if (0 != (g.cflags & Flags.REG_EXPECT)) {
-            int dtstart;
-            if (cold != -1) {
-                dtstart = cold;
-            } else {
-                dtstart = endIndex;
-            }
-            details = new RegMatch(dtstart, endIndex);
+        int dtstart;
+        if (cold != -1) {
+            dtstart = cold;
+        } else {
+            dtstart = endIndex;
         }
+        details = new RegMatch(dtstart, endIndex);
 
         if (close == -1) {		/* not found */
             return false;
@@ -147,15 +146,12 @@ class Runtime {
         /* and pin down details */
         match.set(0, new RegMatch(begin, end));
 
-        if (0 != (g.cflags & Flags.REG_EXPECT)) {
-            int dtstart;
-            if (cold != -1) {
-                dtstart = cold;
-            } else {
-                dtstart = endIndex;
-            }
-            details = new RegMatch(dtstart, endIndex);
+        if (cold != -1) {
+            dtstart = cold;
+        } else {
+            dtstart = endIndex;
         }
+        details = new RegMatch(dtstart, endIndex);
 
         if (re.nsub > 0) { // no need to do the work.
             return dissect(g.tree, begin, end);
@@ -339,19 +335,19 @@ class Runtime {
     /* iterate until satisfaction or failure */
         while (d2.longest(mid, end, null) != end) {
         /* that midpoint didn't work, find a new one */
-        if (mid == stop) {
+            if (mid == stop) {
             /* all possibilities exhausted! */
-            throw new RuntimeException("no midpoint");
+                throw new RuntimeException("no midpoint");
+            }
+            if (shorter) {
+                mid = d.shortest(begin, mid + 1, end, null, null);
+            } else {
+                mid = d.longest(begin, mid - 1, null);
+            }
+            if (mid == -1) {
+                throw new RuntimeException("Failed midpoint");
+            }
         }
-        if (shorter) {
-            mid = d.shortest(begin, mid + 1, end, null, null);
-        } else {
-            mid = d.longest(begin, mid - 1, null);
-        }
-        if (mid == -1) {
-            throw new RuntimeException("Failed midpoint");
-        }
-    }
 
     /* satisfaction */
         boolean dissectMatch = dissect(t.left, begin, mid);
@@ -372,7 +368,7 @@ class Runtime {
         assert t.op == '|';
 
         for (i = 0; t != null; t = t.right, i++) {
-            assert(t.left != null && t.left.cnfa.nstates > 0);
+            assert (t.left != null && t.left.cnfa.nstates > 0);
             d = new Dfa(this, t.left.cnfa);
             if (d.longest(begin, end, null) == end) {
                 return dissect(t.left, begin, end);
@@ -380,7 +376,6 @@ class Runtime {
         }
         throw new RuntimeException("none matched");
     }
-
 
 
     /**
@@ -492,7 +487,8 @@ class Runtime {
         }
         if (t.left != null) {
             zapmem(t.left);
-        } if (t.right != null) {
+        }
+        if (t.right != null) {
             zapmem(t.right);
         }
     }
@@ -556,7 +552,6 @@ class Runtime {
     /* satisfaction */
         return true;
     }
-
 
 
     /**

@@ -24,4 +24,9 @@ problem into smaller DFA problem.
 In Java, the runtime is a combination of Runtime, RegExp, and some data stored in Guts. This is a reflection
 of the C code structure; over time we should be evolving all of this into the RegExp class, I think.
 
+## TODO? ##
 
+The C code has this LRU cache on ssets, corresponding to Java StateSets. In Java, we just keep allocating
+them. The risk here is that it they might amount to too much memory when a complex expression is applied
+to a large input. But the maximum size is related to the complexity of the machine, not the input (I think) 
+so we may get away with this.

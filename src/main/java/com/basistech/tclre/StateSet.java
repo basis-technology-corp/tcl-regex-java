@@ -52,7 +52,6 @@ class StateSet {
     }
 
     void setLastSeen(int lastseen) {
-        System.out.format("%s lastseen <- %d\n", this, lastseen);
         this.lastseen = lastseen;
     }
 

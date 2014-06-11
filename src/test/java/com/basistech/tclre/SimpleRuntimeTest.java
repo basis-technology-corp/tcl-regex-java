@@ -139,4 +139,22 @@ public class SimpleRuntimeTest extends Assert {
         assertEquals(1, exp.matches.size());
         assertEquals(new RegMatch(0, 1), exp.matches.get(0));
     }
+
+    @Test
+    public void testNonGreedy() throws Exception {
+        // ? is advanced?
+        RegExp exp = compile("3z*?", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        boolean matched = doMatch(exp, "123zzz456");
+        assertTrue(matched);
+        assertEquals(1, exp.matches.size());
+        assertEquals(1, exp.matches.get(0).end - exp.matches.get(0).start);
+    }
+
+    @org.junit.Ignore("Not debugged yet.")
+    @Test
+    public void testBackreference() throws Exception {
+        RegExp exp = compile("([ab])\1", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        assertTrue(doMatch(exp, "aa"));
+        assertFalse(doMatch(exp, "ab"));
+    }
 }

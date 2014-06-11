@@ -128,9 +128,6 @@ class Compiler {
             case NLANCH:
                 this.cflags |= Flags.REG_NLANCH;
                 break;
-            case EXPECT:
-                this.cflags |= Flags.REG_EXPECT;
-                break;
             default:
                 throw new RuntimeException("Can't handle " + f);
             }

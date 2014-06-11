@@ -33,9 +33,11 @@ so we may get away with this.
 
 ## TODO ##
 
-* Backreferences. Initial unit test fails, runtime code does not take backref path, probably compiler failing to set the flag.
+* Backreferences. Troubles in the compiler.
 
 * More unit tests; try for full coverage with simple tests.
+
+* Convert runtime to take CharSequence instead of array/indices.
 
 * Errors.
 ** parser to report offsets in error messages
@@ -53,10 +55,15 @@ so we may get away with this.
 ** Get rid of 'Guts' and 'Runtime', sink all this into RegExp.
 ** Decide how far to push java style; this code seems like a place where 'package access' fields are in fact reasonable.
 ** final / private, however, when trivally possible.
+** bitflags versus enum sets in the guts
 
 * Performance measurement / tuning
 
 * REX-JE integration ...
+
+* Extension to permit any character class syntax that ICU will eat.
+
+
 
 
 

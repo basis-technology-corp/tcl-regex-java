@@ -153,7 +153,7 @@ public class SimpleRuntimeTest extends Assert {
     @org.junit.Ignore("Not debugged yet.")
     @Test
     public void testBackreference() throws Exception {
-        RegExp exp = compile("([ab])\1", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        RegExp exp = compile("([ab])\\1", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED));
         assertTrue(doMatch(exp, "aa"));
         assertFalse(doMatch(exp, "ab"));
     }

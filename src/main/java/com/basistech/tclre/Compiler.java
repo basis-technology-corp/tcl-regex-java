@@ -849,23 +849,23 @@ class Compiler {
             if (type == LACON) {
                 throw new RegexException("REG_ESUBREG");
             }
-            if (nextvalue >= subs.size()) {
-                throw new RegexException("REG_ESUBREG");
+            if (nextvalue > subs.size()) {
+                throw new RegexException(String.format("Backreference to %d out of range of defined subexpressions (%d)", nextvalue, subs.size()));
             }
-            if (subs.get(nextvalue) == null) {
-                throw new RegexException("REG_ESUBREG");
+            if (subs.get(nextvalue - 1) == null) { // \1 is first backref, living in slot 0.
+                throw new RegexException(String.format("Backreference to %d refers to non-capturing group.", nextvalue));
             }
 
             assert nextvalue > 0;
             atom = new Subre('b', Subre.BACKR, lp, rp);
-            subno = nextvalue;
+            subno = nextvalue ;
             atom.subno = subno;
             nfa.emptyarc(lp, rp);   /* temporarily, so there's something */
             lex.next();
             break;
 
         default:
-            throw new RegexException("REG_ASSERT");
+            throw new RuntimeException("Impossible type in lex");
         }
 
     /* ...and an atom may be followed by a quantifier */
@@ -1065,7 +1065,7 @@ class Compiler {
         top.flags |= Subre.combine(top.flags, t.flags);
     }
 
-    void delsub(Nfa nda, State lp, State rp) {
+    void delsub(Nfa nfa, State lp, State rp) {
         rp.tmp = rp;
         deltraverse(nfa, lp, rp);
         assert lp.nouts == 0 && rp.nins == 0;   /* did the job */

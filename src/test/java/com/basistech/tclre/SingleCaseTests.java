@@ -18,6 +18,9 @@ import java.util.EnumSet;
 
 import org.junit.Test;
 
+import static com.basistech.tclre.Utils.Matches.matches;
+import static org.hamcrest.CoreMatchers.not;
+
 /**
  * patterns compiled with case-insensitivity.
  * TODO: tricky cases like the Turkish I.
@@ -25,22 +28,23 @@ import org.junit.Test;
 public class SingleCaseTests extends Utils {
     @Test
     public void testAlternation() throws Exception {
-        RegExp exp = compile("a|b", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.ICASE));
-        assertTrue(doMatch(exp, "a"));
-        assertTrue(doMatch(exp, "A"));
-        assertTrue(doMatch(exp, "b"));
-        assertTrue(doMatch(exp, "B"));
-        assertFalse(doMatch(exp, "c"));
-        assertFalse(doMatch(exp, "C"));
+        HsrePattern exp = HsrePattern.compile("a|b", PatternFlags.ADVANCED, PatternFlags.ICASE);
+        assertThat("a", matches(exp));
+        assertThat("A", matches(exp));
+        assertThat("b", matches(exp));
+        assertThat("B", matches(exp));
+        assertThat("c", not(matches(exp)));
+        assertThat("C", not(matches(exp)));
+
     }
 
     @Test
     public void testRange() throws Exception {
-        RegExp exp = compile("[a-z]", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.ICASE));
-        assertTrue(doMatch(exp, "a"));
-        assertTrue(doMatch(exp, "A"));
-        assertTrue(doMatch(exp, "q"));
-        assertTrue(doMatch(exp, "Q"));
-        assertFalse(doMatch(exp, "$"));
+        HsrePattern exp = HsrePattern.compile("[a-z]", PatternFlags.ADVANCED, PatternFlags.ICASE);
+        assertThat("a", matches(exp));
+        assertThat("A", matches(exp));
+        assertThat("q", matches(exp));
+        assertThat("Q", matches(exp));
+        assertThat("$", not(matches(exp)));
     }
 }

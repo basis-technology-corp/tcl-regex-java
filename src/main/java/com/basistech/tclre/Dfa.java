@@ -35,12 +35,12 @@ class Dfa {
     final ColorMap cm;
     int lastpost; 	/* location of last cache-flushed success */
     int lastnopr; 	/* location of last cache-flushed NOPROGRESS */
-    final Runtime runtime;
+    final Runtime hsreMatcher;
 
 
-    Dfa(Runtime runtime, Cnfa cnfa) {
-        this.runtime = runtime;
-        this.cm = runtime.g.cm;
+    Dfa(Runtime hsreMatcher, Cnfa cnfa) {
+        this.hsreMatcher = hsreMatcher;
+        this.cm = hsreMatcher.g.cm;
         this.cnfa = cnfa;
         /*
          * To match the C behavior, Benson convinced himself that we needed
@@ -203,10 +203,10 @@ class Dfa {
         // that adds a.co to ncolors. So that means that you'd think that the lacons
         // indexing would be related... The 'arc' should have a 'color' which is an index
         // into lacon.
-        assert n < runtime.g.lacons.size();
-        Subre sub = runtime.g.lacons.get(n);
-        Dfa d = new Dfa(runtime, sub.cnfa);
-        end = d.longest(cp, runtime.data.length(), null);
+        assert n < hsreMatcher.g.lacons.size();
+        Subre sub = hsreMatcher.g.lacons.get(n);
+        Dfa d = new Dfa(hsreMatcher, sub.cnfa);
+        end = d.longest(cp, hsreMatcher.data.length(), null);
         return (sub.subno != 0) ? (end != -1) : (end == -1);
     }
 
@@ -217,7 +217,7 @@ class Dfa {
      */
     int longest(int start, int stop, boolean[] hitstopp) {
         int cp;
-        int realstop = (stop == runtime.data.length()) ? stop : stop + 1;
+        int realstop = (stop == hsreMatcher.data.length()) ? stop : stop + 1;
         short co;
         StateSet css;
         int post;
@@ -236,14 +236,14 @@ class Dfa {
 
     /* startup */
         if (cp == 0) {
-            co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
+            co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("color %d", co));
             }
         } else {
-            co = cm.getcolor(runtime.data.charAt(cp - 1));
+            co = cm.getcolor(hsreMatcher.data.charAt(cp - 1));
             if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("char %c, color %d\n", runtime.data.charAt(cp - 1), co));
+                LOG.debug(String.format("char %c, color %d\n", hsreMatcher.data.charAt(cp - 1), co));
             }
         }
         css = miss(css, co, cp);
@@ -255,7 +255,7 @@ class Dfa {
         StateSet ss;
     /* main loop */
         while (cp < realstop) {
-            co = cm.getcolor(runtime.data.charAt(cp));
+            co = cm.getcolor(hsreMatcher.data.charAt(cp));
             ss = css.outs[co];
             if (ss == null) {
                 ss = miss(css, co, cp + 1);
@@ -273,11 +273,11 @@ class Dfa {
             LOG.debug(String.format("+++ shutdown +++ at %s", css));
         }
 
-        if (cp == runtime.data.length() && stop == runtime.data.length()) {
+        if (cp == hsreMatcher.data.length() && stop == hsreMatcher.data.length()) {
             if (hitstopp != null) {
                 hitstopp[0] = true;
             }
-            co = cnfa.eos[0 != (runtime.eflags & Flags.REG_NOTEOL) ? 0 : 1];
+            co = cnfa.eos[0 != (hsreMatcher.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("color %d", co));
             }
@@ -319,8 +319,8 @@ class Dfa {
      */
     int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop) {
         int cp;
-        int realmin = min == runtime.data.length() ? min : min + 1;
-        int realmax = max == runtime.data.length() ? max : max + 1;
+        int realmin = min == hsreMatcher.data.length() ? min : min + 1;
+        int realmax = max == hsreMatcher.data.length() ? max : max + 1;
         short co;
         StateSet ss;
         StateSet css;
@@ -338,14 +338,14 @@ class Dfa {
 
     /* startup */
         if (cp == 0) {
-            co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
+            co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("color %d", co));
             }
         } else {
-            co = cm.getcolor(runtime.data.charAt(cp - 1));
+            co = cm.getcolor(hsreMatcher.data.charAt(cp - 1));
             if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("char %c, color %d\n", runtime.data.charAt(cp - 1), co));
+                LOG.debug(String.format("char %c, color %d\n", hsreMatcher.data.charAt(cp - 1), co));
             }
         }
 
@@ -359,7 +359,7 @@ class Dfa {
 
     /* main loop */
         while (cp < realmax) {
-            co = cm.getcolor(runtime.data.charAt(cp));
+            co = cm.getcolor(hsreMatcher.data.charAt(cp));
             ss = css.outs[co];
             if (ss == null) {
                 ss = miss(css, co, cp + 1);
@@ -387,8 +387,8 @@ class Dfa {
         if (0 != (ss.flags & StateSet.POSTSTATE) && cp > min) {
             assert cp >= realmin;
             cp--;
-        } else if (cp == runtime.data.length() && max == runtime.data.length()) {
-            co = cnfa.eos[0 != (runtime.eflags & Flags.REG_NOTEOL) ? 0 : 1];
+        } else if (cp == hsreMatcher.data.length() && max == hsreMatcher.data.length()) {
+            co = cnfa.eos[0 != (hsreMatcher.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             ss = miss(css, co, cp);
         /* match might have ended at eol */
             if ((ss == null || (0 == (ss.flags & StateSet.POSTSTATE)))

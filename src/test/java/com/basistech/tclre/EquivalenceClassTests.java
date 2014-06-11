@@ -16,8 +16,10 @@ package com.basistech.tclre;
 
 import java.util.EnumSet;
 
-import org.junit.Ignore;
 import org.junit.Test;
+
+import static com.basistech.tclre.Utils.Matches.matches;
+import static org.hamcrest.CoreMatchers.not;
 
 /**
  * Let's imagine that both of the characters A and a fall at the same place in the collating sequence;
@@ -30,9 +32,9 @@ public class EquivalenceClassTests extends Utils {
 
     @Test
     public void testSimpleEqv() throws Exception {
-        RegExp exp = compile("[[=a=]]", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED));
-        assertTrue(doMatch(exp, "a"));
+        HsrePattern exp = HsrePattern.compile("[[=a=]]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
+        assertThat("a", matches(exp));
         // C didn't implement this, and neither do we.
-        assertFalse(doMatch(exp, "A"));
+        assertThat("A", not(matches(exp)));
     }
 }

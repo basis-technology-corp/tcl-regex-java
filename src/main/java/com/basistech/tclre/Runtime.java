@@ -20,16 +20,14 @@ import java.util.List;
 import com.google.common.collect.Lists;
 
 /**
- * Runtime matcher. Not called 'matcher' to save that
- * name for some presentable API.
- * TODO: merge this into RegExp.
+ * The internal implementation of matching.
  */
 class Runtime {
     static final int UNTRIED = 0; 	/* not yet tried at all */
     static final int TRYING = 1;    /* top matched, trying submatches */
     static final int TRIED = 2;     /* top didn't match or submatches exhausted */
 
-    RegExp re;
+    HsrePattern re;
     Guts g;
     int eflags;
     List<RegMatch> match;
@@ -40,7 +38,7 @@ class Runtime {
     /**
      * exec - match regular expression
      */
-    boolean exec(RegExp re, CharSequence data, EnumSet<ExecFlags> execFlags)
+    boolean exec(HsrePattern re, CharSequence data, EnumSet<ExecFlags> execFlags)
             throws RegexException {
     /* sanity checks */
     /* setup */
@@ -71,16 +69,10 @@ class Runtime {
     /* do it */
         assert g.tree != null;
 
-        // This silly try-finally is until we rationalize the classes.
-        try {
-            if (0 != (g.info & Flags.REG_UBACKREF)) {
-                return cfind(g.tree.cnfa);
-            } else {
-                return find(g.tree.cnfa);
-            }
-        } finally {
-            re.matches = match;
-            re.details = details;
+        if (0 != (g.info & Flags.REG_UBACKREF)) {
+            return cfind(g.tree.cnfa);
+        } else {
+            return find(g.tree.cnfa);
         }
     }
 

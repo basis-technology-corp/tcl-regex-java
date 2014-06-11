@@ -16,23 +16,108 @@ package com.basistech.tclre;
 
 import java.util.EnumSet;
 
+import org.hamcrest.Description;
+import org.hamcrest.Factory;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.Assert;
 
 /**
  * Created by benson on 6/11/14.
  */
 public class Utils extends Assert {
-    RegExp compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
-        return Compiler.compile(pattern, flags);
+    public static class MatcherMatches extends TypeSafeMatcher<HsreMatcher> {
+        final int start;
+        final int end;
+        final int index;
+
+        public MatcherMatches(int index, int start, int end) {
+            this.index = index;
+            this.start = start;
+            this.end = end;
+        }
+
+        @Override
+        protected boolean matchesSafely(HsreMatcher item) {
+            return start == item.start(index) && end == item.end(index);
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText(String.format("Group %d was not [%d,%d)", index, start, end));
+        }
+
+        @Factory
+        public static <T> Matcher<HsreMatcher> groupIs(int index, int start, int end) {
+            return new MatcherMatches(index, start, end);
+        }
     }
 
-    boolean doMatch(RegExp exp, String input) throws RegexException {
-        Runtime runtime = new Runtime();
-        return runtime.exec(exp, input, EnumSet.noneOf(ExecFlags.class));
-    }
+    public static class Matches extends TypeSafeMatcher<String> {
+        final HsrePattern pattern;
+        final EnumSet<ExecFlags> eflags;
 
-    boolean doMatch(RegExp exp, String input, EnumSet<ExecFlags> flags) throws RegexException {
-        Runtime runtime = new Runtime();
-        return runtime.exec(exp, input, flags);
+        Matches(String patternString, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
+            try {
+                pattern = HsrePattern.compile(patternString, pflags);
+            } catch (RegexException e) {
+                throw new RuntimeException(e);
+            }
+            this.eflags = eflags;
+
+        }
+
+        Matches(HsrePattern pattern, EnumSet<ExecFlags> eflags) {
+            this.pattern = pattern;
+            this.eflags = eflags;
+        }
+
+        @Override
+        public boolean matchesSafely(String input) {
+            HsreMatcher matcher = pattern.matcher(input, eflags);
+            try {
+                return matcher.find();
+            } catch (RegexException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public void describeTo(Description description) {
+            description.appendText("matches " + pattern);
+        }
+
+        @Factory
+        public static <T> Matcher<String> matches(String pattern, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
+            return new Matches(pattern, pflags, eflags);
+        }
+
+        @Factory
+        public static <T> Matcher<String> matches(String pattern) {
+            return new Matches(pattern, EnumSet.noneOf(PatternFlags.class), EnumSet.noneOf(ExecFlags.class));
+        }
+
+        @Factory
+        public static <T> Matcher<String> matches(String pattern, PatternFlags... pflags) {
+            EnumSet<PatternFlags> flagSet = EnumSet.noneOf(PatternFlags.class);
+            for (PatternFlags pf : pflags) {
+                flagSet.add(pf);
+            }
+            return new Matches(pattern, flagSet, EnumSet.noneOf(ExecFlags.class));
+        }
+
+        @Factory
+        public static <T> Matcher<String> matches(HsrePattern pattern) {
+            return new Matches(pattern, EnumSet.noneOf(ExecFlags.class));
+        }
+
+        @Factory
+        public static <T> Matcher<String> matches(HsrePattern pattern, ExecFlags ... eflags) {
+            EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
+            for (ExecFlags ef : eflags) {
+                flagSet.add(ef);
+            }
+            return new Matches(pattern, flagSet);
+        }
+
     }
 }

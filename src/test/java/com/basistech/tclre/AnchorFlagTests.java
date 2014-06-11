@@ -17,6 +17,8 @@ package com.basistech.tclre;
 import java.util.EnumSet;
 
 import org.junit.Test;
+import static com.basistech.tclre.Utils.Matches.matches;
+import static org.hamcrest.CoreMatchers.not;
 
 /**
  * The flags that disable ^/$
@@ -25,15 +27,15 @@ public class AnchorFlagTests extends Utils {
 
     @Test
     public void testNotBol() throws Exception {
-        RegExp exp = compile("^hello", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.ICASE));
-        assertTrue(doMatch(exp, "hello"));
-        assertFalse(doMatch(exp, "hello", EnumSet.of(ExecFlags.NOTBOL)));
+        assertThat("hello", not(matches("^hello", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.ICASE),
+                EnumSet.of(ExecFlags.NOTBOL))));
+        assertThat("hello", matches("^hello", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.ICASE),
+                EnumSet.noneOf(ExecFlags.class)));
     }
 
     @Test
     public void testNotEol() throws Exception {
-        RegExp exp = compile("hello$", EnumSet.of(PatternFlags.ADVANCED, PatternFlags.ICASE));
-        assertTrue(doMatch(exp, "--hello"));
-        assertFalse(doMatch(exp, "--hello", EnumSet.of(ExecFlags.NOTEOL)));
+        assertThat("--hello", matches("hello$", PatternFlags.ADVANCED));
+        assertThat("--hello", not(matches("hello$", EnumSet.of(PatternFlags.ADVANCED), EnumSet.of(ExecFlags.NOTEOL))));
     }
 }

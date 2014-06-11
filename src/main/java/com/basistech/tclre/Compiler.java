@@ -75,7 +75,7 @@ class Compiler {
     int ntree;      /* number of tree nodes */
     List<Subre> lacons; /* lookahead-constraint vector */
     Lex lex;
-    RegExp re;
+    private long info;
 
     /**
      * Constructor does minimal setup; construct, then call compile().
@@ -147,17 +147,16 @@ class Compiler {
      * @return the regexp
      * @throws RegexException
      */
-    static RegExp compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
+    static HsrePattern compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
         Compiler that = new Compiler(pattern, flags);
         return that.compile();
     }
 
-    private RegExp compile() throws RegexException {
+    private HsrePattern compile() throws RegexException {
         stop = pattern.length;
         nlcolor = Constants.COLORLESS;
-        re = new RegExp();
-        re.info = 0;
-        re.guts = new Guts();
+        info = 0;
+        Guts guts = new Guts();
 
         cm = new ColorMap(this);
         nfa = new Nfa(cm);
@@ -199,7 +198,7 @@ class Compiler {
         }
 
     /* build compacted NFAs for tree and lacons */
-        re.info |= nfatree(tree);
+        info |= nfatree(tree);
 
         // lacons start at 1.
         for (int i = 1; i < lacons.size(); i++) {
@@ -218,24 +217,24 @@ class Compiler {
     /* can sacrifice main NFA now, so use it as work area */
         nfa.optimize();
         makesearch(nfa);
-        re.guts.search = nfa.compact();
+        guts.search = nfa.compact();
 
     /* looks okay, package it up */
-        re.nsub = subs.size();
-        re.guts.cm = cm;
-        re.guts.cflags = cflags;
-        re.guts.info = re.info;
-        re.guts.nsub = re.nsub;
-        re.guts.tree = tree;
-        re.guts.ntree = ntree;
+        int nsub = subs.size();
+        guts.cm = cm;
+        guts.cflags = cflags;
+        guts.info = info;
+        guts.nsub = nsub;
+        guts.tree = tree;
+        guts.ntree = ntree;
         if (0 != (cflags & Flags.REG_ICASE)) {
-            re.guts.compare = new Comparer(true);
+            guts.compare = new Comparer(true);
         } else {
-            re.guts.compare = new Comparer(false);
+            guts.compare = new Comparer(false);
         }
 
-        re.guts.lacons = lacons;
-        return re;
+        guts.lacons = lacons;
+        return new HsrePattern(new String(pattern, 0, pattern.length), info, nsub, guts);
     }
 
     static int pair(int a, int b) {
@@ -1492,7 +1491,7 @@ class Compiler {
     }
 
     void note(long b) {
-        re.info |= b;
+        info |= b;
     }
 
     interface AtomSetter {

@@ -14,6 +14,7 @@
 
 package com.basistech.tclre;
 
+import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.text.UnicodeSet;
 
 import it.unimi.dsi.fastutil.objects.Object2CharMap;
@@ -133,40 +134,37 @@ final class Locale {
         //
     }
 
-    // from regc_locale
+    static int element(String what) throws RegexException {
+        // this is a single character or the name of a character.
+        // Surrogate pairs? we can't deal yet. This function
+        // returns 'int' but no one upstairs is home yet.
 
-    static UnicodeSet range(char start, char end, boolean cases) {
-        UnicodeSet set = new UnicodeSet(start, end);
-        if (cases) {
-            set.closeOver(UnicodeSet.ADD_CASE_MAPPINGS);
+        if (what.length() == 1) {
+            return what.charAt(0);
         }
-        return set;
-    }
 
-    static int element(String what) {
         if (CNAME.containsKey(what)) {
             return CNAME.get(what);
         }
+
+        int uc = UCharacter.getCharFromName(what); // what if someone names a non-BMP char?
+        if (uc != -1) {
+            if (uc > 0xffff) {
+                throw new RegexException(String.format(
+                        "Limitation: cannot handle equivalence outside of the BMP: %s not possible.",
+                        what));
+            }
+            return uc;
+        }
+
         return -1;
     }
 
     /**
      * eclass - Because we have no MCCE support, this
-     * ends processing single characters.
+     * just processing single characters.
      */
-    static UnicodeSet eclass(boolean fake, char c, boolean cases) {
-
-    /* crude fake equivalence class for testing */
-        if (fake && c == 'x') {
-            UnicodeSet set = new UnicodeSet();
-            set.add('x');
-            set.add('y');
-            if (cases) {
-                set.add('X');
-                set.add('Y');
-            }
-            return set;
-        }
+    static UnicodeSet eclass(char c, boolean cases) {
 
     /* otherwise, none */
         if (cases) {

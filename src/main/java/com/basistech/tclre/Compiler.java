@@ -1319,16 +1319,16 @@ class Compiler {
             startp = now;
             endp = scanplain();
             if (endp <= startp) {
-                throw new RegexException("REG_ECOLLATE");
+                throw new RegexException("Unterminated or invalid equivalence class.");
             }
             charName = new String(pattern, startp, endp - startp);
             ele = Locale.element(charName);
             if (ele == -1) {
-                throw new RegexException("Unvalid character name " + charName);
+                throw new RegexException("Invalid character name " + charName);
             } else {
                 startc = (char)ele;
             }
-            set = Locale.eclass((cflags & Flags.REG_FAKE) != 0, startc, 0 != (cflags & Flags.REG_ICASE));
+            set = Locale.eclass(startc, 0 != (cflags & Flags.REG_ICASE));
             dovec(set, lp, rp);
             return;
         case CCLASS:

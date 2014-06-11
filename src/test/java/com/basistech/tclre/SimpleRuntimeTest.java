@@ -22,21 +22,7 @@ import org.junit.Test;
 /**
  * some 'pons asinorum' tests to see if the runtime works at all.
  */
-public class SimpleRuntimeTest extends Assert {
-
-    RegExp compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
-        return Compiler.compile(pattern, flags);
-    }
-
-    boolean doMatch(RegExp exp, String input) throws RegexException {
-        Runtime runtime = new Runtime();
-        return runtime.exec(exp, input, EnumSet.noneOf(ExecFlags.class));
-    }
-
-    boolean doMatch(RegExp exp, String input, EnumSet<ExecFlags> flags) throws RegexException {
-        Runtime runtime = new Runtime();
-        return runtime.exec(exp, input, flags);
-    }
+public class SimpleRuntimeTest extends Utils {
 
     @Test
     public void testDontMatch() throws Exception {

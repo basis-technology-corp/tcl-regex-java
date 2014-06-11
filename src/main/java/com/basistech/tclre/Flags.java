@@ -34,8 +34,9 @@ final class Flags {
 // it costs nothing, so we just do it.
 //    static final int REG_EXPECT = 001000;   /* report details on partial/limited matches */
     static final int REG_BOSONLY = 002000;  /* temporary kludge for BOS-only matches */
-    static final int REG_DUMP = 004000; /* none of your business :-) */
-    static final int REG_FAKE = 010000; /* none of your business :-) */
+    // Next two not used.
+//    static final int REG_DUMP = 004000; /* none of your business :-) */
+//    static final int REG_FAKE = 010000; /* none of your business :-) */
     static final int REG_PROGRESS = 020000; /* none of your business :-) */
     static final int REG_NOCAPT = 040000; /* disable capturing parens */
     // these are internal. This may need sorting.

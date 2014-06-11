@@ -28,13 +28,14 @@ class StateSet {
     static final int LOCKED = 4;
     static final int NOPROGRESS = 8;
 
+    private int lastseen; // index of last entered on arrival here
+
     /* Using BitSet and it's hash/equals
      * is probably going to be slower than we want
      * assuming that we get this to work at all. */
-    BitSet states; // states -- we would really like this to be final.
+    BitSet states; // states -- we would really like this to be final & immutable.
     int flags;
     Arcp ins;
-    int lastseen; // index of last entered on arrival here
     StateSet[] outs;
     Arcp[] inchain;
 
@@ -43,6 +44,16 @@ class StateSet {
         // if colors are sparse these will need to be otherwise.
         outs = new StateSet[ncolors];
         inchain = new Arcp[ncolors];
+        lastseen = -1;
+    }
+
+    int getLastSeen() {
+        return lastseen;
+    }
+
+    void setLastSeen(int lastseen) {
+        System.out.format("%s lastseen <- %d\n", this, lastseen);
+        this.lastseen = lastseen;
     }
 
     @Override

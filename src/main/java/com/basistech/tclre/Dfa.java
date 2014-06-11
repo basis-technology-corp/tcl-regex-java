@@ -63,6 +63,8 @@ class Dfa {
      * arguably we could just construct a new DFA each time.
      */
     StateSet initialize(int start) {
+        // Discard state sets; reuse would be faster if we kept them,
+        // but then we'd need the real cache.
         stateSets.clear();
         StateSet stateSet = new StateSet(nstates, ncolors);
         stateSet.states.set(cnfa.pre);
@@ -73,7 +75,7 @@ class Dfa {
         stateSets.put(stateSet.states, stateSet);
         lastpost = -1;
         lastnopr = -1;
-        stateSet.lastseen = start;
+        stateSet.setLastSeen(start);
         return stateSet;
     }
 
@@ -252,7 +254,7 @@ class Dfa {
         if (css == null) {
             return -1;
         }
-        css.lastseen = cp;
+        css.setLastSeen(cp);
 
         StateSet ss;
     /* main loop */
@@ -266,7 +268,7 @@ class Dfa {
                 }
             }
             cp++;
-            ss.lastseen = cp;
+            ss.setLastSeen(cp);
             css = ss;
         }
 
@@ -288,7 +290,7 @@ class Dfa {
             if (ss != null && (0 != (ss.flags & StateSet.POSTSTATE))) {
                 return cp;
             } else if (ss != null) {
-                ss.lastseen = cp;	/* to be tidy */
+                ss.setLastSeen(cp);	/* to be tidy */
             }
         }
 
@@ -297,10 +299,9 @@ class Dfa {
         ObjectIterator<Object2ObjectMap.Entry<BitSet, StateSet>> it = stateSets.object2ObjectEntrySet().fastIterator();
         while (it.hasNext()) {
             StateSet thisSS = it.next().getValue();
-            System.out.println(thisSS);
-            if (0 != (thisSS.flags & StateSet.POSTSTATE) && post != thisSS.lastseen
-                    && (post == -1 || post < thisSS.lastseen)) {
-                post = thisSS.lastseen;
+            if (0 != (thisSS.flags & StateSet.POSTSTATE) && post != thisSS.getLastSeen()
+                    && (post == -1 || post < thisSS.getLastSeen())) {
+                post = thisSS.getLastSeen();
             }
         }
         if (post != -1) {		/* found one */
@@ -357,7 +358,7 @@ class Dfa {
             return -1;
         }
 
-        css.lastseen = cp;
+        css.setLastSeen(cp);
         ss = css;
 
     /* main loop */
@@ -371,7 +372,7 @@ class Dfa {
                 }
             }
             cp++;
-            ss.lastseen = cp;
+            ss.setLastSeen(cp);
             css = ss;
             if (0 != (ss.flags & StateSet.POSTSTATE) && cp >= realmin) {
                 break;		/* NOTE BREAK OUT */
@@ -424,8 +425,8 @@ class Dfa {
         while (it.hasNext()) {
             Object2ObjectMap.Entry<BitSet, StateSet> entry = it.next();
             StateSet ss = entry.getValue();
-            if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.lastseen) {
-                nopr = ss.lastseen;
+            if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.getLastSeen()) {
+                nopr = ss.getLastSeen();
             }
         }
         return nopr;

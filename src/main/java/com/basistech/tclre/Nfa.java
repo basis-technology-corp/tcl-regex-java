@@ -1005,19 +1005,17 @@ class Nfa {
                 switch (a.type) {
                 case Compiler.PLAIN:
                     arcValue = Cnfa.packCarc(a.co, a.to.no);
-                    cnfa.setArc(arcIndex, arcValue);
-                    arcIndex++;
                     break;
                 case Compiler.LACON:
                     assert s.no != cnfa.pre;
                     arcValue = Cnfa.packCarc((short)(cnfa.ncolors + a.co), a.to.no);
-                    cnfa.setArc(arcIndex, arcValue);
                     cnfa.flags |= Cnfa.HASLACONS;
-                    arcIndex++;
                     break;
                 default:
-                    assert false;
+                    throw new RuntimeException("Impossible arc");
                 }
+                cnfa.setArc(arcIndex, arcValue);
+                arcIndex++;
             }
             cnfa.carcsort(first, arcIndex - 1);
             cnfa.setArc(arcIndex++, Cnfa.packCarc(Constants.COLORLESS, 0));
@@ -1033,7 +1031,7 @@ class Nfa {
             long newArcValue = Cnfa.packCarc((short)1, Cnfa.carcTarget(cnfa.arcs[ax]));
             cnfa.arcs[ax] = newArcValue;
         }
-        arcIndex = pre.no;
+        arcIndex = cnfa.states[pre.no];
         long newArcValue = Cnfa.packCarc((short)1, Cnfa.carcTarget(cnfa.arcs[pre.no]));
         cnfa.arcs[arcIndex] = newArcValue;
 

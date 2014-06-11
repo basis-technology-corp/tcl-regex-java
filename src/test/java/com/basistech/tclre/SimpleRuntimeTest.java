@@ -66,15 +66,40 @@ public class SimpleRuntimeTest extends Utils {
         assertFalse(doMatch(exp, "abbc"));
     }
 
+
+    /*
+    {m}, {m,}, and {m,n}
+     */
+
     @Test
     public void testQuant() throws Exception {
         // ? is advanced?
-        RegExp exp = compile("ab{1,2}c", EnumSet.of(PatternFlags.ADVANCED));
+        RegExp exp = compile("ab{1,2}cd{3,}e{2}", EnumSet.of(PatternFlags.ADVANCED));
+        assertTrue(doMatch(exp, "abcdddee"));
+        assertTrue(doMatch(exp, "abcddddee"));
+        assertTrue(doMatch(exp, "XabcddddeeY"));
+        assertTrue(doMatch(exp, "abbcdddee"));
+        assertFalse(doMatch(exp, "acdddee"));
+        assertFalse(doMatch(exp, "abbbcdddee"));
+        assertFalse(doMatch(exp, "abcddee"));
+        assertFalse(doMatch(exp, "abcddde"));
+
+        exp = compile("ab{0,1}c", EnumSet.of(PatternFlags.ADVANCED));
+        assertTrue(doMatch(exp, "ac"));
         assertTrue(doMatch(exp, "abc"));
-        assertTrue(doMatch(exp, "XabcY"));
+        assertFalse(doMatch(exp, "abbc"));
+
+        exp = compile("ab{0,2}c", EnumSet.of(PatternFlags.ADVANCED));
+        assertTrue(doMatch(exp, "ac"));
+        assertTrue(doMatch(exp, "abc"));
         assertTrue(doMatch(exp, "abbc"));
-        assertFalse(doMatch(exp, "ac"));
         assertFalse(doMatch(exp, "abbbc"));
+    }
+
+    @Test
+    public void testNullQuant() throws Exception {
+        RegExp exp = compile("ab{0,0}c", EnumSet.of(PatternFlags.ADVANCED));
+        assertTrue(doMatch(exp, "ac"));
     }
 
     @Test
@@ -142,4 +167,5 @@ public class SimpleRuntimeTest extends Utils {
         assertTrue(doMatch(exp, "aa"));
         assertFalse(doMatch(exp, "ab"));
     }
+
 }

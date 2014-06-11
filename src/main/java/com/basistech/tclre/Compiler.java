@@ -1167,6 +1167,7 @@ class Compiler {
         switch (pair(rm, rn)) {
         // pair(0, 0)
         case 0:     /* empty string */
+            // never get here; other code optimizes this out.
             delsub(nfa, lp, rp);
             nfa.emptyarc(lp, rp);
             break;
@@ -1223,7 +1224,7 @@ class Compiler {
             repeat(lp, s, m - 1, n);
             break;
         default:
-            throw new RegexException("REG_ASSERT");
+            throw new RuntimeException("Impossible quantification");
         }
     }
 

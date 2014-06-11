@@ -33,7 +33,7 @@ so we may get away with this.
 
 ## TODO ##
 
-* Backreferences. Troubles in the compiler.
+* ~~Backreferences. Troubles in the compiler.~~
 
 * More unit tests; try for full coverage with simple tests.
 

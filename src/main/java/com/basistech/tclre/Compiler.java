@@ -998,11 +998,11 @@ class Compiler {
         if (atomtype == BACKREF) {
             assert atom.begin.nouts == 1; /* just the EMPTY */
             delsub(nfa, atom.begin, atom.end);
-            assert subs.get(subno) != null;
+            assert subs.get(subno - 1) != null;
         /* and here's why the recursion got postponed:  it must */
         /* wait until the skeleton is filled in, because it may */
         /* hit a backref that wants to copy the filled-in skeleton */
-            nfa.dupnfa(subs.get(subno).begin, subs.get(subno).end,
+            nfa.dupnfa(subs.get(subno - 1).begin, subs.get(subno - 1).end,
                     atom.begin, atom.end);
         }
 
@@ -1067,7 +1067,7 @@ class Compiler {
 
     void delsub(Nfa nfa, State lp, State rp) {
         rp.tmp = rp;
-        deltraverse(nfa, lp, rp);
+        deltraverse(nfa, lp, lp);
         assert lp.nouts == 0 && rp.nins == 0;   /* did the job */
         assert lp.no != State.FREESTATE && rp.no != State.FREESTATE;    /* no more */
         lp.tmp = null;
@@ -1490,8 +1490,8 @@ class Compiler {
         }
     }
 
-    boolean note(long b) {
-        return re.info != b;
+    void note(long b) {
+        re.info |= b;
     }
 
     interface AtomSetter {

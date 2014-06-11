@@ -21,9 +21,8 @@ class ColorDesc {
     static final int FREECOL = 1; // currently free
     static final int PSEUDO = 2;  // pseudocolor, no real chars
 
-    int nchrs; // number of chars of this color
-
-    //TODO: sub puns a slot for two things, is this a good idea?
+    private int nchars; // number of chars of this color
+    int free; // free chain.
     short sub; // open subcolor (if any); free chain ptr */
     Arc arcs; /* color chain; linked list of arcs. */
     int flags;
@@ -32,10 +31,11 @@ class ColorDesc {
 
     ColorDesc() {
         sub = Constants.NOSUB;
+        free = -1;
     }
 
     void reset() {
-        nchrs = 0;
+        nchars = 0;
         sub = Constants.NOSUB;
         flags = 0;
         arcs = null;
@@ -53,5 +53,17 @@ class ColorDesc {
 
     boolean pseudo() {
         return (flags & PSEUDO) != 0;
+    }
+
+    void setNChars(int nchars) {
+        this.nchars = nchars;
+    }
+
+    int getNChars() {
+        return nchars;
+    }
+
+    void incrementNChars(int incr) {
+        this.nchars += incr;
     }
 }

@@ -22,7 +22,7 @@ import org.junit.Test;
  * More examples of ranges to exercise the color map
  * TODO: figure out what case causes okcolors to promote (and thus exercise the 'free' code).
  */
-public class RangeTest extends Utils {
+public class RangeTests extends Utils {
 
     @Test
     public void testKitchenSink() throws Exception {

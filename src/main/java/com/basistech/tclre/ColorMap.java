@@ -35,8 +35,11 @@ class ColorMap {
     List<ColorDesc> colorDescs; // all the color descs. A list for resizability.
     // cdspace replaced by usr of list.
     Tree[] tree;
+
     ColorMap(Compiler compiler) {
         this.compiler = compiler;
+
+        free = -1;
         colorDescs = Lists.newArrayList();
         tree = new Tree[Constants.NBYTS];
 
@@ -46,7 +49,7 @@ class ColorMap {
         colorDescs.add(white);
         assert colorDescs.size() == 1;
         white.sub = Constants.NOSUB;
-        white.nchrs = (char)(Constants.CHR_MAX - Constants.CHR_MIN + 1);
+        white.setNChars(65536);
 
         // allocate top-level array of tree objects.
         for (int tx = 0; tx < tree.length; tx++) {
@@ -138,18 +141,20 @@ class ColorMap {
     }
 
     short newcolor() {
-        if (free != 0) {
-            assert free > 0;
-            ColorDesc cd = colorDescs.get(free);
+        if (free != -1) {
+            assert free > 0; // slot 0 can't be free.
+            int toReturn = free;
+            ColorDesc cd = colorDescs.get(toReturn);
             assert cd.unusedColor();
             assert cd.arcs == null;
-            free = cd.sub;
+            free = cd.free;
             cd.reset();
-            return (short)free;
+            return (short)toReturn;
         } else {
             ColorDesc newcd = new ColorDesc();
             int colorIndex = colorDescs.size();
             colorDescs.add(newcd);
+            assert colorIndex != -1;
             return (short)colorIndex;
         }
     }
@@ -170,12 +175,12 @@ class ColorMap {
         ColorDesc cd = colorDescs.get(co);
         assert cd.arcs == null;
         assert cd.sub == Constants.NOSUB;
-        assert cd.nchrs == 0;
+        assert cd.getNChars() == 0;
         cd.markFree();
 
-        if (free != 0) {
+        if (free != -1) {
             final ColorDesc colorDesc = colorDescs.get(free);
-            colorDesc.sub = co;
+            colorDesc.free = co;
         }
         free = co;
     }
@@ -188,7 +193,7 @@ class ColorMap {
     short pseudocolor() {
         short co = newcolor();
         ColorDesc cd = colorDescs.get(co);
-        cd.nchrs = 1;
+        cd.setNChars(1);
         cd.flags = ColorDesc.PSEUDO;
         return co;
     }
@@ -209,9 +214,9 @@ class ColorMap {
         }
 
         ColorDesc cd = colorDescs.get(co);
-        cd.nchrs--;
+        cd.incrementNChars(-1);
         ColorDesc scd = colorDescs.get(sco);
-        scd.nchrs++;
+        scd.incrementNChars(1);
         setcolor(c, sco);
         return sco;
     }
@@ -226,7 +231,7 @@ class ColorMap {
 
         sco = colorDescs.get(co).sub;
         if (sco == Constants.NOSUB) {       /* color has no open subcolor */
-            if (cd.nchrs == 1) { /* optimization */
+            if (cd.getNChars() == 1) { /* optimization */
                 return co;
             }
             sco = newcolor();   /* must create subcolor */
@@ -331,8 +336,8 @@ class ColorMap {
             lastt.ptrs[b] = t;
 
             compiler.nfa.newarc(Compiler.PLAIN, sco, lp, rp);
-            cd.nchrs -= Constants.BYTTAB;
-            scd.nchrs += Constants.BYTTAB;
+            cd.incrementNChars(Constants.BYTTAB);
+            scd.incrementNChars(Constants.BYTTAB);
             return;
         }
 
@@ -349,8 +354,8 @@ class ColorMap {
                 t.ccolor[i++] = sco;
             } while (i < Constants.BYTTAB && t.ccolor[i] == co);
             ndone = i - previ;
-            cd.nchrs -= ndone;
-            scd.nchrs += ndone;
+            cd.incrementNChars(-ndone);
+            scd.incrementNChars(ndone);
         }
     }
 
@@ -371,12 +376,12 @@ class ColorMap {
             /* has no subcolor, no further action */
             } else if (sco == co) {
             /* is subcolor, let parent deal with it */
-            } else if (cd.nchrs == 0) {
+            } else if (cd.getNChars() == 0) {
             /* parent empty, its arcs change color to subcolor */
                 cd.sub = Constants.NOSUB;
                 scd = colorDescs.get(sco);
 
-                assert scd.nchrs > 0;
+                assert scd.getNChars() > 0;
                 assert scd.sub == sco;
 
                 scd.sub = Constants.NOSUB;
@@ -395,7 +400,7 @@ class ColorMap {
                 cd.sub = Constants.NOSUB;
                 scd = colorDescs.get(sco);
 
-                assert scd.nchrs > 0;
+                assert scd.getNChars() > 0;
                 assert scd.sub == sco;
 
                 scd.sub = Constants.NOSUB;
@@ -446,7 +451,7 @@ class ColorMap {
 
         co = getcolor(c);
         ColorDesc cd = colorDescs.get(co);
-        return cd.nchrs == 1 && cd.sub == Constants.NOSUB;
+        return cd.getNChars() == 1 && cd.sub == Constants.NOSUB;
     }
 
     /**
@@ -513,13 +518,13 @@ class ColorMap {
         for (co = 1; co < colorDescs.size(); co++) {
             cd = colorDescs.get(co);
             if (!cd.unusedColor()) {
-                assert cd.nchrs > 0;
+                assert cd.getNChars() > 0;
                 has = cd.block != null ? "#" : "";
                 StringBuilder msg = new StringBuilder();
                 if (cd.pseudo()) {
                     msg.append(String.format("#%2d%s(pseudo): ", (int)co, has));
                 } else {
-                    msg.append(String.format("#%2d%s(%d): ", (int)co, has, cd.nchrs));
+                    msg.append(String.format("#%2d%s(%d): ", (int)co, has, cd.getNChars()));
                 }
             /* it's hard to do this more efficiently */
                 for (c = Constants.CHR_MIN; c < Constants.CHR_MAX; c++) {

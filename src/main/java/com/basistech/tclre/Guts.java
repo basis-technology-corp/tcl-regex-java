@@ -39,9 +39,4 @@ class Guts {
     Guts() {
         lacons = Lists.newArrayList();
     }
-
-    // length of above is nlacons.
-    int nlacons() {
-        return lacons.size();
-    }
 }

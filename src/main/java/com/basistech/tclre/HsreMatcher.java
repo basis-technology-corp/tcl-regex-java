@@ -17,8 +17,6 @@ package com.basistech.tclre;
 import java.util.EnumSet;
 import java.util.regex.MatchResult;
 
-import com.google.common.collect.Lists;
-
 /**
  * Matcher. This is an incomplete analog of {@link java.util.regex.Matcher}.
  */
@@ -49,6 +47,7 @@ public final class HsreMatcher implements ReMatcher, MatchResult {
      */
     @Override
     public boolean find(int startOffset) throws RegexException {
+        // TODO: this is a pessimization; we should be able to make one at construction and reuse it.
         runtime = new Runtime();
         return runtime.exec(pattern, data.subSequence(startOffset, data.length()), flags);
     }

@@ -37,25 +37,30 @@ so we may get away with this.
 
 * More unit tests; try for full coverage with simple tests.
 
-* Convert runtime to take CharSequence instead of array/indices.
+* ~~Convert runtime to take CharSequence instead of array/indices.~~
 
-* Errors.
-** parser to report offsets in error messages
-** all error messages informative
+* Add thread interrupt checks in appropriate places; where are those?
 
-* API
-** Talk to Joel about complexity of option flags. I propose to support only full ARE syntax, and always return the 'details' and the captures.
-** define abstract API parallel to j.u.regex, and concrete impl via factory.
+### Errors ##
+
+* parser to report offsets in error messages
+* all error messages informative
+
+### API ###
+
+* Talk to Joel about complexity of option flags. I propose to support only full ARE syntax, and always return the 'details' and the captures.
+* define abstract API parallel to j.u.regex, and concrete impl via factory.
 
 * Build alt implementation via JNI
 
 * Parity testing using REX test suite
 
-* Code structure.
-** Get rid of 'Guts' and 'Runtime', sink all this into RegExp.
-** Decide how far to push java style; this code seems like a place where 'package access' fields are in fact reasonable.
-** final / private, however, when trivally possible.
-** bitflags versus enum sets in the guts
+### Code structure ###
+
+* Get rid of 'Guts' and 'Runtime', sink all this into RegExp.
+* Decide how far to push java style; this code seems like a place where 'package access' fields are in fact reasonable.
+* final / private, however, when trivally possible.
+* bitflags versus enum sets in the guts
 
 * Performance measurement / tuning
 

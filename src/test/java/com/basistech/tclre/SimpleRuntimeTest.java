@@ -30,12 +30,12 @@ public class SimpleRuntimeTest extends Assert {
 
     boolean doMatch(RegExp exp, String input) throws RegexException {
         Runtime runtime = new Runtime();
-        return runtime.exec(exp, input.toCharArray(), 0, input.length(), EnumSet.noneOf(ExecFlags.class));
+        return runtime.exec(exp, input, EnumSet.noneOf(ExecFlags.class));
     }
 
     boolean doMatch(RegExp exp, String input, EnumSet<ExecFlags> flags) throws RegexException {
         Runtime runtime = new Runtime();
-        return runtime.exec(exp, input.toCharArray(), 0, input.length(), flags);
+        return runtime.exec(exp, input, flags);
     }
 
     @Test

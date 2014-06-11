@@ -274,9 +274,9 @@ class Compiler {
         }
 
         @Override
-        public int compare(char[] data, int start1, int start2, int length) {
-            String s1 = new String(data, start1, length);
-            String s2 = new String(data, start2, length);
+        public int compare(CharSequence data, int start1, int start2, int length) {
+            String s1 = data.subSequence(start1, start1 + length).toString();
+            String s2 = data.subSequence(start2, start2 + length).toString();
             return comparator.compare(s1, s2);
         }
     }

@@ -206,7 +206,7 @@ class Dfa {
         assert n < runtime.g.lacons.size();
         Subre sub = runtime.g.lacons.get(n);
         Dfa d = new Dfa(runtime, sub.cnfa);
-        end = d.longest(cp, runtime.endIndex, null);
+        end = d.longest(cp, runtime.data.length(), null);
         return (sub.subno != 0) ? (end != -1) : (end == -1);
     }
 
@@ -217,7 +217,7 @@ class Dfa {
      */
     int longest(int start, int stop, boolean[] hitstopp) {
         int cp;
-        int realstop = (stop == runtime.endIndex) ? stop : stop + 1;
+        int realstop = (stop == runtime.data.length()) ? stop : stop + 1;
         short co;
         StateSet css;
         int post;
@@ -235,15 +235,15 @@ class Dfa {
 
 
     /* startup */
-        if (cp == runtime.startIndex) {
+        if (cp == 0) {
             co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("color %d", co));
             }
         } else {
-            co = cm.getcolor(runtime.data[cp - 1]);
+            co = cm.getcolor(runtime.data.charAt(cp - 1));
             if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("char %c, color %d\n", runtime.data[cp - 1], co));
+                LOG.debug(String.format("char %c, color %d\n", runtime.data.charAt(cp - 1), co));
             }
         }
         css = miss(css, co, cp);
@@ -255,7 +255,7 @@ class Dfa {
         StateSet ss;
     /* main loop */
         while (cp < realstop) {
-            co = cm.getcolor(runtime.data[cp]);
+            co = cm.getcolor(runtime.data.charAt(cp));
             ss = css.outs[co];
             if (ss == null) {
                 ss = miss(css, co, cp + 1);
@@ -273,7 +273,7 @@ class Dfa {
             LOG.debug(String.format("+++ shutdown +++ at %s", css));
         }
 
-        if (cp == runtime.endIndex && stop == runtime.endIndex) {
+        if (cp == runtime.data.length() && stop == runtime.data.length()) {
             if (hitstopp != null) {
                 hitstopp[0] = true;
             }
@@ -319,8 +319,8 @@ class Dfa {
      */
     int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop) {
         int cp;
-        int realmin = min == runtime.endIndex ? min : min + 1;
-        int realmax = max == runtime.endIndex ? max : max + 1;
+        int realmin = min == runtime.data.length() ? min : min + 1;
+        int realmax = max == runtime.data.length() ? max : max + 1;
         short co;
         StateSet ss;
         StateSet css;
@@ -337,15 +337,15 @@ class Dfa {
         }
 
     /* startup */
-        if (cp == runtime.startIndex) {
+        if (cp == 0) {
             co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("color %d", co));
             }
         } else {
-            co = cm.getcolor(runtime.data[cp - 1]);
+            co = cm.getcolor(runtime.data.charAt(cp - 1));
             if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("char %c, color %d\n", runtime.data[cp - 1], co));
+                LOG.debug(String.format("char %c, color %d\n", runtime.data.charAt(cp - 1), co));
             }
         }
 
@@ -359,7 +359,7 @@ class Dfa {
 
     /* main loop */
         while (cp < realmax) {
-            co = cm.getcolor(runtime.data[cp]);
+            co = cm.getcolor(runtime.data.charAt(cp));
             ss = css.outs[co];
             if (ss == null) {
                 ss = miss(css, co, cp + 1);
@@ -387,7 +387,7 @@ class Dfa {
         if (0 != (ss.flags & StateSet.POSTSTATE) && cp > min) {
             assert cp >= realmin;
             cp--;
-        } else if (cp == runtime.endIndex && max == runtime.endIndex) {
+        } else if (cp == runtime.data.length() && max == runtime.data.length()) {
             co = cnfa.eos[0 != (runtime.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             ss = miss(css, co, cp);
         /* match might have ended at eol */
@@ -414,7 +414,7 @@ class Dfa {
 
         int nopr = lastnopr;
         if (nopr == -1) {
-            nopr = runtime.startIndex;
+            nopr = 0;
         }
 
         ObjectIterator<Object2ObjectMap.Entry<BitSet, StateSet>> it = stateSets.object2ObjectEntrySet().fastIterator();

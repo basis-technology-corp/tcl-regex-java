@@ -34,15 +34,13 @@ class Runtime {
     int eflags;
     List<RegMatch> match;
     RegMatch details;
-    int startIndex;
-    int endIndex;
-    char[] data;
+    CharSequence data;
     int[] mem; // backtracking.
 
     /**
      * exec - match regular expression
      */
-    boolean exec(RegExp re, char[] data, int startIndex, int endIndex, EnumSet<ExecFlags> execFlags)
+    boolean exec(RegExp re, CharSequence data, EnumSet<ExecFlags> execFlags)
             throws RegexException {
     /* sanity checks */
     /* setup */
@@ -66,8 +64,6 @@ class Runtime {
         this.re = re;
         this.g = re.guts;
         this.data = data;
-        this.startIndex = startIndex;
-        this.endIndex = endIndex;
         this.match = Lists.newArrayList();
         match.add(null); // make room for 1.
         mem = new int[g.ntree];
@@ -103,16 +99,16 @@ class Runtime {
     /* first, a shot with the search RE */
         Dfa s = new Dfa(this, g.search);
         int[] coldp = new int[1];
-        close = s.shortest(startIndex, startIndex, endIndex, coldp, null);
+        close = s.shortest(0, 0, data.length(), coldp, null);
         cold = coldp[0];
 
         int dtstart;
         if (cold != -1) {
             dtstart = cold;
         } else {
-            dtstart = endIndex;
+            dtstart = data.length();
         }
-        details = new RegMatch(dtstart, endIndex);
+        details = new RegMatch(dtstart, data.length());
 
         if (close == -1) {		/* not found */
             return false;
@@ -127,9 +123,9 @@ class Runtime {
         for (begin = open; begin <= close; begin++) {
             boolean[] hitendp = new boolean[1];
             if (shorter) {
-                end = d.shortest(begin, begin, endIndex, null, hitendp);
+                end = d.shortest(begin, begin, data.length(), null, hitendp);
             } else {
-                end = d.longest(begin, endIndex, hitendp);
+                end = d.longest(begin, data.length(), hitendp);
             }
             hitend = hitendp[0];
 
@@ -149,9 +145,9 @@ class Runtime {
         if (cold != -1) {
             dtstart = cold;
         } else {
-            dtstart = endIndex;
+            dtstart = data.length();
         }
-        details = new RegMatch(dtstart, endIndex);
+        details = new RegMatch(dtstart, data.length());
 
         if (re.nsub > 0) { // no need to do the work.
             return dissect(g.tree, begin, end);
@@ -176,10 +172,10 @@ class Runtime {
         if (cold[0] != -1) {
             dtstart = cold[0];
         } else {
-            dtstart = endIndex;
+            dtstart = data.length();
         }
 
-        details = new RegMatch(dtstart, this.endIndex);
+        details = new RegMatch(dtstart, data.length());
         return ret;
     }
 
@@ -200,10 +196,10 @@ class Runtime {
 
         assert d != null && s != null;
         cold = -1;
-        close = startIndex;
+        close = 0;
         do {
             int[] cold0 = new int[1];
-            close = s.shortest(close, close, endIndex, cold0, null);
+            close = s.shortest(close, close, data.length(), cold0, null);
             cold = cold0[0];
 
             if (close == -1) {
@@ -215,7 +211,7 @@ class Runtime {
 
             for (begin = open; begin <= close; begin++) {
                 estart = begin;
-                estop = endIndex;
+                estop = data.length();
                 for (; ; ) {
                     if (shorter) {
                         end = d.shortest(begin, estart, estop, null, hitend);
@@ -252,7 +248,7 @@ class Runtime {
                     }
                 }
             }
-        } while (close < endIndex);
+        } while (close < data.length());
 
         coldp[0] = cold;
         return false;
@@ -574,7 +570,7 @@ class Runtime {
         if (match.get(n).start == -1) {
             return false;
         }
-        paren = startIndex + match.get(n).start;
+        paren = match.get(n).start;
         len = match.get(n).end - match.get(n).start;
 
     /* no room to maneuver -- retries are pointless */
@@ -603,7 +599,7 @@ class Runtime {
         for (p = begin; p <= stop && (i < max || max == Compiler.INFINITY); p += len) {
             // paren is index of
 
-            if (g.compare.compare(data, startIndex + paren, startIndex + p, len) != 0) {
+            if (g.compare.compare(data, paren, p, len) != 0) {
                 break;
             }
             i++;

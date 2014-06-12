@@ -67,4 +67,16 @@ public class MatcherTests extends Assert {
         assertEquals(3, matcher.end());
     }
 
+    @Test
+    public void matches() throws Exception {
+        RePattern pattern = HsrePattern.compile("ab");
+        ReMatcher matcher = pattern.matcher("abab");
+        assertFalse(matcher.matches());
+        matcher = pattern.matcher("ab");
+        assertTrue(matcher.matches());
+
+        matcher = pattern.matcher("abab");
+        matcher.region(0, 2);
+        assertTrue(matcher.matches());
+    }
 }

@@ -90,6 +90,14 @@ final class HsreMatcher implements ReMatcher {
     }
 
     @Override
+    public boolean matches() throws RegexException {
+        if (!find()) {
+            return false;
+        }
+        return start() == regionStart && end() == regionEnd;
+    }
+
+    @Override
     public int start() {
         return runtime.match.get(0).start + regionStart;
     }

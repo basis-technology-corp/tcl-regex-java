@@ -26,5 +26,6 @@ public interface ReMatcher extends MatchResult {
     ReMatcher region(int start, int end) throws RegexException;
     ReMatcher reset() throws RegexException;
     ReMatcher reset(CharSequence newSequence) throws RegexException;
+    boolean matches() throws RegexException;
 
 }

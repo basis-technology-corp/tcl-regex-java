@@ -36,7 +36,7 @@ public final class HsreMatcher implements ReMatcher, MatchResult {
      * @return the pattern.
      */
     @Override
-    public HsrePattern pattern() {
+    public RePattern pattern() {
         return pattern;
     }
 

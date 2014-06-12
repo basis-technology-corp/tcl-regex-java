@@ -54,7 +54,7 @@ public class Utils extends Assert {
     }
 
     public static class Matches extends TypeSafeMatcher<String> {
-        final HsrePattern pattern;
+        final RePattern pattern;
         final EnumSet<ExecFlags> eflags;
 
         Matches(String patternString, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
@@ -67,7 +67,7 @@ public class Utils extends Assert {
 
         }
 
-        Matches(HsrePattern pattern, EnumSet<ExecFlags> eflags) {
+        Matches(RePattern pattern, EnumSet<ExecFlags> eflags) {
             this.pattern = pattern;
             this.eflags = eflags;
         }
@@ -106,12 +106,12 @@ public class Utils extends Assert {
         }
 
         @Factory
-        public static <T> Matcher<String> matches(HsrePattern pattern) {
+        public static <T> Matcher<String> matches(RePattern pattern) {
             return new Matches(pattern, EnumSet.noneOf(ExecFlags.class));
         }
 
         @Factory
-        public static <T> Matcher<String> matches(HsrePattern pattern, ExecFlags ... eflags) {
+        public static <T> Matcher<String> matches(RePattern pattern, ExecFlags ... eflags) {
             EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
             for (ExecFlags ef : eflags) {
                 flagSet.add(ef);

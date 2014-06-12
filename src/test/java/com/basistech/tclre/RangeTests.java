@@ -14,8 +14,6 @@
 
 package com.basistech.tclre;
 
-import java.util.EnumSet;
-
 import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
@@ -29,7 +27,7 @@ public class RangeTests extends Utils {
 
     @Test
     public void testKitchenSink() throws Exception {
-        HsrePattern exp = HsrePattern.compile("[^a][\u4e00-\uf000][[:upper:]][^\ufeff][\u4e00-\u4e10]b.c.d",
+        RePattern exp = HsrePattern.compile("[^a][\u4e00-\uf000][[:upper:]][^\ufeff][\u4e00-\u4e10]b.c.d",
                 PatternFlags.ADVANCED, PatternFlags.EXPANDED);
         assertThat("Q\u4e01A$\u4e09bGcHd", matches(exp));
     }
@@ -38,26 +36,26 @@ public class RangeTests extends Utils {
 
     @Test
     public void testNegativeRange() throws Exception {
-        HsrePattern exp = HsrePattern.compile("[^a]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
+        RePattern exp = HsrePattern.compile("[^a]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
         assertThat("Q", matches(exp));
         assertThat("a", not(matches(exp)));
     }
 
     @Test
     public void testUnicodeRange() throws Exception {
-        HsrePattern exp = HsrePattern.compile("[\u4e00-\uf000]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
+        RePattern exp = HsrePattern.compile("[\u4e00-\uf000]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
         assertThat("\u4e01", matches(exp));
     }
 
     @Test
     public void testNotBom() throws Exception {
-        HsrePattern exp = HsrePattern.compile("[^\ufeff]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
+        RePattern exp = HsrePattern.compile("[^\ufeff]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
         assertThat("$", matches(exp));
     }
 
     @Test
     public void testUpper() throws Exception {
-        HsrePattern exp = HsrePattern.compile("[[:upper:]]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
+        RePattern exp = HsrePattern.compile("[[:upper:]]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
         assertThat("A", matches(exp));
     }
 }

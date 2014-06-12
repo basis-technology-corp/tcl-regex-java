@@ -14,8 +14,6 @@
 
 package com.basistech.tclre;
 
-import java.util.EnumSet;
-
 import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
@@ -28,7 +26,7 @@ import static org.hamcrest.CoreMatchers.not;
 public class SingleCaseTests extends Utils {
     @Test
     public void testAlternation() throws Exception {
-        HsrePattern exp = HsrePattern.compile("a|b", PatternFlags.ADVANCED, PatternFlags.ICASE);
+        RePattern exp = HsrePattern.compile("a|b", PatternFlags.ADVANCED, PatternFlags.ICASE);
         assertThat("a", matches(exp));
         assertThat("A", matches(exp));
         assertThat("b", matches(exp));
@@ -40,7 +38,7 @@ public class SingleCaseTests extends Utils {
 
     @Test
     public void testRange() throws Exception {
-        HsrePattern exp = HsrePattern.compile("[a-z]", PatternFlags.ADVANCED, PatternFlags.ICASE);
+        RePattern exp = HsrePattern.compile("[a-z]", PatternFlags.ADVANCED, PatternFlags.ICASE);
         assertThat("a", matches(exp));
         assertThat("A", matches(exp));
         assertThat("q", matches(exp));

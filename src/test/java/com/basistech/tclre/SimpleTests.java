@@ -46,7 +46,7 @@ public class SimpleTests extends Utils {
 
     @Test
     public void testAlternation() throws Exception {
-        HsrePattern exp = HsrePattern.compile("a|b", EnumSet.of(PatternFlags.ADVANCED));
+        RePattern exp = HsrePattern.compile("a|b", EnumSet.of(PatternFlags.ADVANCED));
         assertThat("a", matches(exp));
         assertThat("b", matches(exp));
         assertThat("c", not(matches(exp)));
@@ -54,7 +54,7 @@ public class SimpleTests extends Utils {
 
     @Test
     public void testMoreDots() throws Exception {
-        HsrePattern exp = HsrePattern.compile("a.b..c", EnumSet.of(PatternFlags.BASIC));
+        RePattern exp = HsrePattern.compile("a.b..c", EnumSet.of(PatternFlags.BASIC));
         assertThat("aXbYYc", matches(exp));
         assertThat("abYYc", not(matches(exp)));
     }
@@ -62,7 +62,7 @@ public class SimpleTests extends Utils {
     @Test
     public void testQuest() throws Exception {
         // ? is advanced?
-        HsrePattern exp = HsrePattern.compile("ab?c", EnumSet.of(PatternFlags.ADVANCED));
+        RePattern exp = HsrePattern.compile("ab?c", EnumSet.of(PatternFlags.ADVANCED));
         assertThat("abc", matches(exp));
         assertThat("ac", matches(exp));
         assertThat("abbc", not(matches(exp)));
@@ -75,7 +75,7 @@ public class SimpleTests extends Utils {
     @Test
     public void testQuant() throws Exception {
         // ? is advanced?
-        HsrePattern exp = HsrePattern.compile("ab{1,2}cd{3,}e{2}", PatternFlags.ADVANCED);
+        RePattern exp = HsrePattern.compile("ab{1,2}cd{3,}e{2}", PatternFlags.ADVANCED);
         assertThat("abcdddee", matches(exp));
         assertThat("abcddddee", matches(exp));
         assertThat("XabcddddeeY", matches(exp));
@@ -99,13 +99,13 @@ public class SimpleTests extends Utils {
 
     @Test
     public void testNullQuant() throws Exception {
-        HsrePattern exp = HsrePattern.compile("ab{0,0}c", PatternFlags.ADVANCED);
+        RePattern exp = HsrePattern.compile("ab{0,0}c", PatternFlags.ADVANCED);
         assertThat("ac", matches(exp));
     }
 
     @Test
     public void testAnchors() throws Exception {
-        HsrePattern exp = HsrePattern.compile("^abc$", PatternFlags.ADVANCED);
+        RePattern exp = HsrePattern.compile("^abc$", PatternFlags.ADVANCED);
         assertThat("abc", matches(exp));
         assertThat("XabcY", not(matches(exp)));
 
@@ -115,7 +115,7 @@ public class SimpleTests extends Utils {
 
     @Test
     public void testCapture() throws Exception {
-        HsrePattern exp = HsrePattern.compile("a(?:nonc+ap)b(ca+p)c([1-9]+)$", PatternFlags.ADVANCED);
+        RePattern exp = HsrePattern.compile("a(?:nonc+ap)b(ca+p)c([1-9]+)$", PatternFlags.ADVANCED);
         //..............................0000000000111111111122
         //..............................0123456789012345678901
         HsreMatcher matcher = exp.matcher("Xanonccapbcaapc1234567");
@@ -129,14 +129,14 @@ public class SimpleTests extends Utils {
     @Test
     public void testClasses() throws Exception {
         //[[:digit:]]
-        HsrePattern exp = HsrePattern.compile("[[:digit:]]+", PatternFlags.ADVANCED);
+        RePattern exp = HsrePattern.compile("[[:digit:]]+", PatternFlags.ADVANCED);
         assertThat("1234567890", matches(exp));
         assertThat("1234567890a", matches(exp));
     }
 
     @Test
     public void testLookahead() throws Exception {
-        HsrePattern exp = HsrePattern.compile("^[^:]+(?=.*\\.com$)", PatternFlags.ADVANCED,
+        RePattern exp = HsrePattern.compile("^[^:]+(?=.*\\.com$)", PatternFlags.ADVANCED,
                 PatternFlags.EXPANDED);
         HsreMatcher matcher = exp.matcher("http://www.activestate.com");
         assertThat(matcher.find(), is(true));
@@ -146,7 +146,7 @@ public class SimpleTests extends Utils {
 
     @Test
     public void testSimpleLookahead() throws Exception {
-        HsrePattern exp = HsrePattern.compile("^a(?=bc$)", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
+        RePattern exp = HsrePattern.compile("^a(?=bc$)", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
         HsreMatcher matcher = exp.matcher("abc");
         assertThat(matcher.find(), is(true));
         assertThat(matcher.groupCount(), equalTo(0));
@@ -156,7 +156,7 @@ public class SimpleTests extends Utils {
     @Test
     public void testNonGreedy() throws Exception {
         // ? is advanced?
-        HsrePattern exp = HsrePattern.compile("3z*?", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
+        RePattern exp = HsrePattern.compile("3z*?", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
         HsreMatcher matcher = exp.matcher("123zzz456");
         assertThat(matcher.find(), is(true));
         assertThat(0, equalTo(matcher.groupCount()));

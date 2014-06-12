@@ -147,12 +147,12 @@ class Compiler {
      * @return the regexp
      * @throws RegexException
      */
-    static HsrePattern compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
+    static RePattern compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
         Compiler that = new Compiler(pattern, flags);
         return that.compile();
     }
 
-    private HsrePattern compile() throws RegexException {
+    private RePattern compile() throws RegexException {
         stop = pattern.length;
         nlcolor = Constants.COLORLESS;
         info = 0;

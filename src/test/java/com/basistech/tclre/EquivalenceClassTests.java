@@ -14,8 +14,6 @@
 
 package com.basistech.tclre;
 
-import java.util.EnumSet;
-
 import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
@@ -32,7 +30,7 @@ public class EquivalenceClassTests extends Utils {
 
     @Test
     public void testSimpleEqv() throws Exception {
-        HsrePattern exp = HsrePattern.compile("[[=a=]]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
+        RePattern exp = HsrePattern.compile("[[=a=]]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
         assertThat("a", matches(exp));
         // C didn't implement this, and neither do we.
         assertThat("A", not(matches(exp)));

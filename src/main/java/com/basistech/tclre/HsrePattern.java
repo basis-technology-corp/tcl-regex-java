@@ -17,13 +17,12 @@ package com.basistech.tclre;
 import java.util.EnumSet;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.Sets;
 
 /**
  * A compiled regular expression. The method {@link #compile(String, java.util.EnumSet)} serves
  * as the factory.
  */
-public class HsrePattern {
+public class HsrePattern implements RePattern {
     final long info;
     final int nsub;       /* number of subexpressions */
     final Guts guts;
@@ -43,11 +42,11 @@ public class HsrePattern {
      * @return the pattern.
      * @throws RegexException
      */
-    static HsrePattern compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
+    static RePattern compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
         return Compiler.compile(pattern, flags);
     }
 
-    static HsrePattern compile(String pattern, PatternFlags... flags) throws RegexException {
+    static RePattern compile(String pattern, PatternFlags... flags) throws RegexException {
         EnumSet<PatternFlags> flagSet = EnumSet.noneOf(PatternFlags.class);
         for (PatternFlags f : flags) {
             flagSet.add(f);
@@ -55,6 +54,7 @@ public class HsrePattern {
         return Compiler.compile(pattern, flagSet);
     }
 
+    @Override
     public HsreMatcher matcher(CharSequence data, ExecFlags... flags) {
         EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
         for (ExecFlags f : flags) {
@@ -64,6 +64,7 @@ public class HsrePattern {
 
     }
 
+    @Override
     public HsreMatcher matcher(CharSequence data, EnumSet<ExecFlags> flags) {
         return new HsreMatcher(this, data, flags);
     }

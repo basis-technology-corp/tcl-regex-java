@@ -14,11 +14,12 @@
 
 package com.basistech.tclre;
 
+import java.util.EnumSet;
+
 /**
- * The interface for matchers
+ * A compiled regular expression.
  */
-public interface ReMatcher {
-    RePattern pattern();
-    boolean find(int startOffset) throws RegexException;
-    boolean find() throws RegexException;
+public interface RePattern {
+    HsreMatcher matcher(CharSequence data, ExecFlags... flags);
+    HsreMatcher matcher(CharSequence data, EnumSet<ExecFlags> flags);
 }

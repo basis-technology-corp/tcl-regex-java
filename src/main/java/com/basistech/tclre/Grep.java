@@ -36,7 +36,7 @@ public final class Grep {
     String pattern;
     @Argument(index = 1)
     List<File> inputs;
-    private HsrePattern re;
+    private RePattern re;
 
     private Grep() {
         //

@@ -20,15 +20,19 @@ import java.util.EnumSet;
  * Matcher. This is an incomplete analog of {@link java.util.regex.Matcher}.
  */
 final class HsreMatcher implements ReMatcher {
-    private final CharSequence data;
+    private CharSequence data;
     private final EnumSet<ExecFlags> flags;
     private final HsrePattern pattern;
     private Runtime runtime;
+    private int regionStart;
+    private int regionEnd;
 
     HsreMatcher(HsrePattern pattern, CharSequence data, EnumSet<ExecFlags> flags) {
         this.pattern = pattern;
         this.data = data;
         this.flags = flags;
+        regionStart = 0;
+        regionEnd = data.length();
     }
 
     /**
@@ -46,9 +50,12 @@ final class HsreMatcher implements ReMatcher {
      */
     @Override
     public boolean find(int startOffset) throws RegexException {
+        if (startOffset < regionStart) {
+            throw new IllegalArgumentException("Start offset less than region start");
+        }
         // TODO: this is a pessimization; we should be able to make one at construction and reuse it.
         runtime = new Runtime();
-        return runtime.exec(pattern, data.subSequence(startOffset, data.length()), flags);
+        return runtime.exec(pattern, data.subSequence(startOffset, regionEnd), flags);
     }
 
     /**
@@ -57,27 +64,49 @@ final class HsreMatcher implements ReMatcher {
      */
     @Override
     public boolean find() throws RegexException {
-        return find(0);
+        return find(regionStart);
+    }
+
+    @Override
+    public ReMatcher region(int start, int end) throws RegexException {
+        regionStart = start;
+        regionEnd = end;
+        return this;
+    }
+
+    @Override
+    public ReMatcher reset() throws RegexException {
+        regionStart = 0;
+        regionEnd = data.length();
+        return this;
+    }
+
+    @Override
+    public ReMatcher reset(CharSequence newSequence) throws RegexException {
+        data = newSequence;
+        regionStart = 0;
+        regionEnd = data.length();
+        return this;
     }
 
     @Override
     public int start() {
-        return runtime.match.get(0).start;
+        return runtime.match.get(0).start + regionStart;
     }
 
     @Override
     public int start(int group) {
-        return runtime.match.get(group).start;
+        return runtime.match.get(group).start + regionStart;
     }
 
     @Override
     public int end() {
-        return runtime.match.get(0).start;
+        return runtime.match.get(0).end + regionStart;
     }
 
     @Override
     public int end(int group) {
-        return runtime.match.get(group).end;
+        return runtime.match.get(group).end + regionStart;
     }
 
     @Override

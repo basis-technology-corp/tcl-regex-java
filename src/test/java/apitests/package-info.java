@@ -12,19 +12,7 @@
  ** 7-104.9(a).
  ******************************************************************************/
 
-package com.basistech.tclre;
-
-import java.util.regex.MatchResult;
-
 /**
- * The interface for matchers
+ * API tests live in their own package to avoid accidental dependency on package access.
  */
-public interface ReMatcher extends MatchResult {
-    RePattern pattern();
-    boolean find(int startOffset) throws RegexException;
-    boolean find() throws RegexException;
-    ReMatcher region(int start, int end) throws RegexException;
-    ReMatcher reset() throws RegexException;
-    ReMatcher reset(CharSequence newSequence) throws RegexException;
-
-}
+package apitests;

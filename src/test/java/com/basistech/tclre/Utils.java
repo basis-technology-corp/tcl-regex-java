@@ -23,7 +23,7 @@ import org.hamcrest.TypeSafeMatcher;
 import org.junit.Assert;
 
 /**
- * Created by benson on 6/11/14.
+ * Some handy test utilities.
  */
 public class Utils extends Assert {
     public static class MatcherMatches extends TypeSafeMatcher<ReMatcher> {

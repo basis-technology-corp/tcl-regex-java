@@ -29,6 +29,7 @@ final class Locale {
 
     static final Object2CharMap<String> CNAME;
 
+    //CHECKSTYLE:OFF
     static {
         CNAME = new Object2CharOpenHashMap<String>();
 
@@ -128,6 +129,7 @@ final class Locale {
         CNAME.put("tilde", '~');
         CNAME.put("DEL", '\177');
     }
+    //CHECKSTYLE:ON
 
 
     private Locale() {

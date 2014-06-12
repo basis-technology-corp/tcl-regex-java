@@ -18,6 +18,6 @@ package com.basistech.tclre;
  * Flags that control runtime execution.
  */
 public enum ExecFlags {
-    NOTBOL,	/** BOS is not BOL */
+    NOTBOL, /** BOS is not BOL */
     NOTEOL; /** EOS is not EOL */
 }

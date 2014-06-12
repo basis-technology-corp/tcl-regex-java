@@ -31,6 +31,7 @@ import org.kohsuke.args4j.CmdLineParser;
 /**
  * Grep command line to exercise the regex package.
  */
+@SuppressWarnings("PMD")
 public final class Grep {
     @Argument(required = true)
     String pattern;

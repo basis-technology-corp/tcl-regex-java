@@ -15,9 +15,7 @@
 package com.basistech.tclre;
 
 
-import java.util.Comparator;
 import java.util.List;
-
 import com.google.common.collect.Lists;
 
 /**

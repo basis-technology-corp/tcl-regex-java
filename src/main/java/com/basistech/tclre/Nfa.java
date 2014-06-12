@@ -44,10 +44,12 @@ class Nfa {
      *
      * @param cm
      */
+    @SuppressWarnings("PMD")
     Nfa(ColorMap cm) {
         this(null, cm);
     }
 
+    @SuppressWarnings("PMD")
     Nfa(Nfa parent) {
         this(parent, parent.cm);
     }
@@ -73,7 +75,7 @@ class Nfa {
         newarc('$', (short)0, finalState, post);
     }
 
-    void newarc(int t, short co, State from, State to) {
+    final void newarc(int t, short co, State from, State to) {
         Arc a;
 
         assert from != null && to != null;
@@ -633,7 +635,7 @@ class Nfa {
         if (from.nouts > 1) {
             s = newstate();
 
-            assert (to != from);        /* con is not an inarc */
+            assert to != from;        /* con is not an inarc */
             copyins(from, s);       /* duplicate inarcs */
             cparc(con, s, to);      /* move constraint arc */
             freearc(con);
@@ -782,6 +784,7 @@ class Nfa {
         //CA(con->type, a->type)) {
         switch ((con.type << 8) | a.type) {
 
+
         case '^' << 8 | Compiler.PLAIN:     /* newlines are handled separately */
         case '$' << 8 | Compiler.PLAIN:
             return INCOMPATIBLE;
@@ -820,9 +823,10 @@ class Nfa {
         case '$' << 8 | Compiler.LACON:
         case Compiler.AHEAD << 8 | Compiler.LACON:
             return COMPATIBLE;
+        default:
+            throw new RuntimeException("Impossible arc");
 
         }
-        throw new RegexException("REG_ASSERT");
     }
 
 
@@ -979,21 +983,21 @@ class Nfa {
     Cnfa compact() {
 
         Arc a;
-        int nstates;
+        int stateCount;
         int narcs;
-        nstates = 0;
+        stateCount = 0;
         narcs = 0;
 
         for (State s = states; s != null; s = s.next) {
-            nstates++;
+            stateCount++;
             narcs += 1 + s.nouts + 1;
             /* 1 as a fake for flags, nouts for arcs, 1 as endmarker */
         }
 
         int arcIndex = 0;
-        Cnfa cnfa = new Cnfa(nstates, narcs, pre.no, post.no, bos, eos, cm.maxcolor() + 1, 0);
+        Cnfa cnfa = new Cnfa(stateCount, narcs, pre.no, post.no, bos, eos, cm.maxcolor() + 1, 0);
         for (State s = states; s != null; s = s.next) {
-            assert s.no < nstates;
+            assert s.no < stateCount;
             cnfa.setState(s.no, arcIndex);
             /* clear and skip flags "arc", by preparing to set arc at index 1 */
             arcIndex++;

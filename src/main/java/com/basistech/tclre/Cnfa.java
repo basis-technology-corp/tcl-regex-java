@@ -79,8 +79,9 @@ class Cnfa {
         int q;
         long tmp;
 
-        if (last - first <= 1)
+        if (last - first <= 1) {
             return;
+        }
 
         for (p = first; p <= last; p++) {
             for (q = p; q <= last; q++) {

@@ -125,7 +125,7 @@ class Subre {
             sb.append(String.format(" (#%d)", subno));
         }
         if (min != 1 || max != 1) {
-            sb.append(String.format(" {%d,",min));
+            sb.append(String.format(" {%d,", min));
             if (max != Compiler.INFINITY) {
                 sb.append(String.format("%d", max));
             }

@@ -94,12 +94,6 @@ class Lex {
         return v.nexttype == t;
     }
 
-    private void eat(int t) throws RegexException {
-        if (see(t)) {
-            next();
-        }
-    }
-
     private char charAt(int index) {
         return v.pattern[index];
     }
@@ -334,6 +328,7 @@ class Lex {
         v.note(n);
     }
 
+    //CHECKSTYLE:OFF
     /**
      * next - get next token
      */
@@ -727,6 +722,7 @@ class Lex {
     /* otherwise, lexescape has already done the work */
         return true;
     }
+    //CHECKSTYLE:ON
 
     /**
      * brenext - get next BRE token
@@ -742,6 +738,7 @@ class Lex {
             }
             return ret('*');
         case '[':
+            //CHECKSTYLE:OFF
             if (have(6) && charAtNow() == '[' 
                 && charAtNowPlus(1) == ':' 
                 && (charAtNowPlus(2) == '<' || charAtNowPlus(2) == '>') 
@@ -752,6 +749,7 @@ class Lex {
                 v.now += 6;
                 note(Flags.REG_UNONPOSIX);
                 return ret((c == '<') ? '<' : '>');
+                //CHECKSTYLE:ON
             }
             intocon(L_BRACK);
             if (next1('^')) {
@@ -846,7 +844,7 @@ class Lex {
 
         assert 0 != (v.cflags & Flags.REG_EXPANDED);
 
-        for (; ; ) {
+        for (;;) {
             while (!ateos() && iscspace(charAtNow())) {
                 v.now++;
             }
@@ -869,6 +867,7 @@ class Lex {
      * lexescape - parse an ARE backslash escape (backslash already eaten)
      * Note slightly nonstandard use of the CCLASS type code.
      */
+    //CHECKSTYLE:OFF
     boolean lexescape() throws RegexException {
         char c;
         int save;
@@ -1007,6 +1006,7 @@ class Lex {
             throw new RegexException("REG_EESCAPE"); // unknown escape.
         }
     }
+    //CHECKSTYLE:ON
 
     /*
  - lexdigits - slurp up digits and return chr value

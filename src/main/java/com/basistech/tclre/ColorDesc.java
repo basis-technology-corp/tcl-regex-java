@@ -21,13 +21,13 @@ class ColorDesc {
     static final int FREECOL = 1; // currently free
     static final int PSEUDO = 2;  // pseudocolor, no real chars
 
-    private int nchars; // number of chars of this color
     int free; // free chain.
     short sub; // open subcolor (if any); free chain ptr */
     Arc arcs; /* color chain; linked list of arcs. */
     int flags;
 
     ColorMap.Tree block; /* block of color if any */
+    private int nchars; // number of chars of this color
 
     ColorDesc() {
         sub = Constants.NOSUB;

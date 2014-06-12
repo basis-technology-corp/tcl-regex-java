@@ -28,7 +28,6 @@ class StateSet {
     static final int LOCKED = 4;
     static final int NOPROGRESS = 8;
 
-    private int lastseen; // index of last entered on arrival here
 
     /* Using BitSet and it's hash/equals
      * is probably going to be slower than we want
@@ -38,6 +37,9 @@ class StateSet {
     Arcp ins;
     StateSet[] outs;
     Arcp[] inchain;
+
+    /* 'privatized' to facilitate some debugging. */
+    private int lastseen; // index of last entered on arrival here
 
     StateSet(int nsets, int ncolors) {
         states = new BitSet(nsets);

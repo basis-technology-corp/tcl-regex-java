@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 /**
  * from regcomp.c
  */
-class Compiler {
+final class Compiler {
     /* token type codes, some also used as NFA arc types */
     static final int EMPTY = 'n';       /* no token present */
     static final int EOS = 'e';     /* end of string */
@@ -675,6 +675,7 @@ class Compiler {
         return t;
     }
 
+    //CHECKSTYLE:OFF
     void parseqatom(int stopper, int type, State lp, State rp, Subre top) throws RegexException {
         State s;    /* temporaries for new states */
         State s2;
@@ -1063,6 +1064,7 @@ class Compiler {
         t.flags |= Subre.combine(t.flags, t.right.flags);
         top.flags |= Subre.combine(top.flags, t.flags);
     }
+    //CHECKSTYLE:ON
 
     void delsub(Nfa nfa, State lp, State rp) {
         rp.tmp = rp;
@@ -1270,6 +1272,7 @@ class Compiler {
         cm.okcolors(nfa);
     }
 
+    //CHECKSTYLE:OFF
     /**
      * brackpart - handle one item (or range) within a bracket expression
      */
@@ -1391,6 +1394,7 @@ class Compiler {
         }
         dovec(set, lp, rp);
     }
+    //CHECKSTYLE:ON
 
     /**
      * scanplain - scan PLAIN contents of [. etc.

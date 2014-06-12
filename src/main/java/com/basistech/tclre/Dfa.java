@@ -33,8 +33,8 @@ class Dfa {
     final int ncolors; // length of outarc and inchain vectors (really?)
     final Cnfa cnfa;
     final ColorMap cm;
-    int lastpost; 	/* location of last cache-flushed success */
-    int lastnopr; 	/* location of last cache-flushed NOPROGRESS */
+    int lastpost;   /* location of last cache-flushed success */
+    int lastnopr;   /* location of last cache-flushed NOPROGRESS */
     final Runtime hsreMatcher;
 
 
@@ -260,7 +260,7 @@ class Dfa {
             if (ss == null) {
                 ss = miss(css, co, cp + 1);
                 if (ss == null) {
-                    break;	/* NOTE BREAK OUT */
+                    break;  /* NOTE BREAK OUT */
                 }
             }
             cp++;
@@ -286,7 +286,7 @@ class Dfa {
             if (ss != null && (0 != (ss.flags & StateSet.POSTSTATE))) {
                 return cp;
             } else if (ss != null) {
-                ss.setLastSeen(cp);	/* to be tidy */
+                ss.setLastSeen(cp); /* to be tidy */
             }
         }
 
@@ -300,7 +300,7 @@ class Dfa {
                 post = thisSS.getLastSeen();
             }
         }
-        if (post != -1) {		/* found one */
+        if (post != -1) {       /* found one */
             return post - 1;
         }
         return -1;
@@ -364,14 +364,14 @@ class Dfa {
             if (ss == null) {
                 ss = miss(css, co, cp + 1);
                 if (ss == null) {
-                    break;	/* NOTE BREAK OUT */
+                    break;  /* NOTE BREAK OUT */
                 }
             }
             cp++;
             ss.setLastSeen(cp);
             css = ss;
             if (0 != (ss.flags & StateSet.POSTSTATE) && cp >= realmin) {
-                break;		/* NOTE BREAK OUT */
+                break;      /* NOTE BREAK OUT */
             }
         }
 
@@ -380,7 +380,7 @@ class Dfa {
             return -1;
         }
 
-        if (coldp != null) {	/* report last no-progress state set, if any */
+        if (coldp != null) {    /* report last no-progress state set, if any */
             coldp[0] = lastcold();
         }
 

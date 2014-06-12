@@ -23,7 +23,7 @@ import com.google.common.collect.Lists;
  * The internal implementation of matching.
  */
 class Runtime {
-    static final int UNTRIED = 0; 	/* not yet tried at all */
+    static final int UNTRIED = 0;   /* not yet tried at all */
     static final int TRYING = 1;    /* top matched, trying submatches */
     static final int TRIED = 2;     /* top didn't match or submatches exhausted */
 
@@ -38,8 +38,7 @@ class Runtime {
     /**
      * exec - match regular expression
      */
-    boolean exec(HsrePattern re, CharSequence data, EnumSet<ExecFlags> execFlags)
-            throws RegexException {
+    boolean exec(HsrePattern re, CharSequence data, EnumSet<ExecFlags> execFlags) throws RegexException {
     /* sanity checks */
     /* setup */
 
@@ -56,6 +55,8 @@ class Runtime {
             case NOTEOL:
                 eflags |= Flags.REG_NOTEOL;
                 break;
+            default:
+                throw new RuntimeException("impossible exec flag");
             }
         }
 
@@ -83,7 +84,7 @@ class Runtime {
         int begin;
         int end = -1;
         int cold;
-        int open;		/* open and close of range of possible starts */
+        int open;       /* open and close of range of possible starts */
         int close;
         boolean hitend;
         boolean shorter = 0 != (g.tree.flags & Subre.SHORTER);
@@ -102,7 +103,7 @@ class Runtime {
         }
         details = new RegMatch(dtstart, data.length());
 
-        if (close == -1) {		/* not found */
+        if (close == -1) {      /* not found */
             return false;
         }
 
@@ -125,11 +126,11 @@ class Runtime {
                 cold = begin;
             }
             if (end != -1) {
-                break;		/* NOTE BREAK OUT */
+                break;      /* NOTE BREAK OUT */
             }
         }
 
-        assert end != -1;		/* search RE succeeded so loop should */
+        assert end != -1;       /* search RE succeeded so loop should */
 
         /* and pin down details */
         match.set(0, new RegMatch(begin, end));
@@ -178,11 +179,10 @@ class Runtime {
         int begin;
         int end;
         int cold;
-        int open;		/* open and close of range of possible starts */
+        int open;       /* open and close of range of possible starts */
         int close;
         int estart;
         int estop;
-        int er;
         boolean shorter = 0 != (g.tree.flags & Subre.SHORTER);
         boolean hitend[] = new boolean[1];
 
@@ -195,7 +195,7 @@ class Runtime {
             cold = cold0[0];
 
             if (close == -1) {
-                break;				/* NOTE BREAK */
+                break;              /* NOTE BREAK */
             }
             assert cold != -1;
             open = cold;
@@ -204,7 +204,7 @@ class Runtime {
             for (begin = open; begin <= close; begin++) {
                 estart = begin;
                 estop = data.length();
-                for (; ; ) {
+                for (;;) {
                     if (shorter) {
                         end = d.shortest(begin, estart, estop, null, hitend);
                     } else {
@@ -214,7 +214,7 @@ class Runtime {
                         cold = begin;
                     }
                     if (end == -1) {
-                        break;		/* NOTE BREAK OUT */
+                        break;      /* NOTE BREAK OUT */
                     }
 
                     match.clear();
@@ -227,7 +227,7 @@ class Runtime {
                         coldp[0] = cold;
                         return true;
                     }
-                    if ((shorter) ? end == estop : end == begin) {
+                    if (shorter ? end == estop : end == begin) {
                         /* no point in trying again */
                         coldp[0] = cold;
                         return false;
@@ -266,22 +266,22 @@ class Runtime {
      */
     boolean dissect(Subre t, int begin, int end) {
         switch (t.op) {
-        case '=':		/* terminal node */
+        case '=':       /* terminal node */
             assert t.left == null && t.right == null;
-            return true;	/* no action, parent did the work */
+            return true;    /* no action, parent did the work */
 
-        case '|':		/* alternation */
+        case '|':       /* alternation */
             assert t.left != null;
             return altdissect(t, begin, end);
 
-        case 'b':		/* back ref -- shouldn't be calling us! */
+        case 'b':       /* back ref -- shouldn't be calling us! */
             throw new RuntimeException("impossible backref");
 
-        case '.':		/* concatenation */
+        case '.':       /* concatenation */
             assert t.left != null && t.right != null;
             return condissect(t, begin, end);
 
-        case '(':		/* capturing */
+        case '(':       /* capturing */
             assert t.left != null && t.right == null;
             assert t.subno > 0;
             subset(t, begin, end);
@@ -301,7 +301,7 @@ class Runtime {
         Dfa d2;
         int mid;
         boolean shorter = (t.left.flags & Subre.SHORTER) != 0;
-        int stop = (shorter) ? end : begin;
+        int stop = shorter ? end : begin;
 
         assert t.op == '.';
         assert t.left != null && t.left.cnfa.nstates > 0;
@@ -350,13 +350,12 @@ class Runtime {
      */
     boolean altdissect(Subre t, int begin, int end) {
         Dfa d;
-        int i;
 
         assert t != null;
         assert t.op == '|';
 
-        for (i = 0; t != null; t = t.right, i++) {
-            assert (t.left != null && t.left.cnfa.nstates > 0);
+        for (; t != null; t = t.right) {
+            assert t.left != null && t.left.cnfa.nstates > 0;
             d = new Dfa(this, t.left.cnfa);
             if (d.longest(begin, end, null) == end) {
                 return dissect(t.left, begin, end);
@@ -372,30 +371,29 @@ class Runtime {
      * plus 1 so that 0 uniquely means "clean slate".
      */
     boolean cdissect(Subre t, int begin, int end) {
-        int er;
 
         assert t != null;
 
         switch (t.op) {
-        case '=':		/* terminal node */
+        case '=':       /* terminal node */
             assert t.left == null && t.right == null;
-            return true;	/* no action, parent did the work */
+            return true;    /* no action, parent did the work */
 
-        case '|':		/* alternation */
-            assert (t.left != null);
+        case '|':       /* alternation */
+            assert t.left != null;
             return caltdissect(t, begin, end);
 
-        case 'b':		/* back ref -- shouldn't be calling us! */
-            assert (t.left == null && t.right == null);
+        case 'b':       /* back ref -- shouldn't be calling us! */
+            assert t.left == null && t.right == null;
             return cbrdissect(t, begin, end);
 
-        case '.':		/* concatenation */
-            assert (t.left != null && t.right != null);
+        case '.':       /* concatenation */
+            assert t.left != null && t.right != null;
             return ccondissect(t, begin, end);
 
-        case '(':		/* capturing */
-            assert (t.left != null && t.right == null);
-            assert (t.subno > 0);
+        case '(':       /* capturing */
+            assert t.left != null && t.right == null;
+            assert t.subno > 0;
             boolean cdmatch = cdissect(t.left, begin, end);
             if (cdmatch) {
                 subset(t, begin, end);
@@ -421,7 +419,7 @@ class Runtime {
         assert t.left != null && t.left.cnfa.nstates > 0;
         assert t.right != null && t.right.cnfa.nstates > 0;
 
-        if (0 != (t.left.flags & Subre.SHORTER)) {		/* reverse scan */
+        if (0 != (t.left.flags & Subre.SHORTER)) {      /* reverse scan */
             return crevdissect(t, begin, end);
         }
 
@@ -440,12 +438,12 @@ class Runtime {
         }
 
     /* iterate until satisfaction or failure */
-        for (; ; ) {
+        for (;;) {
         /* try this midpoint on for size */
             boolean cdmatch = cdissect(t.left, begin, mid);
             if (cdmatch && d2.longest(mid, end, null) == end
-                    && (cdmatch = cdissect(t.right, mid, end))) {
-                break;			/* NOTE BREAK OUT */
+                    && (cdissect(t.right, mid, end))) {
+                break;          /* NOTE BREAK OUT */
 
             }
 
@@ -513,13 +511,13 @@ class Runtime {
         }
 
     /* iterate until satisfaction or failure */
-        for (; ; ) {
+        for (;;) {
         /* try this midpoint on for size */
             boolean cdmatch = cdissect(t.left, begin, mid);
             if (cdmatch
                     && d2.longest(mid, end, null) == end
                     && (cdissect(t.right, mid, end))) {
-                break;			/* NOTE BREAK OUT */
+                break;          /* NOTE BREAK OUT */
             }
 
         /* that midpoint didn't work, find a new one */
@@ -579,8 +577,8 @@ class Runtime {
             return false;
         }
 
-    /* and too-short string */
-        assert (end >= begin);
+        /* and too-short string */
+        assert end >= begin;
         if ((end - begin) < len) {
             return false;
         }
@@ -598,13 +596,13 @@ class Runtime {
         }
 
     /* and sort it out */
-        if (p != end) {			/* didn't consume all of it */
+        if (p != end) {         /* didn't consume all of it */
             return false;
         }
         if (min <= i && (i <= max || max == Compiler.INFINITY)) {
             return true;
         }
-        return false;		/* out of range */
+        return false;       /* out of range */
     }
 
     /*
@@ -616,7 +614,7 @@ class Runtime {
         if (t == null) {
             return false;
         }
-        assert (t.op == '|');
+        assert t.op == '|';
         if (mem[t.retry] == TRIED) {
             return caltdissect(t.right, begin, end);
         }

@@ -15,7 +15,6 @@
 package com.basistech.tclre;
 
 import java.util.EnumSet;
-import java.util.regex.MatchResult;
 
 /**
  * Matcher. This is an incomplete analog of {@link java.util.regex.Matcher}.

@@ -42,11 +42,11 @@ public class HsrePattern implements RePattern {
      * @return the pattern.
      * @throws RegexException
      */
-    static RePattern compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
+    public static RePattern compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
         return Compiler.compile(pattern, flags);
     }
 
-    static RePattern compile(String pattern, PatternFlags... flags) throws RegexException {
+    public static RePattern compile(String pattern, PatternFlags... flags) throws RegexException {
         EnumSet<PatternFlags> flagSet = EnumSet.noneOf(PatternFlags.class);
         for (PatternFlags f : flags) {
             flagSet.add(f);

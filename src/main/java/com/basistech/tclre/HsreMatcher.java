@@ -49,13 +49,17 @@ final class HsreMatcher implements ReMatcher {
      * @return true for a match.
      */
     @Override
-    public boolean find(int startOffset) throws RegexException {
+    public boolean find(int startOffset) throws RegexRuntimeException {
         if (startOffset < regionStart) {
             throw new IllegalArgumentException("Start offset less than region start");
         }
         // TODO: this is a pessimization; we should be able to make one at construction and reuse it.
         runtime = new Runtime();
-        return runtime.exec(pattern, data.subSequence(startOffset, regionEnd), flags);
+        try {
+            return runtime.exec(pattern, data.subSequence(startOffset, regionEnd), flags);
+        } catch (RegexException e) {
+            throw new RegexRuntimeException(e);
+        }
     }
 
     /**
@@ -63,26 +67,26 @@ final class HsreMatcher implements ReMatcher {
      * @return true for a match.
      */
     @Override
-    public boolean find() throws RegexException {
+    public boolean find() throws RegexRuntimeException {
         return find(regionStart);
     }
 
     @Override
-    public ReMatcher region(int start, int end) throws RegexException {
+    public ReMatcher region(int start, int end) throws RegexRuntimeException {
         regionStart = start;
         regionEnd = end;
         return this;
     }
 
     @Override
-    public ReMatcher reset() throws RegexException {
+    public ReMatcher reset() throws RegexRuntimeException {
         regionStart = 0;
         regionEnd = data.length();
         return this;
     }
 
     @Override
-    public ReMatcher reset(CharSequence newSequence) throws RegexException {
+    public ReMatcher reset(CharSequence newSequence) throws RegexRuntimeException {
         data = newSequence;
         regionStart = 0;
         regionEnd = data.length();
@@ -90,7 +94,7 @@ final class HsreMatcher implements ReMatcher {
     }
 
     @Override
-    public boolean matches() throws RegexException {
+    public boolean matches() throws RegexRuntimeException {
         if (!find()) {
             return false;
         }

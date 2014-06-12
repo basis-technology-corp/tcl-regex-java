@@ -14,18 +14,22 @@
 
 package com.basistech.tclre;
 
-import java.util.regex.MatchResult;
-
 /**
- * The interface for matchers
+ * Unchecked exceptions in regexes. All matcher exceptions are unchecked.
  */
-public interface ReMatcher extends MatchResult {
-    RePattern pattern();
-    boolean find(int startOffset) throws RegexRuntimeException;
-    boolean find() throws RegexRuntimeException;
-    ReMatcher region(int start, int end) throws RegexRuntimeException;
-    ReMatcher reset() throws RegexRuntimeException;
-    ReMatcher reset(CharSequence newSequence) throws RegexRuntimeException;
-    boolean matches() throws RegexRuntimeException;
+public class RegexRuntimeException extends RuntimeException {
+    public RegexRuntimeException(Throwable cause) {
+        super(cause);
+    }
 
+    public RegexRuntimeException() {
+    }
+
+    public RegexRuntimeException(String message) {
+        super(message);
+    }
+
+    public RegexRuntimeException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

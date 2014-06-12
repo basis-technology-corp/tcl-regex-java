@@ -75,11 +75,7 @@ public class Utils extends Assert {
         @Override
         public boolean matchesSafely(String input) {
             ReMatcher matcher = pattern.matcher(input, eflags);
-            try {
-                return matcher.find();
-            } catch (RegexException e) {
-                throw new RuntimeException(e);
-            }
+            return matcher.find();
         }
 
         public void describeTo(Description description) {

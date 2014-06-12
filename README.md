@@ -35,7 +35,7 @@ so we may get away with this.
 
 * ~~Backreferences. Troubles in the compiler.~~
 
-* More unit tests; try for full coverage with simple tests.
+* ~~More unit tests; try for full coverage with simple tests.~~
 
 * ~~Convert runtime to take CharSequence instead of array/indices.~~
 
@@ -45,13 +45,14 @@ so we may get away with this.
 
 * parser to report offsets in error messages
 * all error messages informative
+* Runtime (Runtime, Dfa) to throw RegexRuntimeException.
 
 ### API ###
 
 * Talk to Joel about complexity of option flags. I propose to support only full ARE syntax, and always return the 'details' and the captures.
-* define abstract API parallel to j.u.regex, and concrete impl via factory.
+* ~~define abstract API parallel to j.u.regex, and concrete impl via factory.~~
 
-* Build alt implementation via JNI
+* ~~Build alt implementation via JNI~~
 
 * Parity testing using REX test suite
 

@@ -20,7 +20,7 @@ import java.util.regex.MatchResult;
 /**
  * Matcher. This is an incomplete analog of {@link java.util.regex.Matcher}.
  */
-public final class HsreMatcher implements ReMatcher, MatchResult {
+final class HsreMatcher implements ReMatcher {
     private final CharSequence data;
     private final EnumSet<ExecFlags> flags;
     private final HsrePattern pattern;

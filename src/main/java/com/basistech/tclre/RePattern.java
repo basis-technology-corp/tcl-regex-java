@@ -20,6 +20,6 @@ import java.util.EnumSet;
  * A compiled regular expression.
  */
 public interface RePattern {
-    HsreMatcher matcher(CharSequence data, ExecFlags... flags);
-    HsreMatcher matcher(CharSequence data, EnumSet<ExecFlags> flags);
+    ReMatcher matcher(CharSequence data, ExecFlags... flags);
+    ReMatcher matcher(CharSequence data, EnumSet<ExecFlags> flags);
 }

@@ -118,7 +118,7 @@ public class SimpleTests extends Utils {
         RePattern exp = HsrePattern.compile("a(?:nonc+ap)b(ca+p)c([1-9]+)$", PatternFlags.ADVANCED);
         //..............................0000000000111111111122
         //..............................0123456789012345678901
-        HsreMatcher matcher = exp.matcher("Xanonccapbcaapc1234567");
+        ReMatcher matcher = exp.matcher("Xanonccapbcaapc1234567");
         assertThat(matcher.find(), is(true));
         assertThat(2, equalTo(matcher.groupCount()));
         assertThat(matcher, groupIs(0, 1, 22));
@@ -138,7 +138,7 @@ public class SimpleTests extends Utils {
     public void testLookahead() throws Exception {
         RePattern exp = HsrePattern.compile("^[^:]+(?=.*\\.com$)", PatternFlags.ADVANCED,
                 PatternFlags.EXPANDED);
-        HsreMatcher matcher = exp.matcher("http://www.activestate.com");
+        ReMatcher matcher = exp.matcher("http://www.activestate.com");
         assertThat(matcher.find(), is(true));
         assertThat(0, equalTo(matcher.groupCount()));
         assertThat(matcher, groupIs(0, 0, 4));
@@ -147,7 +147,7 @@ public class SimpleTests extends Utils {
     @Test
     public void testSimpleLookahead() throws Exception {
         RePattern exp = HsrePattern.compile("^a(?=bc$)", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
-        HsreMatcher matcher = exp.matcher("abc");
+        ReMatcher matcher = exp.matcher("abc");
         assertThat(matcher.find(), is(true));
         assertThat(matcher.groupCount(), equalTo(0));
         assertThat(matcher, groupIs(0, 0, 1));
@@ -157,7 +157,7 @@ public class SimpleTests extends Utils {
     public void testNonGreedy() throws Exception {
         // ? is advanced?
         RePattern exp = HsrePattern.compile("3z*?", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
-        HsreMatcher matcher = exp.matcher("123zzz456");
+        ReMatcher matcher = exp.matcher("123zzz456");
         assertThat(matcher.find(), is(true));
         assertThat(0, equalTo(matcher.groupCount()));
         assertThat(matcher, groupIs(0, 2, 3));

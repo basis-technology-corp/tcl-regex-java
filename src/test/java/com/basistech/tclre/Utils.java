@@ -26,7 +26,7 @@ import org.junit.Assert;
  * Created by benson on 6/11/14.
  */
 public class Utils extends Assert {
-    public static class MatcherMatches extends TypeSafeMatcher<HsreMatcher> {
+    public static class MatcherMatches extends TypeSafeMatcher<ReMatcher> {
         final int start;
         final int end;
         final int index;
@@ -38,7 +38,7 @@ public class Utils extends Assert {
         }
 
         @Override
-        protected boolean matchesSafely(HsreMatcher item) {
+        protected boolean matchesSafely(ReMatcher item) {
             return start == item.start(index) && end == item.end(index);
         }
 
@@ -48,7 +48,7 @@ public class Utils extends Assert {
         }
 
         @Factory
-        public static <T> Matcher<HsreMatcher> groupIs(int index, int start, int end) {
+        public static <T> Matcher<ReMatcher> groupIs(int index, int start, int end) {
             return new MatcherMatches(index, start, end);
         }
     }
@@ -74,7 +74,7 @@ public class Utils extends Assert {
 
         @Override
         public boolean matchesSafely(String input) {
-            HsreMatcher matcher = pattern.matcher(input, eflags);
+            ReMatcher matcher = pattern.matcher(input, eflags);
             try {
                 return matcher.find();
             } catch (RegexException e) {

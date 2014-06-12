@@ -14,10 +14,12 @@
 
 package com.basistech.tclre;
 
+import java.util.regex.MatchResult;
+
 /**
  * The interface for matchers
  */
-public interface ReMatcher {
+public interface ReMatcher extends MatchResult {
     RePattern pattern();
     boolean find(int startOffset) throws RegexException;
     boolean find() throws RegexException;

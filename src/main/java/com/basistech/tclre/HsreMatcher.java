@@ -47,6 +47,7 @@ final class HsreMatcher implements ReMatcher {
         if (originalPattern.length() > 0 && originalPattern.charAt(0) == '^') {
             this.startAnchoredPattern = this.pattern;
         } else {
+            //TODO: this will fail if the flags have something nasty like QUOTE.
             String anchored = "^" + originalPattern;
             this.startAnchoredPattern = (HsrePattern)HsrePattern.compile(anchored, pattern.getOriginalFlags());
         }

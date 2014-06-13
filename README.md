@@ -56,6 +56,9 @@ so we may get away with this.
 
 * Parity testing using REX test suite
 
+* The 'lookingAt' and 'matches' features are done by fabricating an extra pattern with a ^ on the front. However, for some possible flag values, 
+this won't work. it needs support inside of Runtime (an ExecFlag) to bail if the first char does not match.
+
 ### Code structure ###
 
 * Get rid of 'Guts' and 'Runtime', sink all this into RegExp.

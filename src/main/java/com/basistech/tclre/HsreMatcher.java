@@ -15,11 +15,15 @@
 package com.basistech.tclre;
 
 import java.util.EnumSet;
+import java.util.regex.Pattern;
 
 /*
  * Matcher. This is an incomplete analog of {@link java.util.regex.Matcher}.
  */
 final class HsreMatcher implements ReMatcher {
+    // avoiding (?: which is a group, not an option
+    // Using a regex to parse a regex, clean brains off walls.
+    private static final Pattern OPTION_PATTERN = Pattern.compile("\\(\\?[bceimnpqstwx]");
     private CharSequence data;
     private final EnumSet<ExecFlags> flags;
     private final HsrePattern pattern;
@@ -50,7 +54,8 @@ final class HsreMatcher implements ReMatcher {
             //TODO: this will fail if the flags have something nasty like QUOTE.
 
             String anchored;
-            if (originalPattern.startsWith("(?")) {
+            if (OPTION_PATTERN.matcher(originalPattern).lookingAt()) {
+                // (?...) for defined options.
                 int endOpEx = originalPattern.indexOf(')');
                 anchored = originalPattern.substring(0, endOpEx + 1) + "^" + originalPattern.substring(endOpEx + 1);
             } else if (originalPattern.startsWith("***=")) {

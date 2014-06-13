@@ -36,4 +36,11 @@ public class RegressionTests extends Utils {
         String boom = "[\\s\\:-]";
         Compiler.compile(boom,  EnumSet.of(PatternFlags.ADVANCED));
     }
+
+    @Test
+    public void testConfusedQuantifier() throws Exception {
+        String boom = "(?:(?:(?:[A-Z][a-zA-Z0-9.]*\\s)*[A-Z][a-zA-Z0-9.]*)(?=\\s?\\((?:ADX|AFET|AMEX|ASBA|ASE|BBV|BELEX|BEX|BIST|BLSE|BMV|BSE|BSSE|BSX|BVC|BVG|BVL|BVPA|BVQ|BVRJ|BdL|BgSE|BhSE|CBOE|CHX|CME|CNSX|CSE|CSX|DCSX|DFM|DGCX|DSE|ECSE|ESX|GSX|HKEx|HKMEx|HNX|HSE|HSX|IDX|IFB|IME|IOB|ISE|ISX|JSE|KASE|KFX|KLSE|KSE|LJSE|LSE|LSX|MAI|MCX|MERVAL|MNSE|MSE|MSEC|MSM|NASDAQ|NCDEX|NEPSE|NMCE|NSE|NSX|NYSE|OTCEI|PDEx|PHLX|PSE|PSEi|SASE|SEBI|SEC|SET|SGX|SICOM|SME|SMX|SSE|TASE|TASI|TFEX|TSE|TSXV|UPSE|USE|VMF|VSE|ZSE|orc)\\:[A-Z]{2,4}\\)))";
+        RePattern pattern = HsrePattern.compile(boom, EnumSet.of(PatternFlags.ADVANCED));
+        pattern.matcher("foo");
+    }
 }

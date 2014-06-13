@@ -223,7 +223,8 @@ class Runtime {
                     mem = new int[maxsubno + 1];
                     boolean matched = cdissect(g.tree, begin, end);
                     if (matched) {
-                        match.add(new RegMatch(begin, end));
+                        // indicate the full match bounds.
+                        match.set(0, new RegMatch(begin, end));
                         coldp[0] = cold;
                         return true;
                     }

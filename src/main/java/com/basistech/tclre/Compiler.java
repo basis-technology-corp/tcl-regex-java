@@ -56,14 +56,13 @@ final class Compiler {
     int now;        /* scan pointer into string */
     int stop;       /* end of string */
     char[] savepattern;
-    int savenow;        /* saved now and stop for "subroutine call" */
-    int savestop;
+    int savenow = -1;        /* saved now and stop for "subroutine call" */
+    int savestop = -1;
     int cflags;     /* copy of compile flags */
     int lasttype;       /* type of previous token */
     int nexttype;       /* type of next token */
     int nextvalue;      /* value (if any) of next token */
     int lexcon;     /* lexical context type (see lex.c) */
-    int nsubs;     /* number of substitutions */
     List<Subre> subs;   /* subRE pointer vector */
     Nfa nfa;    /* the NFA */
     ColorMap cm;    /* character color map */

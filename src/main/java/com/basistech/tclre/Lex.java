@@ -348,9 +348,10 @@ class Lex {
         if (v.savepattern != null && ateos()) {
             v.now = v.savenow;
             v.stop = v.savestop;
-            v.savenow = 0;
-            v.savestop = 0;
+            v.savenow = -1;
+            v.savestop = -1;
             v.pattern = v.savepattern;
+            v.savepattern = null; // mark that it's not saved.
         }
 
     /* skip white space etc. if appropriate (not in literal or []) */

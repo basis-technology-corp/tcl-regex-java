@@ -18,6 +18,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.basistech.tclre.HsrePattern;
+import com.basistech.tclre.PatternFlags;
 import com.basistech.tclre.ReMatcher;
 import com.basistech.tclre.RePattern;
 
@@ -100,6 +101,27 @@ public class MatcherTests extends Assert {
         assertFalse(matcher.lookingAt());
         matcher.region(4, 6);
         assertTrue(matcher.lookingAt());
+    }
+
+    @Test
+    public void lookingAtPrefix() throws Exception {
+        RePattern pattern = HsrePattern.compile("(?i)ab", PatternFlags.ADVANCED);
+        ReMatcher matcher = pattern.matcher("abcdefg");
+        assertTrue(matcher.lookingAt());
+    }
+
+    @Test
+    public void lookingAtAREDirector() throws Exception {
+        RePattern pattern = HsrePattern.compile("***:ab", PatternFlags.ADVANCED); // *** means ADVANCED
+        ReMatcher matcher = pattern.matcher("abcdefg");
+        assertTrue(matcher.lookingAt());
+    }
+
+    @Test
+    public void findPrefix() throws Exception {
+        RePattern pattern = HsrePattern.compile("(?i)ab", PatternFlags.ADVANCED);
+        ReMatcher matcher = pattern.matcher("abcdefg");
+        assertTrue(matcher.find());
     }
 
     @Test

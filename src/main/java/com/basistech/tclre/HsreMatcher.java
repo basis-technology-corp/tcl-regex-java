@@ -16,7 +16,7 @@ package com.basistech.tclre;
 
 import java.util.EnumSet;
 
-/**
+/*
  * Matcher. This is an incomplete analog of {@link java.util.regex.Matcher}.
  */
 final class HsreMatcher implements ReMatcher {
@@ -48,7 +48,22 @@ final class HsreMatcher implements ReMatcher {
             this.startAnchoredPattern = this.pattern;
         } else {
             //TODO: this will fail if the flags have something nasty like QUOTE.
-            String anchored = "^" + originalPattern;
+
+            String anchored;
+            if (originalPattern.startsWith("(?")) {
+                int endOpEx = originalPattern.indexOf(')');
+                anchored = originalPattern.substring(0, endOpEx + 1) + "^" + originalPattern.substring(endOpEx + 1);
+            } else if (originalPattern.startsWith("***=")) {
+                throw new RegexException("Patterns with the ***= director are not supported");
+            } else if (originalPattern.startsWith("***:")) {
+                anchored = "***:^" + originalPattern.substring(4);
+            } else if (originalPattern.startsWith("***")) {
+                //TODO: move to pattern compilation.
+                throw new RegexException("Invalid *** director");
+            } else {
+                anchored = "^" + originalPattern;
+            }
+
             this.startAnchoredPattern = (HsrePattern)HsrePattern.compile(anchored, pattern.getOriginalFlags());
         }
 

@@ -1280,9 +1280,6 @@ final class Compiler {
     void brackpart(State lp, State rp) throws RegexException {
         UnicodeSet set;
         char c;
-        // start and end positions of the name of something,
-        int startp;
-        int endp;
         // start and end chars of a range
         char startc;
         char endc = 0;
@@ -1305,13 +1302,10 @@ final class Compiler {
             startc = c;
             break;
         case COLLEL:
-            startp = now;
-            endp = scanplain();
-            if (endp <= startp) {
+            String charName = scanplain();
+            if (charName.length() == 0) {
                 throw new RegexException("REG_ECOLLATE");
             }
-            // now we want a character name.
-            String charName = new String(pattern, startp, endp - startp);
             ele = Locale.element(charName);
             if (ele == -1) {
                 throw new RegexException("Unvalid character name " + charName);
@@ -1320,12 +1314,10 @@ final class Compiler {
             }
             break;
         case ECLASS:
-            startp = now;
-            endp = scanplain();
-            if (endp <= startp) {
+            charName = scanplain();
+            if (charName.length() == 0) {
                 throw new RegexException("Unterminated or invalid equivalence class.");
             }
-            charName = new String(pattern, startp, endp - startp);
             ele = Locale.element(charName);
             if (ele == -1) {
                 throw new RegexException("Invalid character name " + charName);
@@ -1336,12 +1328,11 @@ final class Compiler {
             dovec(set, lp, rp);
             return;
         case CCLASS:
-            startp = now;
-            endp = scanplain();
-            if (endp <= startp) {
+            String className = scanplain();
+            if (className.length() == 0) {
                 throw new RegexException("REG_ECTYPE");
             }
-            set = Locale.cclass(new String(pattern, startp, endp - startp), 0 != (cflags & Flags.REG_ICASE));
+            set = Locale.cclass(className, 0 != (cflags & Flags.REG_ICASE));
             dovec(set, lp, rp);
             return;
 
@@ -1359,14 +1350,12 @@ final class Compiler {
                 endc = c;
                 break;
             case COLLEL:
-                startp = now;
-                endp = scanplain();
-                if (endp <= startp) {
+                String charName = scanplain();
+                if (charName.length() == 0) {
                     throw new RegexException("REG_ECOLLATE");
                 }
 
                 // look up named character.
-                String charName = new String(pattern, startp, endp - startp);
                 ele = Locale.element(charName);
                 if (ele == -1) {
                     throw new RegexException("Unvalid character name " + charName);
@@ -1402,9 +1391,11 @@ final class Compiler {
      * Certain bits of trickery in lex.c know that this code does not try
      * to look past the final bracket of the [. etc.
      *
-     * @return pos past the sequence
+     * @return the string. It can't return a pos; a nested pattern is popped by
+     * the last lex.next() in here and so the offsets don't work.
      */
-    int scanplain() throws RegexException {
+    String scanplain() throws RegexException {
+        int startp = now;
         int endp;
 
         assert see(COLLEL) || see(ECLASS) || see(CCLASS);
@@ -1416,10 +1407,11 @@ final class Compiler {
             lex.next();
         }
 
+        String ret = new String(pattern, startp, endp - startp);
         assert see(END);
         lex.next();
 
-        return endp;
+        return ret;
     }
 
     /**

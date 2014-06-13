@@ -198,8 +198,12 @@ final class Locale {
      * @param casefold whether to include casefolding
      * @return set
      */
-    public static UnicodeSet cclass(String s, boolean casefold) {
+    public static UnicodeSet cclass(String s, boolean casefold) throws RegexException {
         // ICU support character classes, so...
-        return new UnicodeSet(String.format("[:%s:]", s), casefold ? UnicodeSet.ADD_CASE_MAPPINGS : 0);
+        try {
+            return new UnicodeSet(String.format("[:%s:]", s), casefold ? UnicodeSet.ADD_CASE_MAPPINGS : 0);
+        } catch (IllegalArgumentException iae) {
+            throw new RegexException("Invalid character class name " + s);
+        }
     }
 }

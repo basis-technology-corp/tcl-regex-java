@@ -15,7 +15,7 @@
         <maven>3.0.4</maven>
     </prerequisites>
     <inceptionYear>2014</inceptionYear>
-    <url>http://git.basistech.net/pages/textanalytics/tcl-regex</url>
+    <url>http://git.basistech.net/pages/textanalytics/tcl-regex-java</url>
     <scm>
         <connection>scm:git:git@git.basistech.net:textanalytics/tcl-regex.git</connection>
         <developerConnection>scm:git:git@git.basistech.net:textanalytics/tcl-regex.git</developerConnection>
@@ -28,7 +28,7 @@
     <distributionManagement>
         <site>
             <id>site</id>
-            <url>scm:git:git@git.basistech.net:textanalytics/tcl-regex.git</url>
+            <url>scm:git:git@git.basistech.net:textanalytics/tcl-regex-java.git</url>
         </site>
     </distributionManagement>
     <dependencies>

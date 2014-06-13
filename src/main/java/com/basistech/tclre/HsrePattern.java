@@ -27,9 +27,11 @@ public class HsrePattern implements RePattern {
     final int nsub;       /* number of subexpressions */
     final Guts guts;
     final String original;
+    final EnumSet<PatternFlags> originalFlags;
 
-    HsrePattern(String original, long info, int nsub, Guts guts) {
+    HsrePattern(String original, EnumSet<PatternFlags> originalFlags, long info, int nsub, Guts guts) {
         this.original = original;
+        this.originalFlags = originalFlags;
         this.info = info;
         this.nsub = nsub;
         this.guts = guts;
@@ -60,13 +62,30 @@ public class HsrePattern implements RePattern {
         for (ExecFlags f : flags) {
             flagSet.add(f);
         }
-        return new HsreMatcher(this, data, flagSet);
+        try {
+            return new HsreMatcher(this, data, flagSet);
+        } catch (RegexException e) {
+            // the idea is that we've done all the error detection before.
+            throw new RegexRuntimeException(e);
+        }
 
     }
 
     @Override
     public HsreMatcher matcher(CharSequence data, EnumSet<ExecFlags> flags) {
-        return new HsreMatcher(this, data, flags);
+        try {
+            return new HsreMatcher(this, data, flags);
+        } catch (RegexException e) {
+            throw new RegexRuntimeException(e);
+        }
+    }
+
+    String getOriginal() {
+        return original;
+    }
+
+    EnumSet<PatternFlags> getOriginalFlags() {
+        return originalFlags;
     }
 
     @Override

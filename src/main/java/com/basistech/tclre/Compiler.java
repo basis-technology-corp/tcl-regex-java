@@ -76,6 +76,7 @@ final class Compiler {
     List<Subre> lacons; /* lookahead-constraint vector */
     Lex lex;
     private long info;
+    private final EnumSet<PatternFlags> originalFlags;
 
     /**
      * Constructor does minimal setup; construct, then call compile().
@@ -95,6 +96,7 @@ final class Compiler {
         }
 
         this.pattern = pattern.toCharArray();
+        this.originalFlags = flags;
 
         // Map from EnumSet, which is how we want users to see this some time, to bitflags.
         // At some point we might push the enum sets all the way down.
@@ -234,7 +236,7 @@ final class Compiler {
         }
 
         guts.lacons = lacons;
-        return new HsrePattern(new String(pattern, 0, pattern.length), info, nsub, guts);
+        return new HsrePattern(new String(pattern, 0, pattern.length), originalFlags, info, nsub, guts);
     }
 
     static int pair(int a, int b) {

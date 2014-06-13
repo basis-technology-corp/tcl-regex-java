@@ -21,11 +21,13 @@ import java.util.regex.MatchResult;
  */
 public interface ReMatcher extends MatchResult {
     RePattern pattern();
-    boolean find(int startOffset) throws RegexRuntimeException;
-    boolean find() throws RegexRuntimeException;
-    ReMatcher region(int start, int end) throws RegexRuntimeException;
-    ReMatcher reset() throws RegexRuntimeException;
-    ReMatcher reset(CharSequence newSequence) throws RegexRuntimeException;
-    boolean matches() throws RegexRuntimeException;
-
+    boolean find(int startOffset);
+    boolean find();
+    ReMatcher region(int start, int end);
+    ReMatcher reset();
+    ReMatcher reset(CharSequence newSequence);
+    boolean matches();
+    int regionStart();
+    int regionEnd();
+    boolean lookingAt();
 }

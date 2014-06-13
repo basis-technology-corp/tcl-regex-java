@@ -50,6 +50,15 @@ public class MatcherTests extends Assert {
         ReMatcher reset = matcher.reset("b");
         assertSame(reset, matcher);
         assertFalse(matcher.find());
+
+        matcher = pattern.matcher("1234a");
+        matcher.region(3, 5);
+        assertTrue(matcher.find());
+        assertEquals(4, matcher.start());
+        // check that reset(charseq) set up the region correctly.
+        matcher.reset("a23");
+        assertTrue(matcher.find());
+        assertEquals(0, matcher.start());
     }
 
     @Test
@@ -78,5 +87,29 @@ public class MatcherTests extends Assert {
         matcher = pattern.matcher("abab");
         matcher.region(0, 2);
         assertTrue(matcher.matches());
+    }
+
+    @Test
+    public void lookingAt() throws Exception {
+        RePattern pattern = HsrePattern.compile("ab");
+        ReMatcher matcher = pattern.matcher("abcdefg");
+        assertTrue(matcher.lookingAt());
+        matcher.region(2, 7);
+        assertFalse(matcher.lookingAt());
+        matcher.reset("1234ab");
+        assertFalse(matcher.lookingAt());
+        matcher.region(4, 6);
+        assertTrue(matcher.lookingAt());
+    }
+
+    @Test
+    public void iteration() throws Exception {
+        RePattern pattern = HsrePattern.compile("a");
+        ReMatcher matcher = pattern.matcher("a.a.a.a.a.a");
+        for (int x = 0; x < 6; x++) {
+            assertTrue(matcher.find());
+            assertEquals("start for iteration " + x, x * 2, matcher.start());
+            assertEquals("end for iteration " + x, (x * 2) + 1, matcher.end());
+        }
     }
 }

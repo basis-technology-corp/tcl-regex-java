@@ -23,16 +23,34 @@ final class HsreMatcher implements ReMatcher {
     private CharSequence data;
     private final EnumSet<ExecFlags> flags;
     private final HsrePattern pattern;
+    /*
+     * We need an extra pattern with ^ at the front to do an efficient job on
+     * lookingAt and matches. No need for a third with $ for matches; that would
+     * not save work.
+     */
+    private final HsrePattern startAnchoredPattern;
     private Runtime runtime;
     private int regionStart;
     private int regionEnd;
+    private int nextFindOffset;
+    // correction from Runtime.matches to us.
+    private int matchOffset;
 
-    HsreMatcher(HsrePattern pattern, CharSequence data, EnumSet<ExecFlags> flags) {
+    HsreMatcher(HsrePattern pattern, CharSequence data, EnumSet<ExecFlags> flags) throws RegexException {
         this.pattern = pattern;
         this.data = data;
         this.flags = flags;
         regionStart = 0;
         regionEnd = data.length();
+
+        String originalPattern = pattern.getOriginal();
+        if (originalPattern.length() > 0 && originalPattern.charAt(0) == '^') {
+            this.startAnchoredPattern = this.pattern;
+        } else {
+            String anchored = "^" + originalPattern;
+            this.startAnchoredPattern = (HsrePattern)HsrePattern.compile(anchored, pattern.getOriginalFlags());
+        }
+
     }
 
     /**
@@ -50,13 +68,24 @@ final class HsreMatcher implements ReMatcher {
      */
     @Override
     public boolean find(int startOffset) throws RegexRuntimeException {
+        return findInternal(pattern, startOffset);
+    }
+
+    private boolean findInternal(HsrePattern pat, int startOffset) {
         if (startOffset < regionStart) {
             throw new IllegalArgumentException("Start offset less than region start");
         }
         // TODO: this is a pessimization; we should be able to make one at construction and reuse it.
         runtime = new Runtime();
         try {
-            return runtime.exec(pattern, data.subSequence(startOffset, regionEnd), flags);
+            boolean found = runtime.exec(pat, data.subSequence(startOffset, regionEnd), flags);
+            if (found) {
+                // note how much to add to the runtime.match offsets.
+                matchOffset = startOffset;
+                // and now end does the necessary correction on the offset value from 'runtime'.
+                nextFindOffset = end();
+            }
+            return found;
         } catch (RegexException e) {
             throw new RegexRuntimeException(e);
         }
@@ -68,13 +97,25 @@ final class HsreMatcher implements ReMatcher {
      */
     @Override
     public boolean find() throws RegexRuntimeException {
-        return find(regionStart);
+        return find(nextFindOffset);
+    }
+
+    /*
+     * Called by all the 'resetting' functions.
+     * Allows find to work as specified.
+    */
+    private void resetState() {
+        if (runtime != null) {
+            runtime.match.clear();
+        }
+        nextFindOffset = regionStart;
     }
 
     @Override
     public ReMatcher region(int start, int end) throws RegexRuntimeException {
         regionStart = start;
         regionEnd = end;
+        resetState();
         return this;
     }
 
@@ -82,6 +123,7 @@ final class HsreMatcher implements ReMatcher {
     public ReMatcher reset() throws RegexRuntimeException {
         regionStart = 0;
         regionEnd = data.length();
+        resetState();
         return this;
     }
 
@@ -90,35 +132,51 @@ final class HsreMatcher implements ReMatcher {
         data = newSequence;
         regionStart = 0;
         regionEnd = data.length();
+        resetState();
         return this;
     }
 
     @Override
     public boolean matches() throws RegexRuntimeException {
-        if (!find()) {
+        if (!findInternal(startAnchoredPattern, regionStart)) {
             return false;
         }
         return start() == regionStart && end() == regionEnd;
     }
 
     @Override
+    public int regionStart() {
+        return regionStart;
+    }
+
+    @Override
+    public int regionEnd() {
+        return regionEnd;
+    }
+
+    @Override
+    public boolean lookingAt() {
+        return findInternal(startAnchoredPattern, regionStart);
+    }
+
+    @Override
     public int start() {
-        return runtime.match.get(0).start + regionStart;
+        return runtime.match.get(0).start + matchOffset;
     }
 
     @Override
     public int start(int group) {
-        return runtime.match.get(group).start + regionStart;
+        return runtime.match.get(group).start + matchOffset;
     }
 
     @Override
     public int end() {
-        return runtime.match.get(0).end + regionStart;
+        return runtime.match.get(0).end + matchOffset;
     }
 
     @Override
     public int end(int group) {
-        return runtime.match.get(group).end + regionStart;
+        return runtime.match.get(group).end + matchOffset;
     }
 
     @Override

@@ -63,7 +63,6 @@ final class Compiler {
     int nexttype;       /* type of next token */
     int nextvalue;      /* value (if any) of next token */
     int lexcon;     /* lexical context type (see lex.c) */
-    List<Subre> subs;   /* subRE pointer vector */
     Nfa nfa;    /* the NFA */
     ColorMap cm;    /* character color map */
     short nlcolor;      /* color of newline */
@@ -76,6 +75,7 @@ final class Compiler {
     Lex lex;
     private long info;
     private final EnumSet<PatternFlags> originalFlags;
+    private final List<Subre> subs;   /* subRE pointer vector */
 
     /**
      * Constructor does minimal setup; construct, then call compile().
@@ -260,6 +260,10 @@ final class Compiler {
         return nexttype == t;
     }
 
+    List<Subre> getSubs() {
+        return subs;
+    }
+    
     static class Comparer implements SubstringComparator {
         private UTF16.StringComparator comparator;
 
@@ -821,6 +825,13 @@ final class Compiler {
             }
             if (cap) {
                 subno = subs.size() + 1; // first subno is 1.
+                /*
+                 * This recurses via a call to parse just below.
+                 * So, the size() just above has to reflect this new sub,
+                 * even though we won't create the object until a little further
+                 * down.
+                 */
+                subs.add(null); 
             } else {
                 atomtype = PLAIN;   /* something that's not '(' */
             }
@@ -837,8 +848,10 @@ final class Compiler {
             lex.next();
 
             if (cap) {
-                assert subs.size() == subno - 1;
-                subs.add(atom);
+                // we can't assert anything about the size of 'subs', recursion may have added to it.
+                // but we can check that nothing has used our slot.
+                assert subs.get(subno - 1) == null;
+                subs.set(subno - 1, atom);
                 t = new Subre('(', atom.flags | Subre.CAP, lp, rp);
                 t.subno = subno;
                 t.left = atom;
@@ -851,7 +864,8 @@ final class Compiler {
                 throw new RegexException("REG_ESUBREG");
             }
             if (nextvalue > subs.size()) {
-                throw new RegexException(String.format("Backreference to %d out of range of defined subexpressions (%d)", nextvalue, subs.size()));
+                throw new RegexException(String.format("Backreference to %d out of range of defined subexpressions (%d)", nextvalue, subs
+                        .size()));
             }
             if (subs.get(nextvalue - 1) == null) { // \1 is first backref, living in slot 0.
                 throw new RegexException(String.format("Backreference to %d refers to non-capturing group.", nextvalue));

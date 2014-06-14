@@ -988,7 +988,7 @@ class Lex {
             v.now--;    /* put first digit back */
             c = lexdigits(10, 1, 255);  /* REs >255 long outside spec */
         /* ugly heuristic (first test is "exactly 1 digit?") */
-            if (v.now - save == 0 || (int)c <= v.subs.size()) {
+            if (v.now - save == 0 || (int)c <= v.getSubs().size()) {
                 note(Flags.REG_UBACKREF);
                 return retv(Compiler.BACKREF, (char)c);
             }

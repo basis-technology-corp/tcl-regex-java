@@ -43,4 +43,22 @@ public class RegressionTests extends Utils {
         RePattern pattern = HsrePattern.compile(boom, EnumSet.of(PatternFlags.ADVANCED));
         pattern.matcher("foo");
     }
+
+    @Test
+    public void testStockSymbol() throws Exception {
+        String exp = "(?:(?:(?:[A-Z][a-zA-Z0-9.]*\\s)*[A-Z][a-zA-Z0-9.]*)(?=\\s?\\(\\s?[A-Z]{2,4}\\s?:\\s?[A-Z]{2,4}\\s?\\)))";
+        RePattern pattern = HsrePattern.compile(exp, EnumSet.of(PatternFlags.ADVANCED));
+        ReMatcher matcher = pattern.matcher("noise  - Titlecase Organization Name ( NYSE : TON ) - some noise");
+        assertTrue(matcher.find());
+        assertEquals(9, matcher.start());
+        assertEquals(36, matcher.end());
+        System.out.printf("%d %d\n", matcher.start(), matcher.end());
+
+    }
+
+    @Test
+    public void testQuantifiedSubexpression() throws Exception {
+        String exp = "([^\\s()<>]+|(\\([^\\s()<>]+\\)))*";
+        Compiler.compile(exp, EnumSet.of(PatternFlags.ADVANCED));
+    }
 }

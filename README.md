@@ -59,6 +59,10 @@ so we may get away with this.
 * The 'lookingAt' and 'matches' features are done by fabricating an extra pattern with a ^ on the front. However, for some possible flag values, 
 this won't work. it needs support inside of Runtime (an ExecFlag) to bail if the first char does not match.
 
+* There is extra work done to return capturing groups. In theory, we don't need those, but backreferences make
+use of them. The TCL API has a way to say, 'I dom't care about getting back groups'. The Java API does not.
+Do we need a runtime flag for this?
+
 ### Code structure ###
 
 * Get rid of 'Guts' and 'Runtime', sink all this into RegExp.
@@ -71,8 +75,3 @@ this won't work. it needs support inside of Runtime (an ExecFlag) to bail if the
 * REX-JE integration ...
 
 * Extension to permit any character class syntax that ICU will eat.
-
-
-
-
-

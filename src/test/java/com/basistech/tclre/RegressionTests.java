@@ -17,6 +17,7 @@ package com.basistech.tclre;
 import java.util.EnumSet;
 
 import org.junit.Test;
+import com.basistech.rosette.util.InterruptibleCharSequence;
 
 /**
  * Home for tests that result from problems seen 'in the wild'.
@@ -70,5 +71,16 @@ public class RegressionTests extends Utils {
         RePattern pattern = HsrePattern.compile(exp, EnumSet.of(PatternFlags.ADVANCED));
         ReMatcher matcher = pattern.matcher("this is 1 centimeter wide");
         assertTrue(matcher.find());
+    }
+
+    @Test
+    public void cannotFindSimpleDate() throws Exception {
+        //HsrePattern{pattern=\m(?:0?[1-9]|1[0-2])([-/\.\s])(?:0?[1-9]|[12]\d|3[01])\1(?:\d{2}|\d{4})\M}
+        String exp = "\\m(?:0?[1-9]|1[0-2])([-/\\.\\s])(?:0?[1-9]|[12]\\d|3[01])\\1(?:\\d{2}|\\d{4})\\M";
+        RePattern pattern = HsrePattern.compile(exp, EnumSet.of(PatternFlags.ADVANCED));
+        ReMatcher matcher = pattern.matcher(")");
+        matcher.reset(new InterruptibleCharSequence("1/1/1996".toCharArray(), 0, "1/1/1996".length()));
+        matcher.region(0, 8);
+        assertTrue(matcher.lookingAt());
     }
 }

@@ -18,6 +18,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import com.ibm.icu.text.Normalizer;
 import com.ibm.icu.text.UTF16;
 import com.ibm.icu.text.UnicodeSet;
 
@@ -265,23 +266,30 @@ final class Compiler {
     }
     
     static class Comparer implements SubstringComparator {
-        private UTF16.StringComparator comparator;
+        private final boolean caseInsensitive;
 
         Comparer(boolean caseInsensitive) {
-            if (caseInsensitive) {
-                comparator = new UTF16.StringComparator(true, true,
-                        UTF16.StringComparator.FOLD_CASE_DEFAULT);
-            } else {
-                comparator = new UTF16.StringComparator(true, false,
-                        UTF16.StringComparator.FOLD_CASE_DEFAULT);
-            }
+            this.caseInsensitive = caseInsensitive;
         }
 
+        /*TODO: this isn't right for surrogate pairs, and it's pretty heavy for case-insensitive comparison.
+         */
         @Override
         public int compare(CharSequence data, int start1, int start2, int length) {
-            String s1 = data.subSequence(start1, start1 + length).toString();
-            String s2 = data.subSequence(start2, start2 + length).toString();
-            return comparator.compare(s1, s2);
+            for (int x = 0; x < length; x++) {
+                final int c1 = data.charAt(start1 + x);
+                final int c2 = data.charAt(start2 + x);
+                int thisCompare;
+                if (caseInsensitive) {
+                    thisCompare = Normalizer.compare(c1, c2, Normalizer.COMPARE_IGNORE_CASE);
+                } else {
+                    thisCompare = c1 - c2;
+                }
+                if (thisCompare != 0) {
+                    return thisCompare;
+                }
+            }
+            return 0;
         }
     }
 

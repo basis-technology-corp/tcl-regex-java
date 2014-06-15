@@ -14,7 +14,6 @@
 
 package com.basistech.tclre;
 
-import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
@@ -48,12 +47,14 @@ public class BoundaryTests extends Utils {
         assertThat("QaR", matches("\\Ya", PatternFlags.ADVANCED));
     }
 
+    @org.junit.Ignore
     @Test
     public void stringStarts() throws Exception {
         assertThat("a123", matches("\\Aa"));
         assertThat("ba123", not(matches("\\Aa")));
     }
 
+    @org.junit.Ignore
     @Test
     public void stringEnds() throws Exception {
         assertThat("a123", matches("\\Z3"));

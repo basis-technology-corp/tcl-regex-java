@@ -47,17 +47,15 @@ public class BoundaryTests extends Utils {
         assertThat("QaR", matches("\\Ya", PatternFlags.ADVANCED));
     }
 
-    @org.junit.Ignore
     @Test
     public void stringStarts() throws Exception {
-        assertThat("a123", matches("\\Aa"));
-        assertThat("ba123", not(matches("\\Aa")));
+        assertThat("a123", matches("\\Aa", PatternFlags.ADVANCED));
+        assertThat("ba123", not(matches("\\Aa", PatternFlags.ADVANCED)));
     }
 
-    @org.junit.Ignore
     @Test
     public void stringEnds() throws Exception {
-        assertThat("a123", matches("\\Z3"));
-        assertThat("a123b", not(matches("\\Za")));
+        assertThat("a123", matches("3\\Z", PatternFlags.ADVANCED));
+        assertThat("a123b", not(matches("a\\Z", PatternFlags.ADVANCED)));
     }
 }

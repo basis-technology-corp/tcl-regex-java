@@ -1494,6 +1494,17 @@ final class Compiler {
         for (int rx = 0; rx < rangeCount; rx++) {
             int rangeStart = set.getRangeStart(rx);
             int rangeEnd = set.getRangeEnd(rx);
+            /*
+             * Note: ICU operates in UTF-32 here, not UTF-16! For now, we stop when we exit the BMP.
+             */
+            LOG.debug(String.format("%s %d %4x %4x", set, rx, rangeStart, rangeEnd));
+            if (rangeStart > 0xffff) {
+                LOG.debug("truncating range start > BMP");
+                break;
+            } else if (rangeEnd >= 0xffff) {
+                LOG.debug("truncating range > BMP");
+                rangeEnd = 0xffff;
+            }
             if (rangeStart == rangeEnd) {
                 nfa.newarc(PLAIN, cm.subcolor((char)rangeStart), lp, rp);
             }

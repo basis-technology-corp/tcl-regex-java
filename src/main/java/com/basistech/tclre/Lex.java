@@ -714,7 +714,7 @@ class Lex {
                 break;
 
             default:
-                throw new RegexException("REG_ASSERT");
+                throw new RuntimeException("Invalid escape " + Character.toString((char)v.nextvalue));
             }
         /* lexnest done, back up and try again */
             v.nexttype = v.lasttype;

@@ -61,4 +61,14 @@ public class RegressionTests extends Utils {
         String exp = "([^\\s()<>]+|(\\([^\\s()<>]+\\)))*";
         Compiler.compile(exp, EnumSet.of(PatternFlags.ADVANCED));
     }
+
+    @Test
+    public void cannotFindOneCentimeter() throws Exception {
+        // this is boiled down from the original.
+        // not too bad for minimalization
+        String exp = "(?i)\\m(?:(?:[\\+\\-]?\\d{1,3}(?:,?\\d{3})*(?:\\.\\d+)?))\\s?(?:(?:centi)?meters?)\\M";
+        RePattern pattern = HsrePattern.compile(exp, EnumSet.of(PatternFlags.ADVANCED));
+        ReMatcher matcher = pattern.matcher("this is 1 centimeter wide");
+        assertTrue(matcher.find());
+    }
 }

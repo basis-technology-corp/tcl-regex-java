@@ -526,11 +526,30 @@ class ColorMap {
                 } else {
                     msg.append(String.format("#%2d%s(%d): ", (int)co, has, cd.getNChars()));
                 }
-            /* it's hard to do this more efficiently */
+                /* it's hard to do this more efficiently */
+                /* these can get large ... */
+                char startRange = 0xffff;
+                int rangeCount = 0;
                 for (c = Constants.CHR_MIN; c < Constants.CHR_MAX; c++) {
                     if (getcolor(c) == co) {
-                        msg.append(dumpchr(c));
+                        if (c == startRange + rangeCount) { // does it extend the range?
+                            rangeCount++;
+                        } else if (startRange != (char)0xffff) {
+                            if (rangeCount == 0) {
+                                msg.append(dumpchr(startRange));
+                            } else {
+                                dumpMapRange(msg, startRange, rangeCount);
+                            }
+                            startRange = c;
+                            rangeCount = 1;
+                        } else {
+                            startRange = c; // first attempt at a range.
+                            rangeCount = 1;
+                        }
                     }
+                }
+                if (rangeCount != 0) {
+                    dumpMapRange(msg, startRange, rangeCount);
                 }
 
                 assert c == Constants.CHR_MAX;
@@ -539,6 +558,15 @@ class ColorMap {
                 }
                 LOG.debug(msg.toString());
             }
+        }
+    }
+
+    private void dumpMapRange(StringBuilder msg, char startRange, int rangeCount) {
+        if (rangeCount == 1) {
+            msg.append(dumpchr(startRange));
+        } else {
+            msg.append(String.format("[%s-%s]", dumpchr(startRange),
+                    dumpchr((char)(startRange + rangeCount - 1))));
         }
     }
 

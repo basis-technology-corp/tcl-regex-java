@@ -14,9 +14,11 @@
 
 package com.basistech.tclre;
 
+import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
+import static org.hamcrest.CoreMatchers.not;
 
 /**
  * Word boundary cases
@@ -26,5 +28,35 @@ public class BoundaryTests extends Utils {
     @Test
     public void wordBegin() throws Exception {
         assertThat("Q a R", matches("\\ma", PatternFlags.ADVANCED));
+        assertThat("Q aR", matches("\\ma", PatternFlags.ADVANCED));
+        assertThat("QaR", not(matches("\\ma", PatternFlags.ADVANCED)));
+    }
+
+    @Test
+    public void wordEnd() throws Exception {
+        assertThat("Q a R", matches("a\\M", PatternFlags.ADVANCED));
+        assertThat("Qa R", matches("a\\M", PatternFlags.ADVANCED));
+        assertThat("QaR", not(matches("a\\M", PatternFlags.ADVANCED)));
+    }
+
+    @Test
+    public void wordEitherEnd() throws Exception {
+        assertThat("Q a R", matches("\\ya", PatternFlags.ADVANCED));
+        assertThat("QaR", not(matches("\\ya", PatternFlags.ADVANCED)));
+
+        assertThat("Q a R", not(matches("\\Ya", PatternFlags.ADVANCED)));
+        assertThat("QaR", matches("\\Ya", PatternFlags.ADVANCED));
+    }
+
+    @Test
+    public void stringStarts() throws Exception {
+        assertThat("a123", matches("\\Aa"));
+        assertThat("ba123", not(matches("\\Aa")));
+    }
+
+    @Test
+    public void stringEnds() throws Exception {
+        assertThat("a123", matches("\\Z3"));
+        assertThat("a123b", not(matches("\\Za")));
     }
 }

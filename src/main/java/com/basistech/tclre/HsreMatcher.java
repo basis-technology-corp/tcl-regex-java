@@ -50,7 +50,7 @@ final class HsreMatcher implements ReMatcher {
         regionStart = 0;
         regionEnd = data.length();
 
-        String originalPattern = pattern.getOriginal();
+        String originalPattern = pattern.pattern();
         if (originalPattern.length() > 0 && originalPattern.charAt(0) == '^') {
             this.startAnchoredPattern = this.pattern;
         } else {
@@ -72,7 +72,7 @@ final class HsreMatcher implements ReMatcher {
                 anchored = "^" + originalPattern;
             }
 
-            this.startAnchoredPattern = (HsrePattern)HsrePattern.compile(anchored, pattern.getOriginalFlags());
+            this.startAnchoredPattern = (HsrePattern)HsrePattern.compile(anchored, pattern.flags());
         }
 
     }

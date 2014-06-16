@@ -83,4 +83,16 @@ public class RegressionTests extends Utils {
         matcher.region(0, 8);
         assertTrue(matcher.lookingAt());
     }
+
+    @Test
+    public void cesCannotFindDate() throws Exception {
+        String exp = "\\m(?:\\d{1,2})[-/\\.\\s]+(?:\\d{1,2})[-/\\.\\s]+(?:\\d{1,4})\\.?\\M";
+        String date = "02-08-2008";
+        RePattern pattern = HsrePattern.compile(exp, EnumSet.of(PatternFlags.ADVANCED));
+        ReMatcher matcher = pattern.matcher(")");
+        matcher.reset(new InterruptibleCharSequence(date.toCharArray(), 0, date.length()));
+        matcher.region(0, date.length());
+        assertTrue(matcher.lookingAt());
+
+    }
 }

@@ -86,11 +86,13 @@ public class HsrePattern implements RePattern {
         }
     }
 
-    String getOriginal() {
+    @Override
+    public String pattern() {
         return original;
     }
 
-    EnumSet<PatternFlags> getOriginalFlags() {
+    @Override
+    public EnumSet<PatternFlags> flags() {
         return originalFlags;
     }
 

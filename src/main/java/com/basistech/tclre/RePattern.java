@@ -36,4 +36,14 @@ public interface RePattern {
      * @return the matcher
      */
     ReMatcher matcher(CharSequence data, EnumSet<ExecFlags> flags);
+
+    /**
+     * @return string representation of pattern.
+     */
+    String pattern();
+
+    /**
+     * @return return flags.
+     */
+    EnumSet<PatternFlags> flags();
 }

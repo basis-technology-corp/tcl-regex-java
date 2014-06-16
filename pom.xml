@@ -1,9 +1,8 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tcl-regex</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2</version>
     <description>Basis java port of the regex engine from Tcl</description>
     <parent>
         <groupId>com.basistech</groupId>
@@ -18,7 +17,7 @@
     <scm>
         <connection>scm:git:git@git.basistech.net:textanalytics/tcl-regex.git</connection>
         <developerConnection>scm:git:git@git.basistech.net:textanalytics/tcl-regex.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>tcl-regex-0.2</tag>
     </scm>
     <issueManagement>
         <system>jira</system>
@@ -171,11 +170,8 @@
                                 <java.awt.headless>true</java.awt.headless>
                             </systemProperties>
                             <listeners>
-                                <report-ant-xml mavenExtensions="true"
-                                                dir="${project.build.directory}/surefire-reports"/>
-                                <report-text showThrowable="true" showStackTraces="true" showOutput="onerror"
-                                             showStatusOk="false" showStatusError="true" showStatusFailure="true"
-                                             showStatusIgnored="true" showSuiteSummary="true" timestamps="false"/>
+                                <report-ant-xml mavenExtensions="true" dir="${project.build.directory}/surefire-reports" />
+                                <report-text showThrowable="true" showStackTraces="true" showOutput="onerror" showStatusOk="false" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showSuiteSummary="true" timestamps="false" />
                             </listeners>
                         </configuration>
                     </execution>

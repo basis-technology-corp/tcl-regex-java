@@ -16,8 +16,8 @@
     <inceptionYear>2014</inceptionYear>
     <url>http://git.basistech.net/pages/textanalytics/tcl-regex-java</url>
     <scm>
-        <connection>scm:git:git@git.basistech.net:textanalytics/tcl-regex.git</connection>
-        <developerConnection>scm:git:git@git.basistech.net:textanalytics/tcl-regex.git</developerConnection>
+        <connection>scm:git:git@git.basistech.net:textanalytics/tcl-regex-java.git</connection>
+        <developerConnection>scm:git:git@git.basistech.net:textanalytics/tcl-regex-java.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
     <issueManagement>

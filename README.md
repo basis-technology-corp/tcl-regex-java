@@ -45,7 +45,7 @@ so we may get away with this.
 
 * parser to report offsets in error messages
 * all error messages informative
-* Runtime (Runtime, Dfa) to throw RegexRuntimeException.
+* ~~Runtime (Runtime, Dfa) to throw RegexRuntimeException~~
 
 ### API ###
 
@@ -57,7 +57,9 @@ so we may get away with this.
 * Parity testing using REX test suite
 
 * The 'lookingAt' and 'matches' features are done by fabricating an extra pattern with a ^ on the front. However, for some possible flag values, 
-this won't work. it needs support inside of Runtime (an ExecFlag) to bail if the first char does not match.
+this won't work. it needs support inside of Runtime (an ExecFlag) to
+bail if the first char does not match. Should we at least change it to
+use \A?
 
 * There is extra work done to return capturing groups. In theory, we don't need those, but backreferences make
 use of them. The TCL API has a way to say, 'I dom't care about getting back groups'. The Java API does not.

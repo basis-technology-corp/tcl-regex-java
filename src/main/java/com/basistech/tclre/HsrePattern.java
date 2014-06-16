@@ -14,13 +14,16 @@
 
 package com.basistech.tclre;
 
+import java.util.Collections;
 import java.util.EnumSet;
 
 import com.google.common.base.Objects;
 
 /**
- * A compiled regular expression. The method {@link #compile(String, java.util.EnumSet)} serves
+ * A compiled regular expression. The method {@link #compile(String, PatternFlags...)} serves
  * as the factory.
+ * @see com.basistech.tclre.RePattern
+ * @see com.basistech.tclre.ReMatcher
  */
 public class HsrePattern implements RePattern {
     final long info;
@@ -41,27 +44,30 @@ public class HsrePattern implements RePattern {
      * Compile a pattern.
      * @param pattern the pattern.
      * @param flags flags that determine the interpretation of the pattern.
-     * @return the pattern.
+     * @return the compiled pattern.
      * @throws RegexException
      */
     public static RePattern compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
         return Compiler.compile(pattern, flags);
     }
 
+    /**
+     * Compile a pattern.
+     * @param pattern the pattern.
+     * @param flags flags that determine the interpretation of the pattern.
+     * @return the compiled pattern.
+     * @throws RegexException
+     */
     public static RePattern compile(String pattern, PatternFlags... flags) throws RegexException {
         EnumSet<PatternFlags> flagSet = EnumSet.noneOf(PatternFlags.class);
-        for (PatternFlags f : flags) {
-            flagSet.add(f);
-        }
+        Collections.addAll(flagSet, flags);
         return Compiler.compile(pattern, flagSet);
     }
 
     @Override
     public HsreMatcher matcher(CharSequence data, ExecFlags... flags) {
         EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
-        for (ExecFlags f : flags) {
-            flagSet.add(f);
-        }
+        Collections.addAll(flagSet, flags);
         try {
             return new HsreMatcher(this, data, flagSet);
         } catch (RegexException e) {
@@ -92,6 +98,7 @@ public class HsrePattern implements RePattern {
     public String toString() {
         return Objects.toStringHelper(this)
                 .add("pattern", original)
+                .add("flags", originalFlags)
                 .toString();
     }
 }

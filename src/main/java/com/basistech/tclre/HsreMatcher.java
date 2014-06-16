@@ -14,8 +14,11 @@
 
 package com.basistech.tclre;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.regex.Pattern;
+
+import com.google.common.base.Objects;
 
 /*
  * Matcher. This is an incomplete analog of {@link java.util.regex.Matcher}.
@@ -158,11 +161,23 @@ final class HsreMatcher implements ReMatcher {
     }
 
     @Override
+    public ReMatcher flags(ExecFlags... flags) {
+        this.flags().clear();
+        Collections.addAll(this.flags, flags);
+        return null;
+    }
+
+    @Override
+    public EnumSet<ExecFlags> flags() {
+        return flags;
+    }
+
+
+    @Override
     public boolean matches() throws RegexRuntimeException {
-        if (!findInternal(startAnchoredPattern, regionStart)) {
-            return false;
-        }
-        return start() == regionStart && end() == regionEnd;
+        return findInternal(startAnchoredPattern, regionStart)
+                && start() == regionStart
+                && end() == regionEnd;
     }
 
     @Override
@@ -213,5 +228,16 @@ final class HsreMatcher implements ReMatcher {
     @Override
     public int groupCount() {
         return runtime.match.size() - 1; // omit the 'group' for the whole match.
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("pattern", pattern)
+                .add("flags", flags)
+                .add("regionStart", regionStart)
+                .add("regionEnd", regionEnd)
+                .add("data", data)
+                .toString();
     }
 }

@@ -19,7 +19,6 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 import com.ibm.icu.text.Normalizer;
-import com.ibm.icu.text.UTF16;
 import com.ibm.icu.text.UnicodeSet;
 
 import org.slf4j.Logger;

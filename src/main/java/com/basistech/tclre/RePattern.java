@@ -20,6 +20,20 @@ import java.util.EnumSet;
  * A compiled regular expression.
  */
 public interface RePattern {
+    /**
+     * Create a matcher from a pattern.
+     * @param data the initial data that the matcher will process; {@link com.basistech.tclre.ReMatcher#reset(CharSequence)}
+     *             may be used to change it.
+     * @param flags optional flags that change the behavior of the matcher.
+     * @return the matcher
+     */
     ReMatcher matcher(CharSequence data, ExecFlags... flags);
+    /**
+     * Create a matcher from a pattern.
+     * @param data the initial data that the matcher will process; {@link com.basistech.tclre.ReMatcher#reset(CharSequence)}
+     *             may be used to change it.
+     * @param flags optional flags that change the behavior of the matcher.
+     * @return the matcher
+     */
     ReMatcher matcher(CharSequence data, EnumSet<ExecFlags> flags);
 }

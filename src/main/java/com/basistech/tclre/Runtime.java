@@ -557,8 +557,8 @@ class Runtime {
         assert t.op == 'b';
         assert n >= 0;
 
-
-        if (match.get(n).start == -1) {
+        //TODO: could this get be out of range?
+        if (match.get(n) == null) {
             return false;
         }
         paren = match.get(n).start;

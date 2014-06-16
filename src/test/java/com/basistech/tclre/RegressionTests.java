@@ -53,8 +53,6 @@ public class RegressionTests extends Utils {
         assertTrue(matcher.find());
         assertEquals(9, matcher.start());
         assertEquals(36, matcher.end());
-        System.out.printf("%d %d\n", matcher.start(), matcher.end());
-
     }
 
     @Test

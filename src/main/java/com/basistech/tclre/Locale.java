@@ -14,6 +14,12 @@
 
 package com.basistech.tclre;
 
+import java.util.concurrent.ExecutionException;
+
+import com.google.common.base.Throwables;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.text.UnicodeSet;
 
@@ -21,13 +27,37 @@ import it.unimi.dsi.fastutil.objects.Object2CharMap;
 import it.unimi.dsi.fastutil.objects.Object2CharOpenHashMap;
 
 /**
- * Created by benson on 5/31/14.
+ * Code from locale.
  */
 final class Locale {
 
 /* ASCII character-name table */
 
     static final Object2CharMap<String> CNAME;
+    static final LoadingCache<String, UnicodeSet> KNOWN_SETS_CS = CacheBuilder.newBuilder()
+            .build(
+                    new CacheLoader<String, UnicodeSet>() {
+                        public UnicodeSet load(String cclass) throws RegexException {
+                            String className = "[:" + cclass + ":]";
+                            try {
+                                return new UnicodeSet(className, UnicodeSet.ADD_CASE_MAPPINGS);
+                            }  catch (IllegalArgumentException iae) {
+                                throw new RegexException("Invalid character class name " + cclass);
+                            }
+                        }
+                    });
+    static final LoadingCache<String, UnicodeSet> KNOWN_SETS_CI = CacheBuilder.newBuilder()
+            .build(
+                    new CacheLoader<String, UnicodeSet>() {
+                        public UnicodeSet load(String cclass) throws RegexException {
+                            String className = "[:" + cclass + ":]";
+                            try {
+                                return new UnicodeSet(className, 0);
+                            }  catch (IllegalArgumentException iae) {
+                                throw new RegexException("Invalid character class name " + cclass);
+                            }
+                        }
+                    });
 
     //CHECKSTYLE:OFF
     static {
@@ -136,6 +166,7 @@ final class Locale {
         //
     }
 
+
     static int element(String what) throws RegexException {
         // this is a single character or the name of a character.
         // Surrogate pairs? we can't deal yet. This function
@@ -194,16 +225,20 @@ final class Locale {
      * Return a UnicodeSet for a character class name.
      * It appears that the names that TCL accepts are also acceptable to ICU.
      *
-     * @param s        class name
+     * @param cclassName class name
      * @param casefold whether to include casefolding
      * @return set
      */
-    public static UnicodeSet cclass(String s, boolean casefold) throws RegexException {
-        // ICU support character classes, so...
+    public static UnicodeSet cclass(String cclassName, boolean casefold) throws RegexException {
         try {
-            return new UnicodeSet(String.format("[:%s:]", s), casefold ? UnicodeSet.ADD_CASE_MAPPINGS : 0);
-        } catch (IllegalArgumentException iae) {
-            throw new RegexException("Invalid character class name " + s);
+            if (casefold) {
+                return KNOWN_SETS_CI.get(cclassName);
+            } else {
+                return KNOWN_SETS_CS.get(cclassName);
+            }
+        } catch (ExecutionException e) {
+            Throwables.propagateIfInstanceOf(e.getCause(), RegexException.class);
+            throw new RegexRuntimeException(e.getCause());
         }
     }
 }

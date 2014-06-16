@@ -1504,7 +1504,9 @@ final class Compiler {
             /*
              * Note: ICU operates in UTF-32 here, not UTF-16! For now, we stop when we exit the BMP.
              */
-            LOG.debug(String.format("%s %d %4x %4x", set, rx, rangeStart, rangeEnd));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("%s %d %4x %4x", set, rx, rangeStart, rangeEnd));
+            }
             if (rangeStart > 0xffff) {
                 LOG.debug("truncating range start > BMP");
                 break;

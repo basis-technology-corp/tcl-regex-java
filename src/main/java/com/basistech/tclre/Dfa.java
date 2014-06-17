@@ -14,7 +14,6 @@
 
 package com.basistech.tclre;
 
-import java.util.BitSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,11 +23,14 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 /**
  * Runtime DFA.
+ *
+ * Note: for less than 65 states, all this boolean[] could be done with
+ * a long.
  */
 class Dfa {
     static final Logger LOG = LoggerFactory.getLogger(Dfa.class);
 
-    final Object2ObjectLinkedOpenHashMap<BitSet, StateSet> stateSets;
+    final Object2ObjectLinkedOpenHashMap<boolean[], StateSet> stateSets;
     final int nstates;
     final int ncolors; // length of outarc and inchain vectors (really?)
     final Cnfa cnfa;
@@ -49,7 +51,7 @@ class Dfa {
          * Benson believes that the maximum size here is proportional
            * to the complexity of the machine, not to the input.
          */
-        stateSets = new Object2ObjectLinkedOpenHashMap<BitSet, StateSet>();
+        stateSets = new Object2ObjectLinkedOpenHashMap<boolean[], StateSet>();
         nstates = cnfa.nstates;
         ncolors = cnfa.ncolors;
     }
@@ -63,7 +65,7 @@ class Dfa {
         // but then we'd need the real cache.
         stateSets.clear();
         StateSet stateSet = new StateSet(nstates, ncolors);
-        stateSet.states.set(cnfa.pre);
+        stateSet.states[cnfa.pre] = true;
         stateSet.flags = StateSet.STARTER
                 | StateSet.LOCKED
                 | StateSet.NOPROGRESS;
@@ -94,13 +96,13 @@ class Dfa {
         }
 
          /* first, what set of states would we end up in? */
-        BitSet work = new BitSet(nstates);
+        boolean[] work = new boolean[nstates];
         boolean ispost = false;
         boolean noprogress = true;
         boolean gotstate = false;
 
         for (int i = 0; i < nstates; i++) {
-            if (css.states.get(i)) {
+            if (css.states[i]) {
                 long ca;
                 int ax;
                 short caco;
@@ -113,7 +115,7 @@ class Dfa {
                      ax++, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca)) {
 
                     if (caco == co) {
-                        work.set(catarget, true);
+                        work[catarget] = true;
                         gotstate = true;
                         if (catarget == cnfa.post) {
                             ispost = true;
@@ -134,7 +136,7 @@ class Dfa {
         while (dolacons) { /* transitive closure */
             dolacons = false;
             for (int i = 0; i < nstates; i++) {
-                if (work.get(i)) {
+                if (work[i]) {
                     long ca;
                     int ax;
                     short caco;
@@ -146,13 +148,13 @@ class Dfa {
                             continue; /* NOTE CONTINUE */
                         }
                         sawlacons = true;
-                        if (work.get(catarget)) {
+                        if (work[catarget]) {
                             continue; /* NOTE CONTINUE */
                         }
                         if (!lacon(cp, caco)) {
                             continue; /* NOTE CONTINUE */
                         }
-                        work.set(catarget, true);
+                        work[catarget] = true;
                         dolacons = true;
                         if (catarget == cnfa.post) {
                             ispost = true;
@@ -292,7 +294,7 @@ class Dfa {
 
     /* find last match, if any */
         post = lastpost;
-        ObjectIterator<Object2ObjectMap.Entry<BitSet, StateSet>> it = stateSets.object2ObjectEntrySet().fastIterator();
+        ObjectIterator<Object2ObjectMap.Entry<boolean[], StateSet>> it = stateSets.object2ObjectEntrySet().fastIterator();
         while (it.hasNext()) {
             StateSet thisSS = it.next().getValue();
             if (0 != (thisSS.flags & StateSet.POSTSTATE) && post != thisSS.getLastSeen()
@@ -417,9 +419,9 @@ class Dfa {
             nopr = 0;
         }
 
-        ObjectIterator<Object2ObjectMap.Entry<BitSet, StateSet>> it = stateSets.object2ObjectEntrySet().fastIterator();
+        ObjectIterator<Object2ObjectMap.Entry<boolean[], StateSet>> it = stateSets.object2ObjectEntrySet().fastIterator();
         while (it.hasNext()) {
-            Object2ObjectMap.Entry<BitSet, StateSet> entry = it.next();
+            Object2ObjectMap.Entry<boolean[], StateSet> entry = it.next();
             StateSet ss = entry.getValue();
             if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.getLastSeen()) {
                 nopr = ss.getLastSeen();

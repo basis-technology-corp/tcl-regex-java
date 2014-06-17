@@ -14,8 +14,6 @@
 
 package com.basistech.tclre;
 
-import java.util.BitSet;
-
 import com.google.common.base.Objects;
 
 /**
@@ -32,7 +30,7 @@ class StateSet {
     /* Using BitSet and it's hash/equals
      * is probably going to be slower than we want
      * assuming that we get this to work at all. */
-    BitSet states; // states -- we would really like this to be final & immutable.
+    boolean[] states; // states -- we would really like this to be final & immutable.
     int flags;
     Arcp ins;
     StateSet[] outs;
@@ -42,7 +40,7 @@ class StateSet {
     private int lastseen; // index of last entered on arrival here
 
     StateSet(int nsets, int ncolors) {
-        states = new BitSet(nsets);
+        states = new boolean[nsets];
         // if colors are sparse these will need to be otherwise.
         outs = new StateSet[ncolors];
         inchain = new Arcp[ncolors];

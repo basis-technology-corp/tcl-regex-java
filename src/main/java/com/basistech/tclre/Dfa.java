@@ -17,9 +17,8 @@ package com.basistech.tclre;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * Runtime DFA.
@@ -30,7 +29,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 class Dfa {
     static final Logger LOG = LoggerFactory.getLogger(Dfa.class);
 
-    final Object2ObjectLinkedOpenHashMap<boolean[], StateSet> stateSets;
+    final Object2ObjectMap<boolean[], StateSet> stateSets;
     final int nstates;
     final int ncolors; // length of outarc and inchain vectors (really?)
     final Cnfa cnfa;
@@ -51,7 +50,7 @@ class Dfa {
          * Benson believes that the maximum size here is proportional
            * to the complexity of the machine, not to the input.
          */
-        stateSets = new Object2ObjectLinkedOpenHashMap<boolean[], StateSet>();
+        stateSets = new Object2ObjectOpenHashMap<boolean[], StateSet>();
         nstates = cnfa.nstates;
         ncolors = cnfa.ncolors;
     }
@@ -294,9 +293,8 @@ class Dfa {
 
     /* find last match, if any */
         post = lastpost;
-        ObjectIterator<Object2ObjectMap.Entry<boolean[], StateSet>> it = stateSets.object2ObjectEntrySet().fastIterator();
-        while (it.hasNext()) {
-            StateSet thisSS = it.next().getValue();
+        for (Object2ObjectMap.Entry<boolean[], StateSet> stateSetEntry : stateSets.object2ObjectEntrySet()) {
+            StateSet thisSS = stateSetEntry.getValue();
             if (0 != (thisSS.flags & StateSet.POSTSTATE) && post != thisSS.getLastSeen()
                     && (post == -1 || post < thisSS.getLastSeen())) {
                 post = thisSS.getLastSeen();
@@ -419,9 +417,7 @@ class Dfa {
             nopr = 0;
         }
 
-        ObjectIterator<Object2ObjectMap.Entry<boolean[], StateSet>> it = stateSets.object2ObjectEntrySet().fastIterator();
-        while (it.hasNext()) {
-            Object2ObjectMap.Entry<boolean[], StateSet> entry = it.next();
+        for (Object2ObjectMap.Entry<boolean[], StateSet> entry : stateSets.object2ObjectEntrySet()) {
             StateSet ss = entry.getValue();
             if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.getLastSeen()) {
                 nopr = ss.getLastSeen();

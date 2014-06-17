@@ -87,6 +87,11 @@ class Dfa {
         if (LOG.isDebugEnabled()) {
             LOG.debug(String.format("miss: %s %d %d", css, co, cp));
         }
+
+       // if (Thread.currentThread().isInterrupted()) {
+       //     throw new RegexInterruptedException();
+       //}
+
         if (css.outs[co] != null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("hit!");
@@ -123,9 +128,9 @@ class Dfa {
                         if (0 == Cnfa.carcColor(cnfa.arcs[cnfa.states[catarget]])) {
                             noprogress = false;
                         }
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug(String.format("%d -> %d", i, catarget));
-                        }
+//                        if (LOG.isDebugEnabled()) {
+//                            LOG.debug(String.format("%d -> %d", i, catarget));
+//                        }
                     }
                 }
             }
@@ -162,9 +167,9 @@ class Dfa {
                             noprogress = false;
                         }
 
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("%d :> %d", i, catarget);
-                        }
+//                        if (LOG.isDebugEnabled()) {
+//                            LOG.debug("%d :> %d", i, catarget);
+//                        }
                     }
                 }
             }
@@ -218,7 +223,7 @@ class Dfa {
      */
     int longest(int start, int stop, boolean[] hitstopp) {
         int cp;
-        int realstop = (stop == hsreMatcher.data.length()) ? stop : stop + 1;
+        int realstop = (stop == hsreMatcher.dataLength) ? stop : stop + 1;
         short co;
         StateSet css;
         int post;
@@ -274,7 +279,7 @@ class Dfa {
             LOG.debug(String.format("+++ shutdown +++ at %s", css));
         }
 
-        if (cp == hsreMatcher.data.length() && stop == hsreMatcher.data.length()) {
+        if (cp == hsreMatcher.dataLength && stop == hsreMatcher.dataLength) {
             if (hitstopp != null) {
                 hitstopp[0] = true;
             }
@@ -319,8 +324,8 @@ class Dfa {
      */
     int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop) {
         int cp;
-        int realmin = min == hsreMatcher.data.length() ? min : min + 1;
-        int realmax = max == hsreMatcher.data.length() ? max : max + 1;
+        int realmin = min == hsreMatcher.dataLength ? min : min + 1;
+        int realmax = max == hsreMatcher.dataLength ? max : max + 1;
         short co;
         StateSet ss;
         StateSet css;
@@ -387,7 +392,7 @@ class Dfa {
         if (0 != (ss.flags & StateSet.POSTSTATE) && cp > min) {
             assert cp >= realmin;
             cp--;
-        } else if (cp == hsreMatcher.data.length() && max == hsreMatcher.data.length()) {
+        } else if (cp == hsreMatcher.dataLength && max == hsreMatcher.dataLength) {
             co = cnfa.eos[0 != (hsreMatcher.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             ss = miss(css, co, cp);
         /* match might have ended at eol */

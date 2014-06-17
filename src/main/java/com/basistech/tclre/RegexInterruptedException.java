@@ -15,7 +15,21 @@
 package com.basistech.tclre;
 
 /**
- * Created by benson on 6/17/14.
+ * Exception thrown for Thread.interrupt
  */
-public class RegexInterruptedException {
+public class RegexInterruptedException extends RegexRuntimeException {
+    public RegexInterruptedException() {
+    }
+
+    public RegexInterruptedException(String message) {
+        super(message);
+    }
+
+    public RegexInterruptedException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public RegexInterruptedException(Throwable cause) {
+        super(cause);
+    }
 }

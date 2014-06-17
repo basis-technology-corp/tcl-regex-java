@@ -33,6 +33,7 @@ class Runtime {
     List<RegMatch> match;
     RegMatch details;
     CharSequence data;
+    int dataLength; // cache this, it gets examined _a lot_.
     int[] mem; // backtracking.
 
     /**
@@ -63,6 +64,7 @@ class Runtime {
         this.re = re;
         this.g = re.guts;
         this.data = data;
+        this.dataLength = this.data.length();
         this.match = Lists.newArrayList();
         match.add(null); // make room for 1.
         mem = new int[g.ntree];

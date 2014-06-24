@@ -69,6 +69,16 @@ public class LexTests extends Utils{
         assertThat("#", matches(exp));
         exp = HsrePattern.compile("a{3,5}?", PatternFlags.ADVANCED); /*non-greedy*/
         assertThat("aaaa", matches(exp));
+        assertCatchCompileTime("a[3,4");
         assertCatchCompileTime("a{3,4");
+        assertCatchCompileTime("[[:digit:}");
+
+        assertCatchCompileTime("a[\\");
+        exp = HsrePattern.compile("a[\\d]", PatternFlags.ADVANCED);
+        assertThat("a3", matches(exp));
+        exp = HsrePattern.compile("a\\{3,5\\}", PatternFlags.BASIC);
+        assertThat("aaaa", matches(exp));
+        assertCatchCompileTime("a{3,q}?");
+
     }
 }

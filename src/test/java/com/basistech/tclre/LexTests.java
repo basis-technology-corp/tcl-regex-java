@@ -76,9 +76,27 @@ public class LexTests extends Utils{
         assertCatchCompileTime("a[\\");
         exp = HsrePattern.compile("a[\\d]", PatternFlags.ADVANCED);
         assertThat("a3", matches(exp));
+        exp = HsrePattern.compile("a[\\w]", PatternFlags.ADVANCED);
+        assertThat("aQ", matches(exp));
+        assertCatchCompileTime("a[[");
         exp = HsrePattern.compile("a\\{3,5\\}", PatternFlags.BASIC);
         assertThat("aaaa", matches(exp));
-        assertCatchCompileTime("a{3,q}?");
-
+        exp = HsrePattern.compile("a[\\]b", PatternFlags.BASIC);
+        assertThat("a\\b", matches(exp));
+        assertCatchCompileTime("a{3,q}");
+        assertCatchCompileTime("a[\\q]");
+        HsrePattern.compile("[[q]]", PatternFlags.ADVANCED);
+        /* not clear what this (above) means, but code special-cases it. */
+        exp = HsrePattern.compile("a.+?b", PatternFlags.ADVANCED);
+        assertThat("acwwdcdbwfefwb", matches(exp)); /* won't say which*/
+        exp = HsrePattern.compile("a.??b", PatternFlags.ADVANCED); /* meaning.?? */
+        assertThat("ab", matches(exp)); /* won't say which*/
+        exp = HsrePattern.compile("a{b", PatternFlags.EXPANDED); /* meaning.?? */
+        assertThat("a{b", matches(exp));
+        exp = HsrePattern.compile("a(?#foo)b", PatternFlags.ADVANCED);
+        assertThat("ab", matches(exp));
+        exp = HsrePattern.compile("a(?!foo)b", PatternFlags.ADVANCED);
+        assertThat("ab", matches(exp));
+        assertCatchCompileTime("a(?&)b");
     }
 }

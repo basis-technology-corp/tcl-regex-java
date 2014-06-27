@@ -17,6 +17,7 @@ package apitests;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.basistech.rosette.util.InterruptibleCharSequence;
 import com.basistech.tclre.HsrePattern;
 import com.basistech.tclre.PatternFlags;
 import com.basistech.tclre.ReMatcher;
@@ -133,5 +134,23 @@ public class MatcherTests extends Assert {
             assertEquals("start for iteration " + x, x * 2, matcher.start());
             assertEquals("end for iteration " + x, (x * 2) + 1, matcher.end());
         }
+    }
+
+    /*
+    adjacencyRule with "^\s{0,5}"
+adjacencyLength = 0
+
+then, matchExact is called:
+
+matchExact(null, buffer, offset, 0) <== 0 length
+     */
+
+    @Test
+    public void zeroLengthInput() throws Exception {
+        RePattern pattern = HsrePattern.compile("^\\s{0,5}");
+        ReMatcher matcher = pattern.matcher("");
+        char[] input = new char[10];
+        matcher.reset(new InterruptibleCharSequence(input, 5, 5));
+        matcher.matches();
     }
 }

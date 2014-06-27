@@ -129,7 +129,8 @@ final class HsreMatcher implements ReMatcher {
      * Allows find to work as specified.
     */
     private void resetState() {
-        if (runtime != null) {
+        // if there are any matches sitting in the runtime, eliminate.
+        if (runtime != null && runtime.match != null) {
             runtime.match.clear();
         }
         nextFindOffset = regionStart;

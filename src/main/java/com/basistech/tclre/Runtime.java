@@ -189,7 +189,6 @@ class Runtime {
         boolean hitend[] = new boolean[1];
 
         assert d != null && s != null;
-        cold = -1;
         close = 0;
         do {
             int[] cold0 = new int[1];

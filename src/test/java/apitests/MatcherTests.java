@@ -153,4 +153,19 @@ matchExact(null, buffer, offset, 0) <== 0 length
         matcher.reset(new InterruptibleCharSequence(input, 5, 5));
         matcher.matches();
     }
+
+    /**
+     *
+     2
+     管辖，公司
+     \s{0,5}
+     */
+    @Test
+    public void crashSpacesRangeChinese() throws Exception {
+        RePattern pattern = HsrePattern.compile("\\s{0,5}", PatternFlags.ADVANCED);
+        ReMatcher matcher = pattern.matcher("");
+        matcher.reset(new InterruptibleCharSequence("管辖，公司".toCharArray(), 0, 5)).find();
+        matcher.reset(new InterruptibleCharSequence("管辖，公司".toCharArray(), 0, 5)).region(0, 5).matches();
+    }
+
 }

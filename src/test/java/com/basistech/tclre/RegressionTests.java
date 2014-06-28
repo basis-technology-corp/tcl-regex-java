@@ -19,6 +19,10 @@ import java.util.EnumSet;
 import org.junit.Test;
 import com.basistech.rosette.util.InterruptibleCharSequence;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsAnything.anything;
+import static org.hamcrest.core.IsEqual.equalTo;
+
 /**
  * Home for tests that result from problems seen 'in the wild'.
  */
@@ -80,6 +84,8 @@ public class RegressionTests extends Utils {
         matcher.reset(new InterruptibleCharSequence("1/1/1996".toCharArray(), 0, "1/1/1996".length()));
         matcher.region(0, 8);
         assertTrue(matcher.lookingAt());
+        assertThat(matcher.groupCount(), is(equalTo(1)));
+        assertThat(matcher.start(), is(anything()));
     }
 
     @Test

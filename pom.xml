@@ -39,7 +39,7 @@
         <dependency>
             <groupId>com.basistech</groupId>
             <artifactId>common</artifactId>
-            <version>28.3</version>
+            <version>29</version>
             <scope>test</scope> <!-- only needed in a test -->
         </dependency>
         <dependency>

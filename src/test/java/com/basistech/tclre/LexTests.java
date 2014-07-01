@@ -101,8 +101,17 @@ public class LexTests extends Utils{
         exp = HsrePattern.compile("[\\r][\\b][\\f][\\a][\\e][\\v][\\t]", PatternFlags.ADVANCED);
         assertThat("\r\b\f\007\033\u000b\t", matches(exp));
 
+        assertCatchCompileTime("\\c");
+        assertCatchCompileTime("\\");
+        exp = HsrePattern.compile("\\cC\\B\\w\\D\\S\\W", PatternFlags.ADVANCED);
+        assertThat("\u0003\\_!$@", matches(exp));
+
         exp = HsrePattern.compile("[\\uABCD][\\uEF89][\\U12345678]?", PatternFlags.ADVANCED);
         assertThat("\uABCD\uEF89", matches(exp));
+        exp = HsrePattern.compile("[[:<:]][[:>:]]", PatternFlags.ADVANCED);
+        /* not clear what this matches */
+
+
 
     }
 }

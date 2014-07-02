@@ -112,7 +112,7 @@ public class LexTests extends Utils{
         assertThat("\uABCD\uEF89", matches(exp));
         HsrePattern.compile(".*[[:<:]].*[[:>:]].*", PatternFlags.ADVANCED);
         /* TODO:This works against C++, but doesn't work here. It's deprecated, though. */
-        // assertThat("^%*&^AbeLBakr@#$#@$", matches(exp));
+        // assertThat("^%*&^AbulBakr@#$#@$", matches(exp));
 
         exp = HsrePattern.compile("*a*b$a$", PatternFlags.BASIC);
         assertThat("*aaab$a", matches(exp));
@@ -120,9 +120,9 @@ public class LexTests extends Utils{
         assertThat("q^b$c", matches(exp));
         assertCatchCompileTime("(?b)\\");
         exp = HsrePattern.compile("\\(a|b\\)", PatternFlags.BASIC);
-        assertThat("a|b", matches(exp));
-        exp = HsrePattern.compile(".*\\<.*\\>.*", PatternFlags.BASIC);
-        /* Amazingly, this works in this form. */
-        assertThat("^%*&^AbeLBakr@#$#@$", matches(exp));
+        assertThat("a|b", matches(exp, new String[]{"a|b"}));
+        exp = HsrePattern.compile("\\(.*\\)\\<\\(.*\\)\\>\\(.*\\)", PatternFlags.BASIC);
+        /* Amazingly, this works in this form in BASIC */
+        assertThat("^%*&^AbulBakr@#$#@$", matches(exp, new String[]{"^%*&^","AbulBakr", "@#$#@$"}));
     }
 }

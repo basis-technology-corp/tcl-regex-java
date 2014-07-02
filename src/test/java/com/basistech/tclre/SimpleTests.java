@@ -116,14 +116,11 @@ public class SimpleTests extends Utils {
     @Test
     public void testCapture() throws Exception {
         RePattern exp = HsrePattern.compile("a(?:nonc+ap)b(ca+p)c([1-9]+)$", PatternFlags.ADVANCED);
-        //..............................0000000000111111111122
-        //..............................0123456789012345678901
-        ReMatcher matcher = exp.matcher("Xanonccapbcaapc1234567");
+        String test = "Xanonccapbcaapc1234567";
+        assertThat(test, matches(exp, new String[]{"caap", "1234567"}));
+        ReMatcher matcher = exp.matcher(test);
         assertThat(matcher.find(), is(true));
-        assertThat(2, equalTo(matcher.groupCount()));
-        assertThat(matcher, groupIs(0, 1, 22));
-        assertThat(matcher, groupIs(1, 10, 14));
-        assertThat(matcher, groupIs(2, 15, 22));
+        assertThat(matcher, groupIs(0, 1, test.length()));
     }
 
     @Test
@@ -168,9 +165,10 @@ public class SimpleTests extends Utils {
 
     @Test
     public void testBackreference() throws Exception {
-        assertThat("aa", matches("([ab])\\1", PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        String[] ana = new String[]{"a"};
+        assertThat("aa", matches("([ab])\\1", ana, PatternFlags.ADVANCED, PatternFlags.EXPANDED));
         assertThat("ab", not(matches("([ab])\\1", PatternFlags.ADVANCED, PatternFlags.EXPANDED)));
-        assertThat("aa", matches("\\(a\\)\\1", PatternFlags.BASIC, PatternFlags.BASIC));
+        assertThat("aa", matches("\\(a\\)\\1", ana, PatternFlags.BASIC, PatternFlags.BASIC));
     }
 
 }

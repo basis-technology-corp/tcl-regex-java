@@ -170,6 +170,7 @@ public class SimpleTests extends Utils {
     public void testBackreference() throws Exception {
         assertThat("aa", matches("([ab])\\1", PatternFlags.ADVANCED, PatternFlags.EXPANDED));
         assertThat("ab", not(matches("([ab])\\1", PatternFlags.ADVANCED, PatternFlags.EXPANDED)));
+        assertThat("aa", matches("\\(a\\)\\1", PatternFlags.BASIC, PatternFlags.BASIC));
     }
 
 }

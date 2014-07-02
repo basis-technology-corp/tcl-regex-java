@@ -72,6 +72,8 @@ public class LexTests extends Utils{
         assertCatchCompileTime("a[3,4");
         assertCatchCompileTime("a{3,4");
         assertCatchCompileTime("[[:digit:}");
+        exp = HsrePattern.compile("a\\x123q", PatternFlags.ADVANCED);
+        assertThat("a\u0123q", matches(exp));
 
         assertCatchCompileTime("a[\\");
         exp = HsrePattern.compile("a[\\d]", PatternFlags.ADVANCED);
@@ -108,10 +110,19 @@ public class LexTests extends Utils{
 
         exp = HsrePattern.compile("[\\uABCD][\\uEF89][\\U12345678]?", PatternFlags.ADVANCED);
         assertThat("\uABCD\uEF89", matches(exp));
-        exp = HsrePattern.compile("[[:<:]][[:>:]]", PatternFlags.ADVANCED);
-        /* not clear what this matches */
+        HsrePattern.compile(".*[[:<:]].*[[:>:]].*", PatternFlags.ADVANCED);
+        /* TODO:This works against C++, but doesn't work here. It's deprecated, though. */
+        // assertThat("^%*&^AbeLBakr@#$#@$", matches(exp));
 
-
-
+        exp = HsrePattern.compile("*a*b$a$", PatternFlags.BASIC);
+        assertThat("*aaab$a", matches(exp));
+        exp = HsrePattern.compile("^q^b$c$", PatternFlags.BASIC);
+        assertThat("q^b$c", matches(exp));
+        assertCatchCompileTime("(?b)\\");
+        exp = HsrePattern.compile("\\(a|b\\)", PatternFlags.BASIC);
+        assertThat("a|b", matches(exp));
+        exp = HsrePattern.compile(".*\\<.*\\>.*", PatternFlags.BASIC);
+        /* Amazingly, this works in this form. */
+        assertThat("^%*&^AbeLBakr@#$#@$", matches(exp));
     }
 }

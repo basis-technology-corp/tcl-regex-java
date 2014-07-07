@@ -129,6 +129,8 @@ public class LexTests extends Utils{
         assertCatchCompileTime("(?b)\\");
         exp = HsrePattern.compile("\\(a|b\\)", PatternFlags.BASIC);
         assertThat("a|b", matches(exp, new String[]{"a|b"}));
+        exp = HsrePattern.compile("[ab]", PatternFlags.BASIC);
+        assertThat("a", matches(exp));
         exp = HsrePattern.compile("\\(.*\\)\\<\\(.*\\)\\>\\(.*\\)", PatternFlags.BASIC);
         /* Amazingly, this works in this form in BASIC */
         assertThat("^%*&^AbulBakr@#$#@$", matches(exp, new String[]{"^%*&^","AbulBakr", "@#$#@$"}));

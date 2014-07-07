@@ -174,6 +174,10 @@ public class SimpleTests extends Utils {
         assertThat("qacadq", not(matches("([ab]*?c)\\1", PatternFlags.ADVANCED, PatternFlags.EXPANDED)));
         assertThat("ab", not(matches("([ab])\\1", PatternFlags.ADVANCED, PatternFlags.EXPANDED)));
         assertThat("aa", matches("\\(a\\)\\1", ana, PatternFlags.BASIC, PatternFlags.BASIC));
+        assertThat("qaaaaaaaaz", matches("q(a{0,4})\\1z", PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        assertThat("qz", matches("q(a{0,4})\\1z", PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        assertThat("cc", matches("(a|b|c)\\1", PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        assertThat("dd", not(matches("(a|b|c)\\1", PatternFlags.ADVANCED, PatternFlags.EXPANDED)));
     }
 
 }

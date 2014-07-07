@@ -87,7 +87,10 @@ public class Utils extends Assert {
             if (!matcher.find()) {
                 return false; //<soap>no</soap>
             }
-            int nGroups = (captures == null) ? 0 : captures.length;
+            if (captures == null) {
+                return true;
+            }
+            int nGroups = captures.length;
             if (matcher.groupCount() != nGroups) {
                 return false;
             }

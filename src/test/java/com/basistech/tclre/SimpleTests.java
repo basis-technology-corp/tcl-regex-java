@@ -167,6 +167,11 @@ public class SimpleTests extends Utils {
     public void testBackreference() throws Exception {
         String[] ana = new String[]{"a"};
         assertThat("aa", matches("([ab])\\1", ana, PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        assertThat("qzbaabzq", matches("([ab])\\1", ana, PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        assertThat("qzbaa", matches("([ab]*?|x)\\1$", ana, PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        assertThat("qzbxxa", matches("([ab]*?|x)\\1$", PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        assertThat("qacacq", matches("([ab]*?c)\\1", new String[]{"ac"}, PatternFlags.ADVANCED, PatternFlags.EXPANDED));
+        assertThat("qacadq", not(matches("([ab]*?c)\\1", PatternFlags.ADVANCED, PatternFlags.EXPANDED)));
         assertThat("ab", not(matches("([ab])\\1", PatternFlags.ADVANCED, PatternFlags.EXPANDED)));
         assertThat("aa", matches("\\(a\\)\\1", ana, PatternFlags.BASIC, PatternFlags.BASIC));
     }

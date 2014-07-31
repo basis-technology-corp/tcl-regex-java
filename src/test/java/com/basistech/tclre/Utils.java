@@ -56,40 +56,73 @@ public class Utils extends Assert {
     public static class Matches extends TypeSafeMatcher<String> {
         final RePattern pattern;
         final EnumSet<ExecFlags> eflags;
+        final String[] captures;
 
-        Matches(String patternString, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
+        Matches(String patternString, String[] captures, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
             try {
                 pattern = HsrePattern.compile(patternString, pflags);
             } catch (RegexException e) {
                 throw new RuntimeException(e);
             }
             this.eflags = eflags;
+            this.captures = captures;
 
         }
 
         Matches(RePattern pattern, EnumSet<ExecFlags> eflags) {
             this.pattern = pattern;
             this.eflags = eflags;
+            this.captures = null;
+        }
+
+        Matches(RePattern pattern, String[] captures, EnumSet<ExecFlags> eflags) {
+            this.pattern = pattern;
+            this.captures = captures;
+            this.eflags = eflags;
         }
 
         @Override
         public boolean matchesSafely(String input) {
             ReMatcher matcher = pattern.matcher(input, eflags);
-            return matcher.find();
+            if (!matcher.find()) {
+                return false; //<soap>no</soap>
+            }
+            if (captures == null) {
+                return true;
+            }
+            int nGroups = captures.length;
+            if (matcher.groupCount() != nGroups) {
+                return false;
+            }
+            for (int i = 0; i < nGroups; i++) {
+                String mgroup = matcher.group(i + 1);
+                if (!(mgroup.equals(captures[i]))) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public void describeTo(Description description) {
+
             description.appendText("matches " + pattern);
+            if (captures != null) {
+                description.appendText(", groups=[");
+                for (String s : captures) {
+                    description.appendText(" " + '"' + s + '"');
+                }
+                description.appendText("]");
+            }
         }
 
         @Factory
         public static <T> Matcher<String> matches(String pattern, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
-            return new Matches(pattern, pflags, eflags);
+            return new Matches(pattern, null, pflags, eflags);
         }
 
         @Factory
         public static <T> Matcher<String> matches(String pattern) {
-            return new Matches(pattern, EnumSet.noneOf(PatternFlags.class), EnumSet.noneOf(ExecFlags.class));
+            return new Matches(pattern, null, EnumSet.noneOf(PatternFlags.class), EnumSet.noneOf(ExecFlags.class));
         }
 
         @Factory
@@ -98,7 +131,7 @@ public class Utils extends Assert {
             for (PatternFlags pf : pflags) {
                 flagSet.add(pf);
             }
-            return new Matches(pattern, flagSet, EnumSet.noneOf(ExecFlags.class));
+            return new Matches(pattern, null, flagSet, EnumSet.noneOf(ExecFlags.class));
         }
 
         @Factory
@@ -115,5 +148,22 @@ public class Utils extends Assert {
             return new Matches(pattern, flagSet);
         }
 
+        @Factory
+        public static <T> Matcher<String> matches(RePattern pattern, String[] captures, ExecFlags ... eflags) {
+            EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
+            for (ExecFlags ef : eflags) {
+                flagSet.add(ef);
+            }
+            return new Matches(pattern, captures, flagSet);
+        }
+
+        @Factory
+        public static <T> Matcher<String> matches(String pattern, String[] captures, PatternFlags... pflags) {
+            EnumSet<PatternFlags> flagSet = EnumSet.noneOf(PatternFlags.class);
+            for (PatternFlags pf : pflags) {
+                flagSet.add(pf);
+            }
+            return new Matches(pattern, captures, flagSet, EnumSet.noneOf(ExecFlags.class));
+        }
     }
 }

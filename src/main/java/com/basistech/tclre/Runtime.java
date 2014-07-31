@@ -67,6 +67,11 @@ class Runtime {
         this.dataLength = this.data.length();
         this.match = Lists.newArrayList();
         match.add(null); // make room for 1.
+        if (0 != (g.info & Flags.REG_UBACKREF)) {
+            while (match.size() < g.nsub + 1) {
+                match.add(null);
+            }
+        }
         mem = new int[g.ntree];
        
     /* do it */
@@ -218,7 +223,9 @@ class Runtime {
                         break;      /* NOTE BREAK OUT */
                     }
 
-                    match.clear();
+                    for (int x = 0; x < match.size(); x++) {
+                        match.set(x, null);
+                    }
 
                     int maxsubno = getMaxSubno(g.tree, 0);
                     mem = new int[maxsubno + 1];

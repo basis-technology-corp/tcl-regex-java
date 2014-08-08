@@ -29,12 +29,12 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 class Dfa {
     static final Logger LOG = LoggerFactory.getLogger(Dfa.class);
 
-    final Object2ObjectMap<boolean[], StateSet> stateSets;
+    final Object2ObjectMap<String, StateSet> stateSets;
     final int nstates;
     final int ncolors; // length of outarc and inchain vectors (really?)
     final Cnfa cnfa;
     final ColorMap cm;
-    int lastpost;   /* location of last cache-flushed success */
+    int lastpost;   /* location of las; cache-flushed success */
     int lastnopr;   /* location of last cache-flushed NOPROGRESS */
     final Runtime hsreMatcher;
 
@@ -50,7 +50,7 @@ class Dfa {
          * Benson believes that the maximum size here is proportional
            * to the complexity of the machine, not to the input.
          */
-        stateSets = new Object2ObjectOpenHashMap<boolean[], StateSet>();
+        stateSets = new Object2ObjectOpenHashMap<String, StateSet>();
         nstates = cnfa.nstates;
         ncolors = cnfa.ncolors;
     }
@@ -62,6 +62,7 @@ class Dfa {
     StateSet initialize(int start) {
         // Discard state sets; reuse would be faster if we kept them,
         // but then we'd need the real cache.
+        //stateSets.clear();
         stateSets.clear();
         StateSet stateSet = new StateSet(nstates, ncolors);
         stateSet.states[cnfa.pre] = true;
@@ -69,11 +70,19 @@ class Dfa {
                 | StateSet.LOCKED
                 | StateSet.NOPROGRESS;
         // Insert into hash table based on that one state.
-        stateSets.put(stateSet.states, stateSet);
+        stateSets.put(stringifyStateSet(stateSet.states), stateSet);
         lastpost = -1;
         lastnopr = -1;
         stateSet.setLastSeen(start);
         return stateSet;
+    }
+
+    String stringifyStateSet(boolean[] states) {
+        StringBuilder sb = new StringBuilder(states.length);
+        for (boolean state : states) {
+            sb.append(state ? "1" : "0");
+        }
+        return sb.toString();
     }
 
     /**
@@ -179,7 +188,8 @@ class Dfa {
             return null;
         }
 
-        StateSet stateSet = stateSets.get(work);
+        String works = stringifyStateSet(work);
+        StateSet stateSet = stateSets.get(works);
         if (stateSet == null) {
             stateSet = new StateSet(nstates, ncolors);
             stateSet.ins = new Arcp(null, Constants.WHITE);
@@ -189,7 +199,7 @@ class Dfa {
                 stateSet.flags |= StateSet.NOPROGRESS;
             }
             /* lastseen to be dealt with by caller */
-            stateSets.put(work, stateSet);
+            stateSets.put(works, stateSet);
         }
 
         if (!sawlacons) {
@@ -298,8 +308,8 @@ class Dfa {
 
     /* find last match, if any */
         post = lastpost;
-        for (Object2ObjectMap.Entry<boolean[], StateSet> stateSetEntry : stateSets.object2ObjectEntrySet()) {
-            StateSet thisSS = stateSetEntry.getValue();
+        for (StateSet thisSS : stateSets.values()) { //.object2ObjectEntrySet()) {
+            //StateSet thisSS = stateSetEntry.getValue();
             if (0 != (thisSS.flags & StateSet.POSTSTATE) && post != thisSS.getLastSeen()
                     && (post == -1 || post < thisSS.getLastSeen())) {
                 post = thisSS.getLastSeen();
@@ -422,8 +432,8 @@ class Dfa {
             nopr = 0;
         }
 
-        for (Object2ObjectMap.Entry<boolean[], StateSet> entry : stateSets.object2ObjectEntrySet()) {
-            StateSet ss = entry.getValue();
+        for (StateSet ss : stateSets.values()) {
+            //StateSet ss = entry.getValue();
             if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.getLastSeen()) {
                 nopr = ss.getLastSeen();
             }

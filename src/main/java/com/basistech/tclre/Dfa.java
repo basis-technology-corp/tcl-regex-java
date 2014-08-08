@@ -309,7 +309,6 @@ class Dfa {
     /* find last match, if any */
         post = lastpost;
         for (StateSet thisSS : stateSets.values()) { //.object2ObjectEntrySet()) {
-            //StateSet thisSS = stateSetEntry.getValue();
             if (0 != (thisSS.flags & StateSet.POSTSTATE) && post != thisSS.getLastSeen()
                     && (post == -1 || post < thisSS.getLastSeen())) {
                 post = thisSS.getLastSeen();
@@ -433,7 +432,6 @@ class Dfa {
         }
 
         for (StateSet ss : stateSets.values()) {
-            //StateSet ss = entry.getValue();
             if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.getLastSeen()) {
                 nopr = ss.getLastSeen();
             }

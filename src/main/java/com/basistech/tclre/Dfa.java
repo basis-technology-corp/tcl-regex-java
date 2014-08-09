@@ -29,7 +29,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 class Dfa {
     static final Logger LOG = LoggerFactory.getLogger(Dfa.class);
 
-    final Object2ObjectMap<String, StateSet> stateSets;
+    final Object2ObjectMap<HashableBitArray, StateSet> stateSets;
     final int nstates;
     final int ncolors; // length of outarc and inchain vectors (really?)
     final Cnfa cnfa;
@@ -37,7 +37,6 @@ class Dfa {
     int lastpost;   /* location of las; cache-flushed success */
     int lastnopr;   /* location of last cache-flushed NOPROGRESS */
     final Runtime hsreMatcher;
-
 
     Dfa(Runtime hsreMatcher, Cnfa cnfa) {
         this.hsreMatcher = hsreMatcher;
@@ -50,7 +49,7 @@ class Dfa {
          * Benson believes that the maximum size here is proportional
            * to the complexity of the machine, not to the input.
          */
-        stateSets = new Object2ObjectOpenHashMap<String, StateSet>();
+        stateSets = new Object2ObjectOpenHashMap<HashableBitArray, StateSet>();
         nstates = cnfa.nstates;
         ncolors = cnfa.ncolors;
     }
@@ -65,24 +64,16 @@ class Dfa {
         //stateSets.clear();
         stateSets.clear();
         StateSet stateSet = new StateSet(nstates, ncolors);
-        stateSet.states[cnfa.pre] = true;
+        stateSet.states.set(cnfa.pre, true);
         stateSet.flags = StateSet.STARTER
                 | StateSet.LOCKED
                 | StateSet.NOPROGRESS;
         // Insert into hash table based on that one state.
-        stateSets.put(stringifyStateSet(stateSet.states), stateSet);
+        stateSets.put(stateSet.states, stateSet);
         lastpost = -1;
         lastnopr = -1;
         stateSet.setLastSeen(start);
         return stateSet;
-    }
-
-    String stringifyStateSet(boolean[] states) {
-        StringBuilder sb = new StringBuilder(states.length);
-        for (boolean state : states) {
-            sb.append(state ? "1" : "0");
-        }
-        return sb.toString();
     }
 
     /**
@@ -109,13 +100,13 @@ class Dfa {
         }
 
          /* first, what set of states would we end up in? */
-        boolean[] work = new boolean[nstates];
+        HashableBitArray work = new HashableBitArray(nstates);
         boolean ispost = false;
         boolean noprogress = true;
         boolean gotstate = false;
 
         for (int i = 0; i < nstates; i++) {
-            if (css.states[i]) {
+            if (css.states.get(i)) {
                 long ca;
                 int ax;
                 short caco;
@@ -128,7 +119,7 @@ class Dfa {
                      ax++, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca)) {
 
                     if (caco == co) {
-                        work[catarget] = true;
+                        work.set(catarget, true);
                         gotstate = true;
                         if (catarget == cnfa.post) {
                             ispost = true;
@@ -149,7 +140,7 @@ class Dfa {
         while (dolacons) { /* transitive closure */
             dolacons = false;
             for (int i = 0; i < nstates; i++) {
-                if (work[i]) {
+                if (work.get(i)) {
                     long ca;
                     int ax;
                     short caco;
@@ -161,13 +152,13 @@ class Dfa {
                             continue; /* NOTE CONTINUE */
                         }
                         sawlacons = true;
-                        if (work[catarget]) {
+                        if (work.get(catarget)) {
                             continue; /* NOTE CONTINUE */
                         }
                         if (!lacon(cp, caco)) {
                             continue; /* NOTE CONTINUE */
                         }
-                        work[catarget] = true;
+                        work.set(catarget, true);
                         dolacons = true;
                         if (catarget == cnfa.post) {
                             ispost = true;
@@ -188,8 +179,7 @@ class Dfa {
             return null;
         }
 
-        String works = stringifyStateSet(work);
-        StateSet stateSet = stateSets.get(works);
+        StateSet stateSet = stateSets.get(work);
         if (stateSet == null) {
             stateSet = new StateSet(nstates, ncolors);
             stateSet.ins = new Arcp(null, Constants.WHITE);
@@ -199,9 +189,8 @@ class Dfa {
                 stateSet.flags |= StateSet.NOPROGRESS;
             }
             /* lastseen to be dealt with by caller */
-            stateSets.put(works, stateSet);
+            stateSets.put(work, stateSet);
         }
-
         if (!sawlacons) {
             css.outs[co] = stateSet;
             css.inchain[co] = stateSet.ins;

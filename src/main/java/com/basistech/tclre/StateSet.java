@@ -27,10 +27,7 @@ class StateSet {
     static final int NOPROGRESS = 8;
 
 
-    /* Using BitSet and it's hash/equals
-     * is probably going to be slower than we want
-     * assuming that we get this to work at all. */
-    boolean[] states; // states -- we would really like this to be final & immutable.
+    HashableBitArray states; // states -- we would really like this to be final & immutable.
     int flags;
     Arcp ins;
     StateSet[] outs;
@@ -39,8 +36,8 @@ class StateSet {
     /* 'privatized' to facilitate some debugging. */
     private int lastseen; // index of last entered on arrival here
 
-    StateSet(int nsets, int ncolors) {
-        states = new boolean[nsets];
+    StateSet(int nstates, int ncolors) {
+        states = new HashableBitArray(nstates);
         // if colors are sparse these will need to be otherwise.
         outs = new StateSet[ncolors];
         inchain = new Arcp[ncolors];

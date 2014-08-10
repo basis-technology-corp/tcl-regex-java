@@ -29,7 +29,7 @@ public class HashableBitArray {
         int answer = 0;
         for (int pos = 0, coef = 1; pos < bits.length; pos += 1) {
             if (bits[pos]) {
-                answer += coef;
+                answer ^= coef; // Keep it positive!
             }
             if (coef == (2 << 31)) {
                 coef = 1;

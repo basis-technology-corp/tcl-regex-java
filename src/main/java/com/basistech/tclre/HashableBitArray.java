@@ -30,12 +30,11 @@ public class HashableBitArray {
         for (int pos = 0, coef = 1; pos < bits.length; pos += 1) {
             if (bits[pos]) {
                 answer += coef;
-                if (coef == (2 << 31)) {
-                    coef = 1;
-                } else {
-                    coef <<= 1;
-                }
-
+            }
+            if (coef == (2 << 31)) {
+                coef = 1;
+            } else {
+                coef <<= 1;
             }
         }
         return answer;

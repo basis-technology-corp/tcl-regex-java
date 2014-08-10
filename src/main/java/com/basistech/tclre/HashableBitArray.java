@@ -65,7 +65,7 @@ public class HashableBitArray {
         return bits[i];
     }
 
-    public void set(int i, boolean value) {
+    public void put(int i, boolean value) {
         bits[i] = value;
     }
 

@@ -64,7 +64,7 @@ class Dfa {
         //stateSets.clear();
         stateSets.clear();
         StateSet stateSet = new StateSet(nstates, ncolors);
-        stateSet.states.set(cnfa.pre, true);
+        stateSet.states.put(cnfa.pre, true);
         stateSet.flags = StateSet.STARTER
                 | StateSet.LOCKED
                 | StateSet.NOPROGRESS;
@@ -119,7 +119,7 @@ class Dfa {
                      ax++, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca)) {
 
                     if (caco == co) {
-                        work.set(catarget, true);
+                        work.put(catarget, true);
                         gotstate = true;
                         if (catarget == cnfa.post) {
                             ispost = true;
@@ -158,7 +158,7 @@ class Dfa {
                         if (!lacon(cp, caco)) {
                             continue; /* NOTE CONTINUE */
                         }
-                        work.set(catarget, true);
+                        work.put(catarget, true);
                         dolacons = true;
                         if (catarget == cnfa.post) {
                             ispost = true;

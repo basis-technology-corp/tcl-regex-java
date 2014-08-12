@@ -20,6 +20,8 @@ import org.slf4j.LoggerFactory;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
+import java.util.BitSet;
+
 /**
  * Runtime DFA.
  *
@@ -29,7 +31,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 class Dfa {
     static final Logger LOG = LoggerFactory.getLogger(Dfa.class);
 
-    final Object2ObjectMap<HashableBitArray, StateSet> stateSets;
+    final Object2ObjectMap<BitSet, StateSet> stateSets;
     final int nstates;
     final int ncolors; // length of outarc and inchain vectors (really?)
     final Cnfa cnfa;
@@ -49,7 +51,7 @@ class Dfa {
          * Benson believes that the maximum size here is proportional
            * to the complexity of the machine, not to the input.
          */
-        stateSets = new Object2ObjectOpenHashMap<HashableBitArray, StateSet>();
+        stateSets = new Object2ObjectOpenHashMap<BitSet, StateSet>();
         nstates = cnfa.nstates;
         ncolors = cnfa.ncolors;
     }
@@ -64,7 +66,7 @@ class Dfa {
         //stateSets.clear();
         stateSets.clear();
         StateSet stateSet = new StateSet(nstates, ncolors);
-        stateSet.states.put(cnfa.pre, true);
+        stateSet.states.set(cnfa.pre, true);
         stateSet.flags = StateSet.STARTER
                 | StateSet.LOCKED
                 | StateSet.NOPROGRESS;
@@ -100,7 +102,7 @@ class Dfa {
         }
 
          /* first, what set of states would we end up in? */
-        HashableBitArray work = new HashableBitArray(nstates);
+        BitSet work = new BitSet(nstates);
         boolean ispost = false;
         boolean noprogress = true;
         boolean gotstate = false;
@@ -119,7 +121,7 @@ class Dfa {
                      ax++, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca)) {
 
                     if (caco == co) {
-                        work.put(catarget, true);
+                        work.set(catarget, true);
                         gotstate = true;
                         if (catarget == cnfa.post) {
                             ispost = true;
@@ -158,7 +160,7 @@ class Dfa {
                         if (!lacon(cp, caco)) {
                             continue; /* NOTE CONTINUE */
                         }
-                        work.put(catarget, true);
+                        work.set(catarget, true);
                         dolacons = true;
                         if (catarget == cnfa.post) {
                             ispost = true;

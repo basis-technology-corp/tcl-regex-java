@@ -16,6 +16,8 @@ package com.basistech.tclre;
 
 import com.google.common.base.Objects;
 
+import java.util.BitSet;
+
 /**
  * Runtime state set.
  * regexec.c
@@ -27,7 +29,7 @@ class StateSet {
     static final int NOPROGRESS = 8;
 
 
-    HashableBitArray states; // states -- we would really like this to be final & immutable.
+    BitSet states; // states -- we would really like this to be final & immutable.
     int flags;
     Arcp ins;
     StateSet[] outs;
@@ -37,7 +39,7 @@ class StateSet {
     private int lastseen; // index of last entered on arrival here
 
     StateSet(int nstates, int ncolors) {
-        states = new HashableBitArray(nstates);
+        states = new BitSet(nstates);
         // if colors are sparse these will need to be otherwise.
         outs = new StateSet[ncolors];
         inchain = new Arcp[ncolors];

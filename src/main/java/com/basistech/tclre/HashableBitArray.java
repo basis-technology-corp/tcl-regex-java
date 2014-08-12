@@ -49,7 +49,7 @@ public class HashableBitArray {
         if (bits.length != hba2.getLength()) {
             return false;
         }
-        for (int i = 0; i < bits.length; i++ ) {
+        for (int i = 0; i < bits.length; i++) {
             if (bits[i] != hba2.get(i)) {
                 return false;
             }

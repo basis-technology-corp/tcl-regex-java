@@ -16,17 +16,13 @@ package com.basistech.tclre;
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.regex.Pattern;
-
 import com.google.common.base.Objects;
 
 /*
  * Matcher. This is an incomplete analog of {@link java.util.regex.Matcher}.
  */
 final class HsreMatcher implements ReMatcher {
-    // avoiding (?: which is a group, not an option
-    // Using a regex to parse a regex, clean brains off walls.
-    private static final Pattern OPTION_PATTERN = Pattern.compile("\\(\\?[bceimnpqstwx]");
+
     private CharSequence data;
     private final EnumSet<ExecFlags> flags;
     private final HsrePattern pattern;
@@ -54,25 +50,7 @@ final class HsreMatcher implements ReMatcher {
         if (originalPattern.length() > 0 && originalPattern.charAt(0) == '^') {
             this.startAnchoredPattern = this.pattern;
         } else {
-            //TODO: this will fail if the flags have something nasty like QUOTE.
-
-            String anchored;
-            if (OPTION_PATTERN.matcher(originalPattern).lookingAt()) {
-                // (?...) for defined options.
-                int endOpEx = originalPattern.indexOf(')');
-                anchored = originalPattern.substring(0, endOpEx + 1) + "^" + originalPattern.substring(endOpEx + 1);
-            } else if (originalPattern.startsWith("***=")) {
-                throw new RegexException("Patterns with the ***= director are not supported");
-            } else if (originalPattern.startsWith("***:")) {
-                anchored = "***:^" + originalPattern.substring(4);
-            } else if (originalPattern.startsWith("***")) {
-                //TODO: move to pattern compilation.
-                throw new RegexException("Invalid *** director");
-            } else {
-                anchored = "^" + originalPattern;
-            }
-
-            this.startAnchoredPattern = (HsrePattern)HsrePattern.compile(anchored, pattern.flags());
+            this.startAnchoredPattern = AnchoredPatternsCache.INSTANCE.getAnchoredPattern(pattern);
         }
 
     }

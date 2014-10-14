@@ -43,12 +43,18 @@
         <maven>3.0.4</maven>
     </prerequisites>
     <inceptionYear>2014</inceptionYear>
-    <url>http://git.basistech.net/pages/textanalytics/tcl-regex-java</url>
+    <url>http://basis-technology-corp.github.io/tcl-regex-java</url>
     <scm>
         <connection>scm:git:git@github.com:basis-technology-corp/tcl-regex-java.git</connection>
         <developerConnection>scm:git:git@github.com:basis-technology-corp/tcl-regex-java.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
+    <distributionManagement>
+        <site>
+            <id>site</id>
+            <url>scm:git:git@github.com:basis-technology-corp/tcl-regex-java.git</url>
+        </site>
+    </distributionManagement>
     <properties>
         <maven.version>3.0.4</maven.version>
     </properties>
@@ -123,6 +129,14 @@
                         <target>1.6</target>
                         <debug>true</debug>
                         <optimize>true</optimize>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-scm-publish-plugin</artifactId>
+                    <version>1.1</version>
+                    <configuration>
+                        <scmBranch>gh-pages</scmBranch>
                     </configuration>
                 </plugin>
             </plugins>
@@ -223,8 +237,8 @@
                                 <java.awt.headless>true</java.awt.headless>
                             </systemProperties>
                             <listeners>
-                                <report-ant-xml mavenExtensions="true" dir="${project.build.directory}/surefire-reports" />
-                                <report-text showThrowable="true" showStackTraces="true" showOutput="onerror" showStatusOk="false" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showSuiteSummary="true" timestamps="false" />
+                                <report-ant-xml mavenExtensions="true" dir="${project.build.directory}/surefire-reports"/>
+                                <report-text showThrowable="true" showStackTraces="true" showOutput="onerror" showStatusOk="false" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showSuiteSummary="true" timestamps="false"/>
                             </listeners>
                         </configuration>
                     </execution>

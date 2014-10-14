@@ -32,6 +32,7 @@
    -->
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tcl-regex</artifactId>
+    <groupId>com.basistech.tclre</groupId>
     <version>0.10-SNAPSHOT</version>
     <description>Basis java port of the regex engine from  Tcl</description>
     <parent>

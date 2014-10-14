@@ -14,9 +14,8 @@
   ~    See the License for the specific language governing permissions and
   ~    limitations under the License.
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
- <!-- Copyright 2014 Basis Technology Corp.
+    <!-- Copyright 2014 Basis Technology Corp.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -51,7 +50,7 @@
         <tag>HEAD</tag>
     </scm>
     <properties>
-      <maven.version>3.0.4</maven.version>
+        <maven.version>3.0.4</maven.version>
     </properties>
     <dependencies>
         <dependency>
@@ -112,20 +111,9 @@
         </dependency>
     </dependencies>
     <build>
-      <defaultGoal>install</defaultGoal>
+        <defaultGoal>install</defaultGoal>
         <pluginManagement>
             <plugins>
-              <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <extensions>true</extensions>
-                    <inherited>false</inherited>
-                    <configuration>
-                        <serverId>ossrh-releases</serverId>
-                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        <stagingProfileId>af82fa330d4f7</stagingProfileId>
-                    </configuration>
-                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -140,6 +128,17 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <inherited>false</inherited>
+                <configuration>
+                    <serverId>ossrh-releases</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <stagingProfileId>af82fa330d4f7</stagingProfileId>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>

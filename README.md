@@ -77,3 +77,20 @@ Do we need a runtime flag for this?
 * REX-JE integration ...
 
 * Extension to permit any character class syntax that ICU will eat.
+
+# Maven Site Doc Publication #
+
+
+````
+  mvn site site:stage
+  mvn scm-publish:publish-scm
+````
+
+Typically, this would be after a release:
+
+````
+  mvn release:perform
+  cd target/checkout 
+  mvn site site:stage
+  mvn scm-publish:publish-scm
+````

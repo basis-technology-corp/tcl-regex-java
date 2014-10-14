@@ -17,8 +17,8 @@ package apitests;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.basistech.rosette.util.InterruptibleCharSequence;
 import com.basistech.tclre.HsrePattern;
+import com.basistech.tclre.InterruptibleCharSequence;
 import com.basistech.tclre.PatternFlags;
 import com.basistech.tclre.ReMatcher;
 import com.basistech.tclre.RePattern;

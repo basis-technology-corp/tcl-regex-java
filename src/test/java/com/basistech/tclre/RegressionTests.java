@@ -17,7 +17,6 @@ package com.basistech.tclre;
 import java.util.EnumSet;
 
 import org.junit.Test;
-import com.basistech.rosette.util.InterruptibleCharSequence;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsAnything.anything;

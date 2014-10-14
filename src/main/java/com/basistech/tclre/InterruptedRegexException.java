@@ -17,14 +17,21 @@
 package com.basistech.tclre;
 
 /**
- * Arc pointer used in DFA.
+ * Created by benson on 10/14/14.
  */
-class Arcp {
-    final StateSet ss;
-    final short co;
+public class InterruptedRegexException extends RuntimeException {
+    public InterruptedRegexException() {
+    }
 
-    Arcp(StateSet ss, short co) {
-        this.ss = ss;
-        this.co = co;
+    public InterruptedRegexException(String message) {
+        super(message);
+    }
+
+    public InterruptedRegexException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public InterruptedRegexException(Throwable cause) {
+        super(cause);
     }
 }

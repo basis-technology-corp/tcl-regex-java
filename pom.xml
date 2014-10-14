@@ -1,13 +1,43 @@
 <?xml version="1.0"?>
+<!--
+  ~ Copyright 2014 Basis Technology Corp.
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+ <!-- Copyright 2014 Basis Technology Corp.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+   -->
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tcl-regex</artifactId>
     <version>0.10-SNAPSHOT</version>
-    <description>Basis java port of the regex engine from Tcl</description>
+    <description>Basis java port of the regex engine from  Tcl</description>
     <parent>
-        <groupId>com.basistech</groupId>
-        <artifactId>basis-parent</artifactId>
-        <version>55.3</version>
+        <groupId>com.simpligility.maven</groupId>
+        <artifactId>progressive-organization-pom</artifactId>
+        <version>1.5.1</version>
     </parent>
     <prerequisites>
         <maven>3.0.4</maven>
@@ -15,32 +45,19 @@
     <inceptionYear>2014</inceptionYear>
     <url>http://git.basistech.net/pages/textanalytics/tcl-regex-java</url>
     <scm>
-        <connection>scm:git:git@git.basistech.net:textanalytics/tcl-regex-java.git</connection>
-        <developerConnection>scm:git:git@git.basistech.net:textanalytics/tcl-regex-java.git</developerConnection>
+        <connection>scm:git:git@github.com:basis-technology-corp/tcl-regex-java.git</connection>
+        <developerConnection>scm:git:git@github.com:basis-technology-corp/tcl-regex-java.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
-    <issueManagement>
-        <system>jira</system>
-        <url>http://jira.basistech.net/browse/TEJ</url>
-    </issueManagement>
-    <distributionManagement>
-        <site>
-            <id>site</id>
-            <url>scm:git:git@git.basistech.net:textanalytics/tcl-regex-java.git</url>
-        </site>
-    </distributionManagement>
+    <properties>
+      <maven.version>3.0.4</maven.version>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.11</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.basistech</groupId>
-            <artifactId>common</artifactId>
-            <version>29</version>
-            <scope>test</scope> <!-- only needed in a test -->
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -85,18 +102,31 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.5</version>
             <optional>true</optional>
-            <!--
-            <scope>test</scope>
-            -->
         </dependency>
         <dependency>
-          <groupId>args4j</groupId>
-          <artifactId>args4j</artifactId>
-          <version>2.0.26</version>
-          <optional>true</optional>
+            <groupId>args4j</groupId>
+            <artifactId>args4j</artifactId>
+            <version>2.0.26</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
     <build>
+      <defaultGoal>install</defaultGoal>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <encoding>utf-8</encoding>
+                        <source>1.6</source>
+                        <target>1.6</target>
+                        <debug>true</debug>
+                        <optimize>true</optimize>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -182,27 +212,17 @@
                                 <java.awt.headless>true</java.awt.headless>
                             </systemProperties>
                             <listeners>
-                                <report-ant-xml mavenExtensions="true" dir="${project.build.directory}/surefire-reports" />
-                                <report-text showThrowable="true" showStackTraces="true" showOutput="onerror" showStatusOk="false" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showSuiteSummary="true" timestamps="false" />
+                                <report-ant-xml mavenExtensions="true" dir="${project.build.directory}/surefire-reports"/>
+                                <report-text showThrowable="true" showStackTraces="true" showOutput="onerror" showStatusOk="false" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showSuiteSummary="true" timestamps="false"/>
                             </listeners>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
     </build>
     <reporting>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>${maven-project-info-reports-plugin.version}</version>
-                <configuration>
-                    <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
-                    <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>

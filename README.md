@@ -1,4 +1,12 @@
-# TCL/HSRE port to Java #
+# TCL/HSRE RegEx in Java #
+
+## Introduction ##
+
+This repository contains a port of the TCL Regular Expression (TCLRE) library to Java. The TCL Regular Expression library 
+was derived from the Henry Spencer regular expression library.
+
+TCLRE combines a rich, extended, regular expression language with bounded runtime. The bounded runtime is the most important
+advantage over the regular expression classes provided in Java, which can run indefinitely. 
 
 ## Notes on the Port ##
 

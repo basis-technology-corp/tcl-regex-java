@@ -24,12 +24,13 @@ import static com.basistech.tclre.Utils.Matches.matches;
 import static com.basistech.tclre.Utils.MatcherMatches.groupIs;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 /**
  * some 'pons asinorum' tests to see if the runtime works at all.
  */
-public class SimpleTests extends Utils {
+public class SimpleTest extends Utils {
 
     @Test
     public void testDontMatch() throws Exception {

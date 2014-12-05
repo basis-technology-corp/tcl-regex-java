@@ -21,11 +21,12 @@ import java.util.EnumSet;
 import org.junit.Test;
 import static com.basistech.tclre.Utils.Matches.matches;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The flags that disable ^/$
  */
-public class AnchorFlagTests extends Utils {
+public class AnchorFlagTest extends Utils {
 
     @Test
     public void testNotBol() throws Exception {
@@ -41,9 +42,20 @@ public class AnchorFlagTests extends Utils {
         assertThat("--hello", not(matches("hello$", EnumSet.of(PatternFlags.ADVANCED), EnumSet.of(ExecFlags.NOTEOL))));
     }
 
+    /*
+     * Note: com.basistech.tclre.Runtime.exec always starts by calling 'shortest', and never bothers with 'longest'
+     * unless shortest finds a match. So we don't need code in 'longest' that enforces LOOKING_AT, and we don't need
+     * a test that provokes the longest path with the flag.
+     */
     @Test
-    public void lookingAt() throws Exception {
+    public void lookingAtSimple() throws Exception {
         // LOOKING_AT simulates a ^ at the start.
         assertThat("xhello", not(matches("hello", EnumSet.of(PatternFlags.ADVANCED), EnumSet.of(ExecFlags.LOOKING_AT))));
+    }
+
+    @Test
+    public void lookingAtBackreference() throws Exception {
+        String[] ana = new String[]{"a"};
+        assertThat("xaa", matches("([ab])\\1", ana, EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED), EnumSet.of(ExecFlags.LOOKING_AT)));
     }
 }

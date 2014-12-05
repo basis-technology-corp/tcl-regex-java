@@ -20,12 +20,13 @@ import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * More examples of ranges to exercise the color map
  * TODO: figure out what case causes okcolors to promote (and thus exercise the 'free' code).
  */
-public class RangeTests extends Utils {
+public class RangeTest extends Utils {
 
     @Test
     public void testKitchenSink() throws Exception {

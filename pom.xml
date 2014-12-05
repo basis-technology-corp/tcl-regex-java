@@ -210,39 +210,10 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- set up for carrotsearch randomness instead of surefire. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <skipTests>true</skipTests>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.carrotsearch.randomizedtesting</groupId>
-                <artifactId>junit4-maven-plugin</artifactId>
-                <version>2.1.2</version>
-                <executions>
-                    <execution>
-                        <id>tests</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>junit4</goal>
-                        </goals>
-                        <configuration>
-                            <assertions>true</assertions>
-                            <skipTests>true</skipTests>
-                            <maxMemory>2g</maxMemory>
-                            <systemProperties>
-                                <java.awt.headless>true</java.awt.headless>
-                            </systemProperties>
-                            <listeners>
-                                <report-ant-xml mavenExtensions="true" dir="${project.build.directory}/surefire-reports"/>
-                                <report-text showThrowable="true" showStackTraces="true" showOutput="onerror" showStatusOk="false" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showSuiteSummary="true" timestamps="false"/>
-                            </listeners>
-                        </configuration>
-                    </execution>
-                </executions>
+                <version>2.18</version>
             </plugin>
         </plugins>
     </build>

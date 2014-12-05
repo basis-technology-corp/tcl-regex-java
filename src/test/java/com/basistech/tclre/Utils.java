@@ -17,6 +17,7 @@
 package com.basistech.tclre;
 
 import java.util.EnumSet;
+import java.util.regex.Pattern;
 
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
@@ -27,7 +28,7 @@ import org.junit.Assert;
 /**
  * Some handy test utilities.
  */
-public class Utils extends Assert {
+public class Utils {
     public static class MatcherMatches extends TypeSafeMatcher<ReMatcher> {
         final int start;
         final int end;
@@ -123,6 +124,11 @@ public class Utils extends Assert {
         }
 
         @Factory
+        public static <T> Matcher<String> matches(String pattern, String[] captures, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
+            return new Matches(pattern, captures, pflags, eflags);
+        }
+
+        @Factory
         public static <T> Matcher<String> matches(String pattern) {
             return new Matches(pattern, null, EnumSet.noneOf(PatternFlags.class), EnumSet.noneOf(ExecFlags.class));
         }
@@ -149,6 +155,8 @@ public class Utils extends Assert {
             }
             return new Matches(pattern, flagSet);
         }
+
+
 
         @Factory
         public static <T> Matcher<String> matches(RePattern pattern, String[] captures, ExecFlags ... eflags) {

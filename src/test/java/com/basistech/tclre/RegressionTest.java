@@ -20,14 +20,17 @@ import java.util.EnumSet;
 
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsAnything.anything;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Home for tests that result from problems seen 'in the wild'.
  */
-public class RegressionTests extends Utils {
+public class RegressionTest extends Utils {
 
     @Test
     public void nestedNestAssertion() throws Exception {

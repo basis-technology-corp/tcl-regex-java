@@ -20,11 +20,13 @@ import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Created by bsg on 6/13/14.
+ * Test for the lexer.
  */
-public class LexTests extends Utils{
+public class LexTest extends Utils{
     private void assertCatchCompileTime(String regex) {
         try {
             HsrePattern.compile(regex, PatternFlags.ADVANCED);

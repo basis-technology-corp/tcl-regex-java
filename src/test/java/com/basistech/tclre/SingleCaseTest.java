@@ -20,12 +20,13 @@ import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * patterns compiled with case-insensitivity.
  * TODO: tricky cases like the Turkish I.
  */
-public class SingleCaseTests extends Utils {
+public class SingleCaseTest extends Utils {
     @Test
     public void testAlternation() throws Exception {
         RePattern exp = HsrePattern.compile("a|b", PatternFlags.ADVANCED, PatternFlags.ICASE);

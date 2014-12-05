@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Let's imagine that both of the characters A and a fall at the same place in the collating sequence;
@@ -28,7 +29,7 @@ import static org.hamcrest.CoreMatchers.not;
  * members of an equivalence class, then all of the bracket expressions [[=o=]], [[=ô=]], and
  * [oô] match those same two characters.
  */
-public class EquivalenceClassTests extends Utils {
+public class EquivalenceClassTest extends Utils {
 
     @Test
     public void testSimpleEqv() throws Exception {

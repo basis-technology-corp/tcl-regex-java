@@ -56,6 +56,7 @@ public class AnchorFlagTest extends Utils {
     @Test
     public void lookingAtBackreference() throws Exception {
         String[] ana = new String[]{"a"};
-        assertThat("xaa", matches("([ab])\\1", ana, EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED), EnumSet.of(ExecFlags.LOOKING_AT)));
+        /* turns out that even the ugly backreference case passes through 'shortest', and so this test passes. */
+        assertThat("xaa", not(matches("([ab])\\1", ana, EnumSet.of(PatternFlags.ADVANCED, PatternFlags.EXPANDED), EnumSet.of(ExecFlags.LOOKING_AT))));
     }
 }

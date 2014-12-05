@@ -345,11 +345,13 @@ class Dfa {
 
     /* startup */
         if (cp == 0) {
+            /* If the NOTBOL flag is true, we take color as bos[0], else 1. So, bos[1] is when we are at the _effective_ bos, [0] when we are not. */
             co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("color %d", co));
             }
         } else {
+            /* Not at bos at all, set color based on prior character. */
             co = cm.getcolor(hsreMatcher.data.charAt(cp - 1));
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("char %c, color %d\n", hsreMatcher.data.charAt(cp - 1), co));
@@ -364,6 +366,8 @@ class Dfa {
         css.setLastSeen(cp);
         ss = css;
 
+        boolean lookingAt = 0 != (hsreMatcher.eflags & Flags.REG_LOOKING_AT);
+
     /* main loop */
         while (cp < realmax) {
             co = cm.getcolor(hsreMatcher.data.charAt(cp));
@@ -374,6 +378,12 @@ class Dfa {
                     break;  /* NOTE BREAK OUT */
                 }
             }
+
+            if (lookingAt && cp == 0 && (0 != (ss.flags & StateSet.NOPROGRESS))) {
+                // failed to traverse an arc, looking-at flag is set, at first position.
+                return -1;
+            }
+
             cp++;
             ss.setLastSeen(cp);
             css = ss;

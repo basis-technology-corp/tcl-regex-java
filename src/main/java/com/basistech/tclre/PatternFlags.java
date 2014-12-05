@@ -17,20 +17,43 @@
 package com.basistech.tclre;
 
 /**
- * the flags.
- *
- * Note that most things that want ADVANCED also want EXTENDED, and most
- * things that use the NL options want them both.
+ * Flags that accompany a regular expression and modulate its interpretation.
  */
 public enum PatternFlags {
+    /**
+     * Basic Regular Expression.
+     */
     BASIC,
+    /**
+     * Advanced Regular Expression.
+     */
     EXTENDED,
+    /**
+     * Advanced Regular Expression.
+     */
     ADVANCED,
+    /**
+     * Not a regular expression at all; no interpretation of RE syntax.
+     */
     QUOTE,
+    /**
+     * Case-insensitive matching.
+     */
     ICASE,
+    /**
+     * Groups never capture.
+     */
     NOSUB,
+    /**
+     * Expanded syntax where whitespace and comments are ignored. This is the same as specifying the (?x) embedded option.
+     */
     EXPANDED,
+    /**
+     * Changes the behavior of `[^' bracket expressions and `.' so that they stop at newlines. This is the same as specifying the (?p) embedded option.
+     */
     NLSTOP,
-    NLANCH,
-    EXPECT;
+    /**
+     * Changes the behavior of `^' and `$' (the ``anchors'') so they match the beginning and end of a line respectively. This is the same as specifying the (?w) embedded option.
+     */
+    NLANCH;
 }

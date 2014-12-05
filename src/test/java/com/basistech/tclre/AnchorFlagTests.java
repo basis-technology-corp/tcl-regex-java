@@ -40,4 +40,10 @@ public class AnchorFlagTests extends Utils {
         assertThat("--hello", matches("hello$", PatternFlags.ADVANCED));
         assertThat("--hello", not(matches("hello$", EnumSet.of(PatternFlags.ADVANCED), EnumSet.of(ExecFlags.NOTEOL))));
     }
+
+    @Test
+    public void lookingAt() throws Exception {
+        // LOOKING_AT simulates a ^ at the start.
+        assertThat("xhello", not(matches("hello", EnumSet.of(PatternFlags.ADVANCED), EnumSet.of(ExecFlags.LOOKING_AT))));
+    }
 }

@@ -19,7 +19,7 @@ package com.basistech.tclre;
 import com.google.common.base.Objects;
 
 /**
- * Created by benson on 5/29/14.
+ * State object in runtime.
  */
 class State {
     static final int FREESTATE = -1;

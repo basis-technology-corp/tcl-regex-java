@@ -58,6 +58,9 @@ class Runtime {
             case NOTEOL:
                 eflags |= Flags.REG_NOTEOL;
                 break;
+            case LOOKING_AT:
+                eflags |= Flags.REG_LOOKING_AT;
+                break;
             default:
                 throw new RuntimeException("impossible exec flag");
             }

@@ -28,12 +28,6 @@ final class HsreMatcher implements ReMatcher {
     private CharSequence data;
     private final EnumSet<ExecFlags> flags;
     private final HsrePattern pattern;
-    /*
-     * We need an extra pattern with ^ at the front to do an efficient job on
-     * lookingAt and matches. No need for a third with $ for matches; that would
-     * not save work.
-     */
-    private final HsrePattern startAnchoredPattern;
     private Runtime runtime;
     private int regionStart;
     private int regionEnd;
@@ -49,12 +43,6 @@ final class HsreMatcher implements ReMatcher {
         regionEnd = data.length();
 
         String originalPattern = pattern.pattern();
-        if (originalPattern.length() > 0 && originalPattern.charAt(0) == '^') {
-            this.startAnchoredPattern = this.pattern;
-        } else {
-            this.startAnchoredPattern = AnchoredPatternsCache.INSTANCE.getAnchoredPattern(pattern);
-        }
-
     }
 
     /**
@@ -72,17 +60,25 @@ final class HsreMatcher implements ReMatcher {
      */
     @Override
     public boolean find(int startOffset) throws RegexRuntimeException {
-        return findInternal(pattern, startOffset);
+        return findInternal(pattern, startOffset, false);
     }
 
-    private boolean findInternal(HsrePattern pat, int startOffset) {
+    private boolean findInternal(HsrePattern pat, int startOffset, boolean lookingAt) {
         if (startOffset < regionStart) {
             throw new IllegalArgumentException("Start offset less than region start");
         }
+
+        // if lookingAt add the LOOKING_AT flag.
+        EnumSet<ExecFlags> execFlags = flags;
+        if (lookingAt) {
+            execFlags = EnumSet.copyOf(flags);
+            execFlags.add(ExecFlags.LOOKING_AT);
+        }
+
         // TODO: this is a pessimization; we should be able to make one at construction and reuse it.
         runtime = new Runtime();
         try {
-            boolean found = runtime.exec(pat, data.subSequence(startOffset, regionEnd), flags);
+            boolean found = runtime.exec(pat, data.subSequence(startOffset, regionEnd), execFlags);
             if (found) {
                 // note how much to add to the runtime.match offsets.
                 matchOffset = startOffset;
@@ -156,7 +152,7 @@ final class HsreMatcher implements ReMatcher {
 
     @Override
     public boolean matches() throws RegexRuntimeException {
-        return findInternal(startAnchoredPattern, regionStart)
+        return findInternal(pattern, regionStart, true)
                 && start() == regionStart
                 && end() == regionEnd;
     }
@@ -173,7 +169,7 @@ final class HsreMatcher implements ReMatcher {
 
     @Override
     public boolean lookingAt() {
-        return findInternal(startAnchoredPattern, regionStart);
+        return findInternal(pattern, regionStart, true);
     }
 
     @Override

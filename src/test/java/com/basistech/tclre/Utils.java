@@ -119,22 +119,22 @@ public class Utils {
         }
 
         @Factory
-        public static <T> Matcher<String> matches(String pattern, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
+        public static Matcher<String> matches(String pattern, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
             return new Matches(pattern, null, pflags, eflags);
         }
 
         @Factory
-        public static <T> Matcher<String> matches(String pattern, String[] captures, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
+        public static Matcher<String> matches(String pattern, String[] captures, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
             return new Matches(pattern, captures, pflags, eflags);
         }
 
         @Factory
-        public static <T> Matcher<String> matches(String pattern) {
+        public static Matcher<String> matches(String pattern) {
             return new Matches(pattern, null, EnumSet.noneOf(PatternFlags.class), EnumSet.noneOf(ExecFlags.class));
         }
 
         @Factory
-        public static <T> Matcher<String> matches(String pattern, PatternFlags... pflags) {
+        public static Matcher<String> matches(String pattern, PatternFlags... pflags) {
             EnumSet<PatternFlags> flagSet = EnumSet.noneOf(PatternFlags.class);
             for (PatternFlags pf : pflags) {
                 flagSet.add(pf);
@@ -143,12 +143,12 @@ public class Utils {
         }
 
         @Factory
-        public static <T> Matcher<String> matches(RePattern pattern) {
+        public static Matcher<String> matches(RePattern pattern) {
             return new Matches(pattern, EnumSet.noneOf(ExecFlags.class));
         }
 
         @Factory
-        public static <T> Matcher<String> matches(RePattern pattern, ExecFlags ... eflags) {
+        public static Matcher<String> matches(RePattern pattern, ExecFlags ... eflags) {
             EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
             for (ExecFlags ef : eflags) {
                 flagSet.add(ef);

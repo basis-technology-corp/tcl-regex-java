@@ -38,16 +38,7 @@ public class LexTest extends Utils{
 
     @Test
     public void testLex() throws Exception {
-        RePattern exp = HsrePattern.compile("***=a.*[bc]d$+", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
-
-        try {
-            /* not supported at runtime */
-            assertThat("a.*[bc]d$+", matches(exp));
-            assertTrue(false);
-        } catch(RegexRuntimeException ree) {
-            assertTrue(true);
-        }
-        exp = HsrePattern.compile("a.*+[bc]d$+", PatternFlags.QUOTE);
+        RePattern exp = HsrePattern.compile("a.*+[bc]d$+", PatternFlags.QUOTE);
         assertThat("a.*+[bc]d$+", matches(exp));
         assertThat("a.*+[ef]d$+", not(matches(exp)));
         assertCatchCompileTime("***?kaboom");

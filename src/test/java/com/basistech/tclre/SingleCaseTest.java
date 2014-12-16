@@ -23,6 +23,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * patterns compiled with case-insensitivity.
@@ -62,14 +63,15 @@ public class SingleCaseTest extends Utils {
         // We're testing a date/time pattern against the input string, so there's
         // a match in offsets 22-33 corresponding to "january 3rd"
         boolean res = matcher.lookingAt();
-        if (res) {
-            assertEquals(22, matcher.start());
-            assertEquals(33, matcher.end());
-        }
 
-        // But then again, since we are using lookingAt() we only expect a match
-        // when the region starts at 0, which is not the case, so we expect res
-        // to be false.
+
         assertFalse(res);
+
+        matcher.region(9, str.length());
+        assertFalse(matcher.lookingAt());
+
+        matcher.region(22, str.length());
+        assertTrue(matcher.lookingAt());
+        assertEquals(22, matcher.start());
     }
 }

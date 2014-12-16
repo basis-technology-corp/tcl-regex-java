@@ -320,8 +320,8 @@ class Dfa {
      * @param start   where the match should start
      * @param min     match must end at or after here
      * @param max     match must end at or before here
-     * @param coldp   store coldstart pointer here, if non-null
-     * @param hitstop record whether hit end of total input/
+     * @param coldp   store coldstart pointer here, if non-null. This is the _beginning_ of the match region.
+     * @param hitstop record whether hit end of total input
      * @return endpoint or -1
      */
     int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop) {
@@ -397,8 +397,12 @@ class Dfa {
             return -1;
         }
 
+        int matchStart = lastcold();
+        if (matchStart != 0 && lookingAt) {
+            return -1; // it's not a real match if the requirement was lookingAt and it wasn't at the start.
+        }
         if (coldp != null) {    /* report last no-progress state set, if any */
-            coldp[0] = lastcold();
+            coldp[0] = matchStart;
         }
 
         if (0 != (ss.flags & StateSet.POSTSTATE) && cp > min) {

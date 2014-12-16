@@ -21,6 +21,8 @@ import org.junit.Test;
 import static com.basistech.tclre.Utils.Matches.matches;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * patterns compiled with case-insensitivity.
@@ -47,5 +49,27 @@ public class SingleCaseTest extends Utils {
         assertThat("q", matches(exp));
         assertThat("Q", matches(exp));
         assertThat("$", not(matches(exp)));
+    }
+
+    @Test
+    public void testTEJ348() throws Exception {
+        String patternStr = "(?i)\\m(?:(?:(?:(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:tues?|thu(?:rs?)?|fri)\\.?)|(?:mon|wed|sat|sun)\\.?)\\s*,?\\s+)?(?:(?:(?:january|february|july|september|october|november|december)|(?:april|june)\\.?)|(?:(?:August)\\.?)|(?:march|may)|(?:jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)\\.?)(?:(?:\\s+the)?\\s+(?:0?[1-9]|[12]\\d|3[01])(?:th|nd|rd|st)?)(?:\\s*,?\\s*(?:\\d{4}))?\\M";
+        RePattern pattern = HsrePattern.compile(patternStr, PatternFlags.ADVANCED);
+        String str = "The event happened on january 3rd at 4PM on Wednesday.";
+        ReMatcher matcher = pattern.matcher(str);
+        matcher.region(0, 50);
+
+        // We're testing a date/time pattern against the input string, so there's
+        // a match in offsets 22-33 corresponding to "january 3rd"
+        boolean res = matcher.lookingAt();
+        if (res) {
+            assertEquals(22, matcher.start());
+            assertEquals(33, matcher.end());
+        }
+
+        // But then again, since we are using lookingAt() we only expect a match
+        // when the region starts at 0, which is not the case, so we expect res
+        // to be false.
+        assertFalse(res);
     }
 }

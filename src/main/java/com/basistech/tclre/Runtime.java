@@ -113,6 +113,7 @@ class Runtime {
         } else {
             dtstart = data.length();
         }
+
         details = new RegMatch(dtstart, data.length());
 
         if (close == -1) {      /* not found */

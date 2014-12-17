@@ -38,8 +38,6 @@ class Dfa {
     final int ncolors; // length of outarc and inchain vectors (really?)
     final Cnfa cnfa;
     final ColorMap cm;
-    int lastpost;   /* location of las; cache-flushed success */
-    int lastnopr;   /* location of last cache-flushed NOPROGRESS */
     final Runtime hsreMatcher;
 
     Dfa(Runtime hsreMatcher, Cnfa cnfa) {
@@ -51,7 +49,7 @@ class Dfa {
          * to preserve insertion order. He might have been wrong.
          * Note that this isn't a cache;
          * Benson believes that the maximum size here is proportional
-           * to the complexity of the machine, not to the input.
+         * to the complexity of the machine, not to the input.
          */
         stateSets = new Object2ObjectOpenHashMap<BitSet, StateSet>();
         nstates = cnfa.nstates;
@@ -74,8 +72,6 @@ class Dfa {
                 | StateSet.NOPROGRESS;
         // Insert into hash table based on that one state.
         stateSets.put(stateSet.states, stateSet);
-        lastpost = -1;
-        lastnopr = -1;
         stateSet.setLastSeen(start);
         return stateSet;
     }
@@ -300,7 +296,7 @@ class Dfa {
         }
 
     /* find last match, if any */
-        post = lastpost;
+        post = -1;
         for (StateSet thisSS : stateSets.values()) { //.object2ObjectEntrySet()) {
             if (0 != (thisSS.flags & StateSet.POSTSTATE) && post != thisSS.getLastSeen()
                     && (post == -1 || post < thisSS.getLastSeen())) {
@@ -366,8 +362,6 @@ class Dfa {
         css.setLastSeen(cp);
         ss = css;
 
-        boolean lookingAt = 0 != (hsreMatcher.eflags & Flags.REG_LOOKING_AT);
-
     /* main loop */
         while (cp < realmax) {
             co = cm.getcolor(hsreMatcher.data.charAt(cp));
@@ -379,11 +373,6 @@ class Dfa {
                 }
             }
 
-            if (lookingAt && cp == 0 && (0 != (ss.flags & StateSet.NOPROGRESS))) {
-                // failed to traverse an arc, looking-at flag is set, at first position.
-                return -1;
-            }
-
             cp++;
             ss.setLastSeen(cp);
             css = ss;
@@ -392,15 +381,11 @@ class Dfa {
             }
         }
 
-
         if (ss == null) {
             return -1;
         }
 
         int matchStart = lastcold();
-        if (matchStart != 0 && lookingAt) {
-            return -1; // it's not a real match if the requirement was lookingAt and it wasn't at the start.
-        }
         if (coldp != null) {    /* report last no-progress state set, if any */
             coldp[0] = matchStart;
         }
@@ -432,11 +417,7 @@ class Dfa {
      * @return offset or -1
      */
     int lastcold() {
-
-        int nopr = lastnopr;
-        if (nopr == -1) {
-            nopr = 0;
-        }
+        int nopr = 0;
 
         for (StateSet ss : stateSets.values()) {
             if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.getLastSeen()) {

@@ -387,8 +387,10 @@ class Nfa {
             return;
         }
 
+        LOG.debug("dump nfa");
+
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("pre %d, post %d", pre.no, post.no));
+        sb.append(String.format("pre %d, post %d init %d final %d", pre.no, post.no, init.no, finalState.no));
 
         if (bos[0] != Constants.COLORLESS) {
             sb.append(String.format(", bos [%d]", bos[0]));
@@ -423,7 +425,7 @@ class Nfa {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%d%s%c", s.no, (s.tmp != null) ? "T" : "",
+        sb.append(String.format("State %d%s%c", s.no, (s.tmp != null) ? "T" : "",
                 (s.flag != 0) ? (char)s.flag : '.'));
         if (s.prev != null && s.prev.next != s) {
             sb.append(String.format("\tstate chain bad"));
@@ -502,7 +504,7 @@ class Nfa {
         case Compiler.EMPTY:
             break;
         default:
-            sb.append(String.format("0x%x/0%lo", a.type, a.co));
+            sb.append(String.format("0x%x/0%d", a.type, a.co));
             break;
         }
         if (a.from != s) {

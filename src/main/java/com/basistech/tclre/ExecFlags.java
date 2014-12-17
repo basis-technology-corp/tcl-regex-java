@@ -20,6 +20,7 @@ package com.basistech.tclre;
  * Flags that control runtime execution.
  */
 public enum ExecFlags {
+    LOOKING_AT, /** act as if expression started with ^ */
     NOTBOL, /** BOS is not BOL */
     NOTEOL; /** EOS is not EOL */
 }

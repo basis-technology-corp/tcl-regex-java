@@ -58,6 +58,9 @@ class Runtime {
             case NOTEOL:
                 eflags |= Flags.REG_NOTEOL;
                 break;
+            case LOOKING_AT:
+                eflags |= Flags.REG_LOOKING_AT;
+                break;
             default:
                 throw new RuntimeException("impossible exec flag");
             }
@@ -98,19 +101,12 @@ class Runtime {
         boolean hitend;
         boolean shorter = 0 != (g.tree.flags & Subre.SHORTER);
 
-    /* first, a shot with the search RE */
+        /* First, a shot with the search RE. */
+        /*TOOD: in looking-at mode, is this a good use of time? */
         Dfa s = new Dfa(this, g.search);
         int[] coldp = new int[1];
         close = s.shortest(0, 0, data.length(), coldp, null);
         cold = coldp[0];
-
-        int dtstart;
-        if (cold != -1) {
-            dtstart = cold;
-        } else {
-            dtstart = data.length();
-        }
-        details = new RegMatch(dtstart, data.length());
 
         if (close == -1) {      /* not found */
             return false;
@@ -123,6 +119,13 @@ class Runtime {
         cold = -1;
         Dfa d = new Dfa(this, cnfa);
         for (begin = open; begin <= close; begin++) {
+            /*
+             * if LOOKING_AT, we can't validly have a 'begin' after 'open'.
+             */
+            if (begin > 0 && 0 != (eflags & Flags.REG_LOOKING_AT)) {
+                return false;
+            }
+
             boolean[] hitendp = new boolean[1];
             if (shorter) {
                 end = d.shortest(begin, begin, data.length(), null, hitendp);
@@ -143,7 +146,7 @@ class Runtime {
 
         /* and pin down details */
         match.set(0, new RegMatch(begin, end));
-
+        int dtstart;
         if (cold != -1) {
             dtstart = cold;
         } else {
@@ -168,7 +171,7 @@ class Runtime {
         Dfa s = new Dfa(this, g.search);
         Dfa d = new Dfa(this, cnfa);
 
-        boolean ret = cfindloop(cnfa, d, s, cold);
+        boolean ret = cfindloop(d, s, cold);
 
         int dtstart;
         if (cold[0] != -1) {
@@ -184,7 +187,7 @@ class Runtime {
     /**
      * cfindloop - the heart of cfind
      */
-    boolean cfindloop(Cnfa cnfa, Dfa d, Dfa s, int[] coldp) {
+    boolean cfindloop(Dfa d, Dfa s, int[] coldp) {
         int begin;
         int end;
         int cold;
@@ -210,6 +213,9 @@ class Runtime {
             cold = -1;
 
             for (begin = open; begin <= close; begin++) {
+                if (begin > 0 && 0 != (eflags & Flags.REG_LOOKING_AT)) {
+                    return false;
+                }
                 estart = begin;
                 estop = data.length();
                 for (;;) {

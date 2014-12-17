@@ -38,8 +38,6 @@ class Dfa {
     final int ncolors; // length of outarc and inchain vectors (really?)
     final Cnfa cnfa;
     final ColorMap cm;
-    int lastpost;   /* location of las; cache-flushed success */
-    int lastnopr;   /* location of last cache-flushed NOPROGRESS */
     final Runtime hsreMatcher;
 
     Dfa(Runtime hsreMatcher, Cnfa cnfa) {
@@ -51,7 +49,7 @@ class Dfa {
          * to preserve insertion order. He might have been wrong.
          * Note that this isn't a cache;
          * Benson believes that the maximum size here is proportional
-           * to the complexity of the machine, not to the input.
+         * to the complexity of the machine, not to the input.
          */
         stateSets = new Object2ObjectOpenHashMap<BitSet, StateSet>();
         nstates = cnfa.nstates;
@@ -74,8 +72,6 @@ class Dfa {
                 | StateSet.NOPROGRESS;
         // Insert into hash table based on that one state.
         stateSets.put(stateSet.states, stateSet);
-        lastpost = -1;
-        lastnopr = -1;
         stateSet.setLastSeen(start);
         return stateSet;
     }
@@ -300,7 +296,7 @@ class Dfa {
         }
 
     /* find last match, if any */
-        post = lastpost;
+        post = -1;
         for (StateSet thisSS : stateSets.values()) { //.object2ObjectEntrySet()) {
             if (0 != (thisSS.flags & StateSet.POSTSTATE) && post != thisSS.getLastSeen()
                     && (post == -1 || post < thisSS.getLastSeen())) {
@@ -320,8 +316,8 @@ class Dfa {
      * @param start   where the match should start
      * @param min     match must end at or after here
      * @param max     match must end at or before here
-     * @param coldp   store coldstart pointer here, if non-null
-     * @param hitstop record whether hit end of total input/
+     * @param coldp   store coldstart pointer here, if non-null. This is the _beginning_ of the match region.
+     * @param hitstop record whether hit end of total input
      * @return endpoint or -1
      */
     int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop) {
@@ -345,11 +341,13 @@ class Dfa {
 
     /* startup */
         if (cp == 0) {
+            /* If the NOTBOL flag is true, we take color as bos[0], else 1. So, bos[1] is when we are at the _effective_ bos, [0] when we are not. */
             co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("color %d", co));
             }
         } else {
+            /* Not at bos at all, set color based on prior character. */
             co = cm.getcolor(hsreMatcher.data.charAt(cp - 1));
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("char %c, color %d\n", hsreMatcher.data.charAt(cp - 1), co));
@@ -374,6 +372,7 @@ class Dfa {
                     break;  /* NOTE BREAK OUT */
                 }
             }
+
             cp++;
             ss.setLastSeen(cp);
             css = ss;
@@ -382,13 +381,13 @@ class Dfa {
             }
         }
 
-
         if (ss == null) {
             return -1;
         }
 
+        int matchStart = lastcold();
         if (coldp != null) {    /* report last no-progress state set, if any */
-            coldp[0] = lastcold();
+            coldp[0] = matchStart;
         }
 
         if (0 != (ss.flags & StateSet.POSTSTATE) && cp > min) {
@@ -418,11 +417,7 @@ class Dfa {
      * @return offset or -1
      */
     int lastcold() {
-
-        int nopr = lastnopr;
-        if (nopr == -1) {
-            nopr = 0;
-        }
+        int nopr = 0;
 
         for (StateSet ss : stateSets.values()) {
             if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.getLastSeen()) {

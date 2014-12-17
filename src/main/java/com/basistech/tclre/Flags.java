@@ -17,7 +17,7 @@
 package com.basistech.tclre;
 
 /**
- * Created by benson on 5/29/14.
+ * A collection of integer flags.
  */
 final class Flags {
     static final int REG_BASIC = 000000;    /* BREs (convenience) */
@@ -33,8 +33,7 @@ final class Flags {
     static final int REG_NLANCH = 000200;   /* ^ matches after \n, $ before */
     static final int REG_NEWLINE = 000300;  /* newlines are line terminators */
     static final int REG_PEND = 000400; /* ugh -- backward-compatibility hack */
-// it costs nothing, so we just do it.
-//    static final int REG_EXPECT = 001000;   /* report details on partial/limited matches */
+    static final int REG_LOOKING_AT = 001000;   /* act as if there was a ^ */
     static final int REG_BOSONLY = 002000;  /* temporary kludge for BOS-only matches */
     // Next two not used.
 //    static final int REG_DUMP = 004000; /* none of your business :-) */

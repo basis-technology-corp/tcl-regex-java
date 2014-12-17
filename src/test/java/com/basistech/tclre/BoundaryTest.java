@@ -20,11 +20,12 @@ import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Word boundary cases
  */
-public class BoundaryTests extends Utils {
+public class BoundaryTest extends Utils {
 
     @Test
     public void wordBegin() throws Exception {

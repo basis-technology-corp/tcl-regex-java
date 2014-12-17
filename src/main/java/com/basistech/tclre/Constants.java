@@ -17,10 +17,9 @@
 package com.basistech.tclre;
 
 /**
- * Created by benson on 5/29/14.
+ * Some constants.
  */
 final class Constants {
-    static final int NOCELT = -1;
     static final int CHRBITS = 16;
     static final int CHR_MIN = 0;
     static final int CHR_MAX = 0xffff;

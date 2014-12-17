@@ -20,11 +20,13 @@ import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Created by bsg on 6/13/14.
+ * Test for the lexer.
  */
-public class LexTests extends Utils{
+public class LexTest extends Utils{
     private void assertCatchCompileTime(String regex) {
         try {
             HsrePattern.compile(regex, PatternFlags.ADVANCED);
@@ -36,16 +38,7 @@ public class LexTests extends Utils{
 
     @Test
     public void testLex() throws Exception {
-        RePattern exp = HsrePattern.compile("***=a.*[bc]d$+", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
-
-        try {
-            /* not supported at runtime */
-            assertThat("a.*[bc]d$+", matches(exp));
-            assertTrue(false);
-        } catch(RegexRuntimeException ree) {
-            assertTrue(true);
-        }
-        exp = HsrePattern.compile("a.*+[bc]d$+", PatternFlags.QUOTE);
+        RePattern exp = HsrePattern.compile("a.*+[bc]d$+", PatternFlags.QUOTE);
         assertThat("a.*+[bc]d$+", matches(exp));
         assertThat("a.*+[ef]d$+", not(matches(exp)));
         assertCatchCompileTime("***?kaboom");

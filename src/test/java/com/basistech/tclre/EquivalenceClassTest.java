@@ -20,31 +20,22 @@ import org.junit.Test;
 
 import static com.basistech.tclre.Utils.Matches.matches;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * patterns compiled with case-insensitivity.
- * TODO: tricky cases like the Turkish I.
+ * Let's imagine that both of the characters A and a fall at the same place in the collating sequence;
+ * they belong to the same equivalence class. In that case, both of the bracket expressions
+ * [[=A=]b] and [[=a=]b] are equivalent to writing [Aab]. As another example, if o and ô are
+ * members of an equivalence class, then all of the bracket expressions [[=o=]], [[=ô=]], and
+ * [oô] match those same two characters.
  */
-public class SingleCaseTests extends Utils {
-    @Test
-    public void testAlternation() throws Exception {
-        RePattern exp = HsrePattern.compile("a|b", PatternFlags.ADVANCED, PatternFlags.ICASE);
-        assertThat("a", matches(exp));
-        assertThat("A", matches(exp));
-        assertThat("b", matches(exp));
-        assertThat("B", matches(exp));
-        assertThat("c", not(matches(exp)));
-        assertThat("C", not(matches(exp)));
-
-    }
+public class EquivalenceClassTest extends Utils {
 
     @Test
-    public void testRange() throws Exception {
-        RePattern exp = HsrePattern.compile("[a-z]", PatternFlags.ADVANCED, PatternFlags.ICASE);
+    public void testSimpleEqv() throws Exception {
+        RePattern exp = HsrePattern.compile("[[=a=]]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
         assertThat("a", matches(exp));
-        assertThat("A", matches(exp));
-        assertThat("q", matches(exp));
-        assertThat("Q", matches(exp));
-        assertThat("$", not(matches(exp)));
+        // C didn't implement this, and neither do we.
+        assertThat("A", not(matches(exp)));
     }
 }

@@ -31,7 +31,7 @@ import org.junit.Test;
 /**
  * Tests of misc apis in HsreMatcher
  */
-public class MatcherTests extends Assert {
+public class MatcherTest extends Assert {
 
     @Test
     public void jreCheck() throws Exception {

@@ -17,6 +17,7 @@
 package com.basistech.tclre;
 
 import java.util.EnumSet;
+import java.util.regex.Pattern;
 
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
@@ -27,7 +28,7 @@ import org.junit.Assert;
 /**
  * Some handy test utilities.
  */
-public class Utils extends Assert {
+public class Utils {
     public static class MatcherMatches extends TypeSafeMatcher<ReMatcher> {
         final int start;
         final int end;
@@ -118,17 +119,22 @@ public class Utils extends Assert {
         }
 
         @Factory
-        public static <T> Matcher<String> matches(String pattern, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
+        public static Matcher<String> matches(String pattern, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
             return new Matches(pattern, null, pflags, eflags);
         }
 
         @Factory
-        public static <T> Matcher<String> matches(String pattern) {
+        public static Matcher<String> matches(String pattern, String[] captures, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
+            return new Matches(pattern, captures, pflags, eflags);
+        }
+
+        @Factory
+        public static Matcher<String> matches(String pattern) {
             return new Matches(pattern, null, EnumSet.noneOf(PatternFlags.class), EnumSet.noneOf(ExecFlags.class));
         }
 
         @Factory
-        public static <T> Matcher<String> matches(String pattern, PatternFlags... pflags) {
+        public static Matcher<String> matches(String pattern, PatternFlags... pflags) {
             EnumSet<PatternFlags> flagSet = EnumSet.noneOf(PatternFlags.class);
             for (PatternFlags pf : pflags) {
                 flagSet.add(pf);
@@ -137,18 +143,20 @@ public class Utils extends Assert {
         }
 
         @Factory
-        public static <T> Matcher<String> matches(RePattern pattern) {
+        public static Matcher<String> matches(RePattern pattern) {
             return new Matches(pattern, EnumSet.noneOf(ExecFlags.class));
         }
 
         @Factory
-        public static <T> Matcher<String> matches(RePattern pattern, ExecFlags ... eflags) {
+        public static Matcher<String> matches(RePattern pattern, ExecFlags ... eflags) {
             EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
             for (ExecFlags ef : eflags) {
                 flagSet.add(ef);
             }
             return new Matches(pattern, flagSet);
         }
+
+
 
         @Factory
         public static <T> Matcher<String> matches(RePattern pattern, String[] captures, ExecFlags ... eflags) {

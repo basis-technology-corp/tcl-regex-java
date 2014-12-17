@@ -91,6 +91,11 @@ class Runtime {
 
     /**
      * find - find a match for the main NFA (no-complications case)
+     * This method uses a strategy that we may want to change. First, it runs the 'search machine',
+     * which tells you if the expression can be found anywhere, and, if so, where is the furthest possible
+     * end. If succeeds, it does an iteration to find the exact bounds. In C, there was an option to
+     * only do the first step, to return a simple boolean with no bounds. We have no API for that.
+     * So, it would be good to benchmark to determine if the two-step process is faster or slower than the alternative.
      */
     boolean find(Cnfa cnfa) {
         int begin;
@@ -101,28 +106,32 @@ class Runtime {
         boolean hitend;
         boolean shorter = 0 != (g.tree.flags & Subre.SHORTER);
 
-        /* First, a shot with the search RE. */
-        /*TOOD: in looking-at mode, is this a good use of time? */
-        Dfa s = new Dfa(this, g.search);
-        int[] coldp = new int[1];
-        close = s.shortest(0, 0, data.length(), coldp, null);
-        cold = coldp[0];
+        boolean lookingAt = 0 != (eflags & Flags.REG_LOOKING_AT);
 
-        if (close == -1) {      /* not found */
-            return false;
+        if (lookingAt) {
+            close = data.length();
+            cold = 0;
+        } else {
+            /* First, a shot with the search RE. */
+            int[] coldp = new int[1];
+            Dfa s = new Dfa(this, g.search);
+            close = s.shortest(0, 0, data.length(), coldp, null);
+            cold = coldp[0];
+
+            if (close == -1) {      /* not found */
+                return false;
+            }
         }
 
     /* find starting point and match */
-        assert cold != -1;
         open = cold;
-
         cold = -1;
         Dfa d = new Dfa(this, cnfa);
         for (begin = open; begin <= close; begin++) {
             /*
              * if LOOKING_AT, we can't validly have a 'begin' after 'open'.
              */
-            if (begin > 0 && 0 != (eflags & Flags.REG_LOOKING_AT)) {
+            if (begin > 0 && lookingAt) {
                 return false;
             }
 
@@ -137,12 +146,14 @@ class Runtime {
             if (hitend && cold == -1) {
                 cold = begin;
             }
-            if (end != -1) {
+            if (end != -1) { /* success */
                 break;      /* NOTE BREAK OUT */
             }
         }
 
-        assert end != -1;       /* search RE succeeded so loop should */
+        if (end == -1) {
+            return false;
+        }
 
         /* and pin down details */
         match.set(0, new RegMatch(begin, end));

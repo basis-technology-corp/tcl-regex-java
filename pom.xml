@@ -35,15 +35,10 @@
     <version>0.10.3-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <description>Java port of the regex engine from Tcl</description>
-    <organization>
-      <name>Basis Technology Corp.</name>
-      <url>http://www.basistech.com</url>
-    </organization>
-
     <parent>
-        <groupId>com.simpligility.maven</groupId>
-        <artifactId>progressive-organization-pom</artifactId>
-        <version>1.5.1</version>
+        <groupId>com.basistech</groupId>
+        <artifactId>open-source-parent</artifactId>
+        <version>0.0.4</version>
     </parent>
     <prerequisites>
         <maven>3.0.4</maven>
@@ -61,9 +56,6 @@
             <url>scm:git:git@github.com:basis-technology-corp/tcl-regex-java.git</url>
         </site>
     </distributionManagement>
-    <properties>
-        <maven.version>3.0.4</maven.version>
-    </properties>
     <dependencies>
         <!-- the order here (hamcrest, hamcrest, mockito) is important. -->
         <dependency>
@@ -152,68 +144,12 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>2.5.3</version>
-                <extensions>true</extensions>
-                <dependencies>
-                    <!-- FELIX-4556 -->
-                    <dependency>
-                        <groupId>biz.aQute.bnd</groupId>
-                        <artifactId>bndlib</artifactId>
-                        <version>2.4.0</version>
-                    </dependency>
-                </dependencies>
                 <configuration>
-                    <archive>
-                        <addMavenDescriptor>false</addMavenDescriptor>
-                        <manifest>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                        </manifest>
-                        <manifestEntries>
-                            <Bundle-Vendor>Basis Technology Corp.</Bundle-Vendor>
-                            <Implementation-Vendor>Basis Technology Corp.</Implementation-Vendor>
-                            <Implementation-Version>${project.version}</Implementation-Version>
-                        </manifestEntries>
-                    </archive>
                     <instructions>
                       <Export-Package>com.basistech.tclre</Export-Package>
                       <Embed-Dependency>fastutil</Embed-Dependency>
                     </instructions>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <extensions>true</extensions>
-                <inherited>false</inherited>
-                <configuration>
-                    <serverId>ossrh-releases</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <stagingProfileId>af82fa330d4f7</stagingProfileId>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.3.1</version>
-                <executions>
-                    <execution>
-                        <id>enforce-versions</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <phase>validate</phase>
-                        <configuration>
-                            <rules>
-                                <requireMavenVersion>
-                                    <version>3.0.4</version>
-                                </requireMavenVersion>
-                                <requireJavaVersion>
-                                    <version>[1.7.0,1.8)</version>
-                                </requireJavaVersion>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

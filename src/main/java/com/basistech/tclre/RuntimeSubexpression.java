@@ -15,15 +15,54 @@
  */
 package com.basistech.tclre;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+
+import java.io.Serializable;
+
 /**
  * Information needed at runtime for a subexpression.
  */
-final class RuntimeSubexpression {
+final class RuntimeSubexpression implements Serializable {
+    static final long serialVersionUID = 1L;
     final int number;
     final Cnfa machine;
+    final char op;
+    final RuntimeSubexpression left;
+    final RuntimeSubexpression right;
+    final int flags;
+    final int retry;
+    final int min;
+    final int max;
 
-    RuntimeSubexpression(int number, Cnfa machine) {
-        this.number = number;
-        this.machine = machine;
+    RuntimeSubexpression() {
+        number = -1;
+        machine = null;
+        op = 0;
+        left = null;
+        right = null;
+        flags = 0;
+        retry = 0;
+        this.min = 0;
+        this.max = 0;
+    }
+
+    RuntimeSubexpression(Subre re) {
+        this.number = re.subno;
+        this.op = re.op;
+        this.machine = re.cnfa;
+        this.flags = re.flags;
+        if (re.left == null) {
+            this.left = null;
+        } else {
+            this.left = new RuntimeSubexpression(re.left);
+        }
+        if (re.right == null) {
+            this.right = null;
+        } else {
+            this.right = new RuntimeSubexpression(re.right);
+        }
+        this.retry = re.retry;
+        this.min = re.min;
+        this.max = re.max;
     }
 }

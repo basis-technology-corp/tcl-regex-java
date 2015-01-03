@@ -16,6 +16,7 @@
 
 package com.basistech.tclre;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.EnumSet;
 
@@ -27,7 +28,8 @@ import com.google.common.base.Objects;
  * @see com.basistech.tclre.RePattern
  * @see com.basistech.tclre.ReMatcher
  */
-public class HsrePattern implements RePattern {
+public class HsrePattern implements RePattern, Serializable {
+    static final long serialVersionUID = 1L;
     final long info;
     final int nsub;       /* number of subexpressions */
     final Guts guts;

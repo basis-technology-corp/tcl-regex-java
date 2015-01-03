@@ -33,11 +33,12 @@
     <artifactId>tcl-regex</artifactId>
     <groupId>com.basistech.tclre</groupId>
     <version>0.10.3-SNAPSHOT</version>
-    <description>Basis java port of the regex engine from  Tcl</description>
+    <packaging>bundle</packaging>
+    <description>Java port of the regex engine from Tcl</description>
     <parent>
-        <groupId>com.simpligility.maven</groupId>
-        <artifactId>progressive-organization-pom</artifactId>
-        <version>1.5.1</version>
+        <groupId>com.basistech</groupId>
+        <artifactId>open-source-parent</artifactId>
+        <version>0.0.4</version>
     </parent>
     <prerequisites>
         <maven>3.0.4</maven>
@@ -55,11 +56,8 @@
             <url>scm:git:git@github.com:basis-technology-corp/tcl-regex-java.git</url>
         </site>
     </distributionManagement>
-    <properties>
-        <maven.version>3.0.4</maven.version>
-    </properties>
     <dependencies>
-      <!-- the order here (hamcrest, hamcrest, mockito) is important. -->
+        <!-- the order here (hamcrest, hamcrest, mockito) is important. -->
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
@@ -85,6 +83,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.basistech</groupId>
+            <artifactId>pax-exam-test-composite</artifactId>
+            <version>0.0.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.ibm.icu</groupId>
             <artifactId>icu4j</artifactId>
             <version>53.1</version>
@@ -102,6 +106,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <scope>compile</scope>
             <version>1.7.5</version>
         </dependency>
         <dependency>
@@ -115,6 +120,12 @@
             <artifactId>args4j</artifactId>
             <version>2.0.26</version>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>5.0.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>
@@ -140,43 +151,64 @@
                         <scmBranch>gh-pages</scmBranch>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.18</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <extensions>true</extensions>
-                <inherited>false</inherited>
-                <configuration>
-                    <serverId>ossrh-releases</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <stagingProfileId>af82fa330d4f7</stagingProfileId>
-                </configuration>
-            </plugin>
+            <!-- because we're not dealing any tricky OSGi version
+                 issues, we can just grab our dependencies and filter
+                 down to get our bundles. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.3.1</version>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.9</version>
                 <executions>
                     <execution>
-                        <id>enforce-versions</id>
+                        <id>copy-bundles</id>
+                        <phase>generate-test-resources</phase>
                         <goals>
-                            <goal>enforce</goal>
+                            <goal>copy-dependencies</goal>
                         </goals>
-                        <phase>validate</phase>
                         <configuration>
-                            <rules>
-                                <requireMavenVersion>
-                                    <version>3.0.4</version>
-                                </requireMavenVersion>
-                                <requireJavaVersion>
-                                    <version>[1.7.0,1.8)</version>
-                                </requireJavaVersion>
-                            </rules>
+                            <outputDirectory>${project.build.directory}/bundles</outputDirectory>
+                            <!--
+                              Exclude the ones that are not OSGi
+                              components, plus OSGi itself.
+                          -->
+                            <excludeArtifactIds>fastutil,bndlib,org.osgi.core</excludeArtifactIds>
+                            <excludeGroupIds>org.slf4j</excludeGroupIds>
+                            <includeScope>compile</includeScope>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.servicemix.tooling</groupId>
+                <artifactId>depends-maven-plugin</artifactId>
+                <version>1.2</version>
+                <executions>
+                    <execution>
+                        <id>generate-depends-file</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>generate-depends-file</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <configuration>
+                    <instructions>
+                        <Export-Package>com.basistech.tclre</Export-Package>
+                        <Embed-Dependency>fastutil</Embed-Dependency>
+                    </instructions>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -201,20 +233,23 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-site-plugin</artifactId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.18</version>
                 <executions>
                     <execution>
-                        <id>attach-descriptor</id>
                         <goals>
-                            <goal>attach-descriptor</goal>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
                         </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <java.awt.headless>true</java.awt.headless>
+                                <project.build.directory>${project.build.directory}</project.build.directory>
+                                <project.version>${project.version}</project.version>
+                            </systemPropertyVariables>
+                        </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.18</version>
             </plugin>
         </plugins>
     </build>

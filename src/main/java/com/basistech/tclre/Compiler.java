@@ -236,7 +236,8 @@ final class Compiler {
             guts.compare = new Comparer(false);
         }
 
-        guts.lacons = lacons;
+
+        guts.setupLookaheadConstraints(lacons);
         return new HsrePattern(new String(pattern, 0, pattern.length), originalFlags, info, nsub, guts);
     }
 

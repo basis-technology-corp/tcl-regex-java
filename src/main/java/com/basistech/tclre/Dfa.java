@@ -207,12 +207,11 @@ class Dfa {
         // compare this to com.basistech.tclre.Nfa.compact(), the LACONS case.
         // that adds a.co to ncolors. So that means that you'd think that the lacons
         // indexing would be related... The 'arc' should have a 'color' which is an index
-        // into lacon.
-        assert n < hsreMatcher.g.lacons.size();
-        Subre sub = hsreMatcher.g.lacons.get(n);
-        Dfa d = new Dfa(hsreMatcher, sub.cnfa);
+        //
+        RuntimeSubexpression subex = hsreMatcher.g.lookaheadConstraintMachine(n);
+        Dfa d = new Dfa(hsreMatcher, subex.machine);
         end = d.longest(cp, hsreMatcher.data.length(), null);
-        return (sub.subno != 0) ? (end != -1) : (end == -1);
+        return (subex.number != 0) ? (end != -1) : (end == -1);
     }
 
     /**

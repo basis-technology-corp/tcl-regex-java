@@ -34,9 +34,26 @@ class Guts {
     ColorMap cm;
     SubstringComparator compare;
 
-    List<Subre> lacons; /* lookahead-constraint vector */
+    private List<RuntimeSubexpression> lookaheadConstraintMachines;
 
+    //TODO: turn this into immutable
     Guts() {
-        lacons = Lists.newArrayList();
+    }
+
+    void setupLookaheadConstraints(List<Subre> lacons) {
+        if (lacons != null) {
+            lookaheadConstraintMachines = Lists.newArrayList();
+            for (Subre subre : lacons) {
+                if (subre == null) {
+                    lookaheadConstraintMachines.add(new RuntimeSubexpression(0, null));
+                } else {
+                    lookaheadConstraintMachines.add(new RuntimeSubexpression(subre.subno, subre.cnfa));
+                }
+            }
+        }
+    }
+
+    RuntimeSubexpression lookaheadConstraintMachine(int index) {
+        return lookaheadConstraintMachines.get(index);
     }
 }

@@ -162,9 +162,8 @@ class Dfa {
 
         StateSet stateSet = stateSets.get(work);
         if (stateSet == null) {
-            stateSet = new StateSet(nstates, ncolors);
+            stateSet = new StateSet(work, ncolors);
             stateSet.ins = new Arcp(null, Constants.WHITE);
-            stateSet.states = work;
             stateSet.poststate = ispost;
             stateSet.noprogress |= noprogress;
             /* lastseen to be dealt with by caller */

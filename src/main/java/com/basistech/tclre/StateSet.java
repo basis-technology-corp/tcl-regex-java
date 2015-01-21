@@ -43,6 +43,14 @@ class StateSet {
         lastseen = -1;
     }
 
+    StateSet(BitSet states, int ncolors) {
+        this.states = states;
+        // if colors are sparse these will need to be otherwise.
+        outs = new StateSet[ncolors];
+        inchain = new Arcp[ncolors];
+        lastseen = -1;
+    }
+
     int getLastSeen() {
         return lastseen;
     }

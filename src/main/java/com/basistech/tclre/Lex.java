@@ -605,7 +605,8 @@ class Lex {
             if (0 != (v.cflags & Flags.REG_ADVF) && next1('?')) {
                 note(Flags.REG_UNONPOSIX);
                 v.now++;
-                switch (charAtNowAdvance()) {
+                char flagChar = charAtNowAdvance();
+                switch (flagChar) {
                 case ':':       /* non-capturing paren */
                     return retv('(', 0);
 
@@ -628,8 +629,7 @@ class Lex {
                     return retv(Compiler.LACON, 0);
 
                 default:
-                    throw new RegexException("Errors.REG_BADRPT");
-
+                    throw new RegexException(String.format("Invalid flag after '(?': %c", flagChar));
                 }
             }
             if (0 != (v.cflags & Flags.REG_NOSUB) || 0 != (v.cflags & Flags.REG_NOCAPT)) {

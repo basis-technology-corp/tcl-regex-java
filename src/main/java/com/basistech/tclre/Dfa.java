@@ -31,8 +31,6 @@ import java.util.BitSet;
  * a long.
  */
 class Dfa {
-    static final Logger LOG = LoggerFactory.getLogger(Dfa.class);
-
     final Object2ObjectMap<BitSet, StateSet> stateSets;
     final int nstates;
     final int ncolors; // length of outarc and inchain vectors (really?)
@@ -83,18 +81,11 @@ class Dfa {
      * @return
      */
     StateSet miss(StateSet css, short co, int cp) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(String.format("miss: %s %d %d", css, co, cp));
-        }
-
        // if (Thread.currentThread().isInterrupted()) {
        //     throw new RegexInterruptedException();
        //}
 
         if (css.outs[co] != null) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("hit!");
-            }
             return css.outs[co];
         }
 
@@ -225,10 +216,6 @@ class Dfa {
         StateSet css;
         int post;
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("+++ startup +++");
-        }
-
     /* initialize */
         css = initialize(start);
         cp = start;
@@ -240,14 +227,8 @@ class Dfa {
     /* startup */
         if (cp == 0) {
             co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("color %d", co));
-            }
         } else {
             co = cm.getcolor(hsreMatcher.data.charAt(cp - 1));
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("char %c, color %d\n", hsreMatcher.data.charAt(cp - 1), co));
-            }
         }
         css = miss(css, co, cp);
         if (css == null) {
@@ -272,18 +253,11 @@ class Dfa {
         }
 
     /* shutdown */
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(String.format("+++ shutdown +++ at %s", css));
-        }
-
         if (cp == hsreMatcher.dataLength && stop == hsreMatcher.dataLength) {
             if (hitstopp != null) {
                 hitstopp[0] = true;
             }
             co = cnfa.eos[0 != (hsreMatcher.eflags & Flags.REG_NOTEOL) ? 0 : 1];
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("color %d", co));
-            }
             ss = miss(css, co, cp);
         /* special case:  match ended at eol? */
             if (ss != null && (0 != (ss.flags & StateSet.POSTSTATE))) {
@@ -326,10 +300,6 @@ class Dfa {
         StateSet ss;
         StateSet css;
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(" --- startup ---");
-        }
-
     /* initialize */
         css = initialize(start);
         cp = start;
@@ -341,15 +311,9 @@ class Dfa {
         if (cp == 0) {
             /* If the NOTBOL flag is true, we take color as bos[0], else 1. So, bos[1] is when we are at the _effective_ bos, [0] when we are not. */
             co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("color %d", co));
-            }
         } else {
             /* Not at bos at all, set color based on prior character. */
             co = cm.getcolor(hsreMatcher.data.charAt(cp - 1));
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("char %c, color %d\n", hsreMatcher.data.charAt(cp - 1), co));
-            }
         }
 
         css = miss(css, co, cp);

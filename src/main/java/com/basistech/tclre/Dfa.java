@@ -16,9 +16,6 @@
 
 package com.basistech.tclre;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 

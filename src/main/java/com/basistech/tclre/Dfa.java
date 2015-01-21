@@ -60,10 +60,8 @@ class Dfa {
         // but then we'd need the real cache.
         stateSets.clear();
         StateSet stateSet = new StateSet(nstates, ncolors);
-        stateSet.states.set(cnfa.pre, true);
-        stateSet.flags = StateSet.STARTER
-                | StateSet.LOCKED
-                | StateSet.NOPROGRESS;
+        stateSet.states.set(cnfa.pre);
+        stateSet.noprogress = true;
         // Insert into hash table based on that one state.
         stateSets.put(stateSet.states, stateSet);
         stateSet.setLastSeen(start);
@@ -153,10 +151,6 @@ class Dfa {
                         if (0 == Cnfa.carcColor(cnfa.arcs[cnfa.states[catarget]])) {
                             noprogress = false;
                         }
-
-//                        if (LOG.isDebugEnabled()) {
-//                            LOG.debug("%d :> %d", i, catarget);
-//                        }
                     }
                 }
             }
@@ -171,10 +165,8 @@ class Dfa {
             stateSet = new StateSet(nstates, ncolors);
             stateSet.ins = new Arcp(null, Constants.WHITE);
             stateSet.states = work;
-            stateSet.flags = ispost ? StateSet.POSTSTATE : 0;
-            if (noprogress) {
-                stateSet.flags |= StateSet.NOPROGRESS;
-            }
+            stateSet.poststate = ispost;
+            stateSet.noprogress |= noprogress;
             /* lastseen to be dealt with by caller */
             stateSets.put(work, stateSet);
         }
@@ -257,7 +249,7 @@ class Dfa {
             co = cnfa.eos[0 != (hsreMatcher.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             ss = miss(css, co, cp);
         /* special case:  match ended at eol? */
-            if (ss != null && (0 != (ss.flags & StateSet.POSTSTATE))) {
+            if (ss != null && ss.poststate) {
                 return cp;
             } else if (ss != null) {
                 ss.setLastSeen(cp); /* to be tidy */
@@ -267,7 +259,7 @@ class Dfa {
     /* find last match, if any */
         post = -1;
         for (StateSet thisSS : stateSets.values()) { //.object2ObjectEntrySet()) {
-            if (0 != (thisSS.flags & StateSet.POSTSTATE) && post != thisSS.getLastSeen()
+            if (thisSS.poststate && post != thisSS.getLastSeen()
                     && (post == -1 || post < thisSS.getLastSeen())) {
                 post = thisSS.getLastSeen();
             }
@@ -335,7 +327,7 @@ class Dfa {
             cp++;
             ss.setLastSeen(cp);
             css = ss;
-            if (0 != (ss.flags & StateSet.POSTSTATE) && cp >= realmin) {
+            if (ss.poststate && cp >= realmin) {
                 break;      /* NOTE BREAK OUT */
             }
         }
@@ -349,20 +341,19 @@ class Dfa {
             coldp[0] = matchStart;
         }
 
-        if (0 != (ss.flags & StateSet.POSTSTATE) && cp > min) {
+        if (ss.poststate && cp > min) {
             assert cp >= realmin;
             cp--;
         } else if (cp == hsreMatcher.dataLength && max == hsreMatcher.dataLength) {
             co = cnfa.eos[0 != (hsreMatcher.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             ss = miss(css, co, cp);
         /* match might have ended at eol */
-            if ((ss == null || (0 == (ss.flags & StateSet.POSTSTATE)))
-                    && hitstop != null) {
+            if ((ss == null || !ss.poststate) && hitstop != null) {
                 hitstop[0] = true;
             }
         }
 
-        if (ss == null || 0 == (ss.flags & StateSet.POSTSTATE)) {
+        if (ss == null || !ss.poststate) {
             return -1;
         }
 
@@ -379,7 +370,7 @@ class Dfa {
         int nopr = 0;
 
         for (StateSet ss : stateSets.values()) {
-            if (0 != (ss.flags & StateSet.NOPROGRESS) && nopr < ss.getLastSeen()) {
+            if (ss.noprogress && nopr < ss.getLastSeen()) {
                 nopr = ss.getLastSeen();
             }
         }

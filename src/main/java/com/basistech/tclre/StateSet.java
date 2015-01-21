@@ -25,14 +25,9 @@ import java.util.BitSet;
  * regexec.c
  */
 class StateSet {
-    static final int STARTER = 1;
-    static final int POSTSTATE = 2;
-    static final int LOCKED = 4;
-    static final int NOPROGRESS = 8;
-
-
     BitSet states; // states -- we would really like this to be final & immutable.
-    int flags;
+    boolean poststate;
+    boolean noprogress;
     Arcp ins;
     StateSet[] outs;
     Arcp[] inchain;
@@ -60,7 +55,8 @@ class StateSet {
     public String toString() {
         return Objects.toStringHelper(this)
                 .add("states", states)
-                .add("flags", Integer.toHexString(flags))
+                .add("noprogress", noprogress)
+                .add("poststate", poststate)
                 .add("lastseen", lastseen)
                 .toString();
     }

@@ -17,26 +17,52 @@
 package com.basistech.tclre;
 
 
+import java.io.Serializable;
 import java.util.List;
 import com.google.common.collect.Lists;
+import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 /**
- * Data structures derived from regguts.h.
- * Note that this is built for 16-bit chars.
+ * The bits and pieces that make up a runnable expression. This is immutable.
  */
-class Guts {
-    int cflags;     /* copy of compile flags */
-    long info;      /* copy of re_info */
-    int nsub;       /* copy of re_nsub */
-    Subre tree;
-    Cnfa search;    /* for fast preliminary search */
-    int ntree;
-    ColorMap cm;
-    SubstringComparator compare;
+class Guts implements Serializable {
+    static final long serialVersionUID = 1L;
 
-    List<Subre> lacons; /* lookahead-constraint vector */
+    final int cflags;     /* copy of compile flags */
+    final long info;      /* copy of re_info */
+    final int nsub;       /* copy of re_nsub */
+    final RuntimeSubexpression tree;
+    final Cnfa search;    /* for fast preliminary search */
+    final int ntree;
+    final RuntimeColorMap cm;
+    final SubstringComparator compare;
 
-    Guts() {
-        lacons = Lists.newArrayList();
+    private List<RuntimeSubexpression> lookaheadConstraintMachines;
+
+    public Guts(int cflags, long info, int nsub, RuntimeSubexpression tree, Cnfa search, int ntree, ColorMap cm, SubstringComparator compare, List<Subre> lacons) {
+        this.cflags = cflags;
+        this.info = info;
+        this.nsub = nsub;
+        this.tree = tree;
+        this.search = search;
+        this.ntree = ntree;
+        // create the sort of color map that we can serialize and share.
+        this.cm = new RuntimeColorMap(cm.tree[0]);
+        this.compare = compare;
+        if (lacons != null) {
+            lookaheadConstraintMachines = Lists.newArrayList();
+            for (Subre subre : lacons) {
+                if (subre == null) {
+                    lookaheadConstraintMachines.add(new RuntimeSubexpression());
+                } else {
+                    lookaheadConstraintMachines.add(new RuntimeSubexpression(subre));
+                }
+            }
+        }
+    }
+
+    RuntimeSubexpression lookaheadConstraintMachine(int index) {
+        return lookaheadConstraintMachines.get(index);
     }
 }

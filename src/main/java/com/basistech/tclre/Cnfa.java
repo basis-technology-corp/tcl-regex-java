@@ -16,66 +16,34 @@
 
 package com.basistech.tclre;
 
+import java.io.Serializable;
+
 /**
  * Compacted (runtime) NFA.
  */
-class Cnfa {
+class Cnfa implements Serializable {
+    static final long serialVersionUID = 1L;
     static final int HASLACONS = 1;
-    int nstates;        /* number of states */
-    int ncolors;        /* number of colors */
-    int flags;
-    int pre;        /* setup state number */
-    int post;       /* teardown state number */
-    short[] bos = new short[2];     /* colors, if any, assigned to BOS and BOL */
-    short[] eos = new short[2];     /* colors, if any, assigned to EOS and EOL */
-    long[] arcs;
+    final int ncolors;        /* number of colors */
+    final int flags;
+    final int pre;        /* setup state number */
+    final int post;       /* teardown state number */
+    final short[] bos;     /* colors, if any, assigned to BOS and BOL */
+    final short[] eos;     /* colors, if any, assigned to EOS and EOL */
+    final long[] arcs;
     // each state is an index of an arc.
-    int[] states;
+    final int[] states;
 
 
-    Cnfa(int nstates,
-         int narcs,
-         int preNo,
-         int postNo, short[] bos,
-         short[] eos, int maxcolors, int flags) {
-
-        this.pre = preNo;
-        this.post = postNo;
-        this.nstates = nstates;
+    Cnfa(int ncolors, int flags, int pre, int post, short[] bos, short[] eos, long[] arcs, int[] states) {
+        this.ncolors = ncolors;
+        this.flags = flags;
+        this.pre = pre;
+        this.post = post;
         this.bos = bos;
         this.eos = eos;
-        this.ncolors = maxcolors;
-        this.flags = flags;
-
-        this.arcs = new long[narcs];
-        this.states = new int[nstates];
-    }
-
-    void dump() {
-        System.out.format("nstates %d\nncolors %d\nflags %x\npre %d\npost %d\nbos [%d, %d]\neos [%d %d]\n",
-            nstates,
-            ncolors,
-            flags,
-            pre,
-            post,
-            bos[0],
-            bos[1],
-            eos[0],
-            eos[1]);
-        System.out.format("    color state\n");
-        for (int x = 0; x < arcs.length; x++) {
-            long arc = arcs[x];
-            System.out.format("%03d %5d %d\n", x, carcColor(arc), carcTarget(arc));
-        }
-        System.out.println();
-    }
-
-    void setState(int index, int arcIndex) {
-        states[index] = arcIndex;
-    }
-
-    void setArc(int index, long arcValue) {
-        arcs[index] = arcValue;
+        this.arcs = arcs;
+        this.states = states;
     }
 
     static long packCarc(short color, int targetState) {
@@ -89,37 +57,4 @@ class Cnfa {
     static int carcTarget(long packed) {
         return (int)packed;
     }
-
-    /**
-     * carcsort - sort compacted-NFA arcs by color
-     * Really dumb algorithm, but if the list is long enough for that to matter,
-     * you're in real trouble anyway.
-     */
-    void carcsort(int first, int last) {
-        int p;
-        int q;
-        long tmp;
-
-        if (last - first <= 1) {
-            return;
-        }
-
-        for (p = first; p <= last; p++) {
-            for (q = p; q <= last; q++) {
-                short pco = carcColor(arcs[p]);
-                short qco = carcColor(arcs[q]);
-                int pto = carcTarget(arcs[p]);
-                int qto = carcTarget(arcs[q]);
-                if (pco > qco || (pco == qco && pto > qto)) {
-                    assert p != q;
-                    tmp = arcs[p];
-                    arcs[p] = arcs[q];
-                    arcs[q] = tmp;
-                }
-            }
-        }
-    }
-
-
-
 }

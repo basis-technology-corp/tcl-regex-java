@@ -37,7 +37,7 @@ class Dfa {
     final int nstates;
     final int ncolors; // length of outarc and inchain vectors (really?)
     final Cnfa cnfa;
-    final ColorMap cm;
+    final RuntimeColorMap cm;
     final Runtime hsreMatcher;
 
     Dfa(Runtime hsreMatcher, Cnfa cnfa) {
@@ -52,7 +52,7 @@ class Dfa {
          * to the complexity of the machine, not to the input.
          */
         stateSets = new Object2ObjectOpenHashMap<BitSet, StateSet>();
-        nstates = cnfa.nstates;
+        nstates = cnfa.states.length;
         ncolors = cnfa.ncolors;
     }
 
@@ -63,7 +63,6 @@ class Dfa {
     StateSet initialize(int start) {
         // Discard state sets; reuse would be faster if we kept them,
         // but then we'd need the real cache.
-        //stateSets.clear();
         stateSets.clear();
         StateSet stateSet = new StateSet(nstates, ncolors);
         stateSet.states.set(cnfa.pre, true);
@@ -207,12 +206,11 @@ class Dfa {
         // compare this to com.basistech.tclre.Nfa.compact(), the LACONS case.
         // that adds a.co to ncolors. So that means that you'd think that the lacons
         // indexing would be related... The 'arc' should have a 'color' which is an index
-        // into lacon.
-        assert n < hsreMatcher.g.lacons.size();
-        Subre sub = hsreMatcher.g.lacons.get(n);
-        Dfa d = new Dfa(hsreMatcher, sub.cnfa);
+        //
+        RuntimeSubexpression subex = hsreMatcher.g.lookaheadConstraintMachine(n);
+        Dfa d = new Dfa(hsreMatcher, subex.machine);
         end = d.longest(cp, hsreMatcher.data.length(), null);
-        return (sub.subno != 0) ? (end != -1) : (end == -1);
+        return (subex.number != 0) ? (end != -1) : (end == -1);
     }
 
     /**

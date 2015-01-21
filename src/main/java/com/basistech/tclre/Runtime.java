@@ -83,9 +83,9 @@ class Runtime {
         assert g.tree != null;
 
         if (0 != (g.info & Flags.REG_UBACKREF)) {
-            return cfind(g.tree.cnfa);
+            return cfind(g.tree.machine);
         } else {
-            return find(g.tree.cnfa);
+            return find(g.tree.machine);
         }
     }
 
@@ -277,8 +277,8 @@ class Runtime {
     /**
      * subset - set any subexpression relevant to a successful subre
      */
-    void subset(Subre sub, int begin, int end) {
-        int n = sub.subno;
+    void subset(RuntimeSubexpression sub, int begin, int end) {
+        int n = sub.number;
 
         assert n > 0;
 
@@ -292,7 +292,7 @@ class Runtime {
     /**
      * dissect - determine subexpression matches (uncomplicated case)
      */
-    boolean dissect(Subre t, int begin, int end) {
+    boolean dissect(RuntimeSubexpression t, int begin, int end) {
         switch (t.op) {
         case '=':       /* terminal node */
             assert t.left == null && t.right == null;
@@ -311,7 +311,7 @@ class Runtime {
 
         case '(':       /* capturing */
             assert t.left != null && t.right == null;
-            assert t.subno > 0;
+            assert t.number > 0;
             subset(t, begin, end);
             return dissect(t.left, begin, end);
 
@@ -324,7 +324,7 @@ class Runtime {
     /**
      * condissect - determine concatenation subexpression matches (uncomplicated)
      */
-    boolean condissect(Subre t, int begin, int end) {
+    boolean condissect(RuntimeSubexpression t, int begin, int end) {
         Dfa d;
         Dfa d2;
         int mid;
@@ -332,11 +332,11 @@ class Runtime {
         int stop = shorter ? end : begin;
 
         assert t.op == '.';
-        assert t.left != null && t.left.cnfa.nstates > 0;
-        assert t.right != null && t.right.cnfa.nstates > 0;
+        assert t.left != null && t.left.machine.states.length > 0;
+        assert t.right != null && t.right.machine.states.length > 0;
 
-        d = new Dfa(this, t.left.cnfa);
-        d2 = new Dfa(this, t.right.cnfa);
+        d = new Dfa(this, t.left.machine);
+        d2 = new Dfa(this, t.right.machine);
 
     /* pick a tentative midpoint */
         if (shorter) {
@@ -376,15 +376,15 @@ class Runtime {
     /**
      * altdissect - determine alternative subexpression matches (uncomplicated)
      */
-    boolean altdissect(Subre t, int begin, int end) {
+    boolean altdissect(RuntimeSubexpression t, int begin, int end) {
         Dfa d;
 
         assert t != null;
         assert t.op == '|';
 
         for (; t != null; t = t.right) {
-            assert t.left != null && t.left.cnfa.nstates > 0;
-            d = new Dfa(this, t.left.cnfa);
+            assert t.left != null && t.left.machine.states.length > 0;
+            d = new Dfa(this, t.left.machine);
             if (d.longest(begin, end, null) == end) {
                 return dissect(t.left, begin, end);
             }
@@ -398,7 +398,7 @@ class Runtime {
      * The retry memory stores the offset of the trial midpoint from begin,
      * plus 1 so that 0 uniquely means "clean slate".
      */
-    boolean cdissect(Subre t, int begin, int end) {
+    boolean cdissect(RuntimeSubexpression t, int begin, int end) {
 
         assert t != null;
 
@@ -421,7 +421,7 @@ class Runtime {
 
         case '(':       /* capturing */
             assert t.left != null && t.right == null;
-            assert t.subno > 0;
+            assert t.number > 0;
             boolean cdmatch = cdissect(t.left, begin, end);
             if (cdmatch) {
                 subset(t, begin, end);
@@ -438,21 +438,21 @@ class Runtime {
      * The retry memory stores the offset of the trial midpoint from begin,
      * plus 1 so that 0 uniquely means "clean slate".
      */
-    boolean ccondissect(Subre t, int begin, int end) {
+    boolean ccondissect(RuntimeSubexpression t, int begin, int end) {
         Dfa d;
         Dfa d2;
         int mid;
 
         assert t.op == '.';
-        assert t.left != null && t.left.cnfa.nstates > 0;
-        assert t.right != null && t.right.cnfa.nstates > 0;
+        assert t.left != null && t.left.machine.states.length > 0;
+        assert t.right != null && t.right.machine.states.length > 0;
 
         if (0 != (t.left.flags & Subre.SHORTER)) {      /* reverse scan */
             return crevdissect(t, begin, end);
         }
 
-        d = new Dfa(this, t.left.cnfa);
-        d2 = new Dfa(this, t.right.cnfa);
+        d = new Dfa(this, t.left.machine);
+        d2 = new Dfa(this, t.right.machine);
 
     /* pick a tentative midpoint */
         if (mem[t.retry] == 0) {
@@ -494,9 +494,9 @@ class Runtime {
         return true;
     }
 
-    void zapmem(Subre t) {
+    void zapmem(RuntimeSubexpression t) {
         mem[t.retry] = 0;
-        while (match.size() < t.subno + 1) {
+        while (match.size() < t.number + 1) {
             match.add(null);
         }
         if (t.left != null) {
@@ -513,19 +513,19 @@ class Runtime {
      * The retry memory stores the offset of the trial midpoint from begin,
      * plus 1 so that 0 uniquely means "clean slate".
      */
-    boolean crevdissect(Subre t, int begin, int end) {
+    boolean crevdissect(RuntimeSubexpression t, int begin, int end) {
         Dfa d;
         Dfa d2;
         int mid;
 
         assert t.op == '.';
-        assert t.left != null && t.left.cnfa.nstates > 0;
-        assert t.right != null && t.right.cnfa.nstates > 0;
+        assert t.left != null && t.left.machine.states.length > 0;
+        assert t.right != null && t.right.machine.states.length > 0;
         assert 0 != (t.left.flags & Subre.SHORTER);
 
     /* concatenation -- need to split the substring between parts */
-        d = new Dfa(this, t.left.cnfa);
-        d2 = new Dfa(this, t.right.cnfa);
+        d = new Dfa(this, t.left.machine);
+        d2 = new Dfa(this, t.right.machine);
 
     /* pick a tentative midpoint */
         if (mem[t.retry] == 0) {
@@ -571,9 +571,9 @@ class Runtime {
     /**
      * cbrdissect - determine backref subexpression matches
      */
-    boolean cbrdissect(Subre t, int begin, int end) {
+    boolean cbrdissect(RuntimeSubexpression t, int begin, int end) {
         int i;
-        int n = t.subno;
+        int n = t.number;
         int len;
         int paren;
         int p;
@@ -637,7 +637,7 @@ class Runtime {
      - caltdissect - determine alternative subexpression matches (w. complications)
      ^ static int caltdissect(struct vars *, struct Subre , int , int );
      */
-    boolean caltdissect(Subre t, int begin, int end) {
+    boolean caltdissect(RuntimeSubexpression t, int begin, int end) {
         Dfa d;
         if (t == null) {
             return false;
@@ -648,7 +648,7 @@ class Runtime {
         }
 
         if (mem[t.retry] == UNTRIED) {
-            d = new Dfa(this, t.left.cnfa);
+            d = new Dfa(this, t.left.machine);
             if (d.longest(begin, end, null) != end) {
                 mem[t.retry] = TRIED;
                 return caltdissect(t.right, begin, end);
@@ -665,7 +665,7 @@ class Runtime {
         return caltdissect(t.right, begin, end);
     }
 
-    private int getMaxSubno(Subre tree, int i) {
+    private int getMaxSubno(RuntimeSubexpression tree, int i) {
         i = Math.max(i, tree.retry);
         if (tree.left != null) {
             i = Math.max(i, getMaxSubno(tree.left, i));

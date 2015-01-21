@@ -24,26 +24,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Manage the assignment of colors for characters. Arcs are labelled with colors, which group characters.
  * code from regc_color.c.
+ * TODO: is all the complex management of the tree really worthwhile? When the dust settles, tree[0] is a non-sparse map from all possible char values
+ * TODO: to colors. Could it be represented as simple short[] all along?
  */
 class ColorMap {
     static final Logger LOG = LoggerFactory.getLogger(ColorMap.class);
+    final Tree[] tree;
     // this is called 'v' in the C code.
     Compiler compiler; // for compile error reporting
-    // replaced by the use of a list.
-    //int ncds; // number of ColorDesc's
     int free; // beginning of free chain (if non-zero)
-    // colorDescs is 'cd' in the C code.
     List<ColorDesc> colorDescs; // all the color descs. A list for resizability.
-    // cdspace replaced by usr of list.
-    Tree[] tree;
 
     ColorMap(Compiler compiler) {
+        tree = buildTree();
         this.compiler = compiler;
 
         free = -1;
         colorDescs = Lists.newArrayList();
-        tree = new Tree[Constants.NBYTS];
 
         // reg_color.c: initcm.
 
@@ -52,12 +51,15 @@ class ColorMap {
         assert colorDescs.size() == 1;
         white.sub = Constants.NOSUB;
         white.setNChars(65536);
+        white.block = tree[Constants.NBYTS - 1];
+    }
 
+    private static Tree[] buildTree() {
+        Tree[] tree = new Tree[Constants.NBYTS];
         // allocate top-level array of tree objects.
         for (int tx = 0; tx < tree.length; tx++) {
             tree[tx] = new Tree();
         }
-
         // Make each top-level's collection of next-level pointers point to the next item
         // at the top level.
         for (int tx = 0; tx < tree.length - 1; tx++) {
@@ -73,7 +75,8 @@ class ColorMap {
         for (int i = Constants.BYTTAB - 1; i >= 0; i--) {
             t.ccolor[i] = Constants.WHITE;
         }
-        white.block = t;
+
+        return tree;
     }
 
     static short b0(char c) {
@@ -82,6 +85,17 @@ class ColorMap {
 
     static short b1(char c) {
         return (short)((c >>> Constants.BYTBITS) & Constants.BYTMASK);
+    }
+
+    /**
+     * Retrieve the color for a character.
+     * @param c input char.
+     * @return output color.
+     */
+    short getcolor(char c) {
+        // take the first tree item in the map, then go down two levels.
+        // why the extra level?
+        return tree[0].ptrs[b1(c)].ccolor[b0(c)];
     }
 
     /**
@@ -497,12 +511,6 @@ class ColorMap {
         }
     }
 
-    short getcolor(char c) {
-        // take the first tree item in the map, then go down two levels.
-        // why the extra level?
-        return tree[0].ptrs[b1(c)].ccolor[b0(c)];
-    }
-
     /**
      * dumpcolors - debugging output
      */
@@ -586,7 +594,7 @@ class ColorMap {
             t = tree[0].ptrs[i];
             if (t == null) {
                 // this might not be an error, it was just a debug message in c.
-                throw new RuntimeException("null in filled tree");
+                throw new RuntimeException("null in filled color tree");
             } else if (t == fillt) {
                 // do nothing
             } else if (level < Constants.NBYTS - 2) /* more pointer blocks below */ {
@@ -613,8 +621,8 @@ class ColorMap {
     /**
      * Color tree
      */
-    /* C unions this. We use more memory instead, and trust that clever punning of pointers and shorts is not
-     * happening.
+    /* C unions this. We use more memory instead. See TODO
+     comments at top of file as to whether this all makes sense.
      */
     static class Tree {
         short[] ccolor = new short[Constants.BYTTAB];

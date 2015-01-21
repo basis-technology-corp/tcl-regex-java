@@ -16,6 +16,7 @@
 
 package com.basistech.tclre;
 
+import java.io.Serializable;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -159,7 +160,6 @@ final class Compiler {
         stop = pattern.length;
         nlcolor = Constants.COLORLESS;
         info = 0;
-        Guts guts = new Guts();
 
         cm = new ColorMap(this);
         nfa = new Nfa(cm);
@@ -220,23 +220,19 @@ final class Compiler {
     /* can sacrifice main NFA now, so use it as work area */
         nfa.optimize();
         makesearch(nfa);
-        guts.search = nfa.compact();
+        Cnfa search = nfa.compact();
 
     /* looks okay, package it up */
         int nsub = subs.size();
-        guts.cm = cm;
-        guts.cflags = cflags;
-        guts.info = info;
-        guts.nsub = nsub;
-        guts.tree = tree;
-        guts.ntree = ntree;
+        SubstringComparator compare;
         if (0 != (cflags & Flags.REG_ICASE)) {
-            guts.compare = new Comparer(true);
+            compare = new Comparer(true);
         } else {
-            guts.compare = new Comparer(false);
+            compare = new Comparer(false);
         }
 
-        guts.lacons = lacons;
+        Guts guts = new Guts(cflags, info, nsub, new RuntimeSubexpression(tree),
+                search, ntree, cm, compare, lacons);
         return new HsrePattern(new String(pattern, 0, pattern.length), originalFlags, info, nsub, guts);
     }
 
@@ -266,7 +262,8 @@ final class Compiler {
         return subs;
     }
     
-    static class Comparer implements SubstringComparator {
+    static class Comparer implements SubstringComparator, Serializable {
+        static final long serialVersionUID = 1L;
         private final boolean caseInsensitive;
 
         Comparer(boolean caseInsensitive) {

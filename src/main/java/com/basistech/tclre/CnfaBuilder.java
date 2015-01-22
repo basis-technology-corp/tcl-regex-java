@@ -21,7 +21,7 @@ package com.basistech.tclre;
  */
 class CnfaBuilder {
     int ncolors;        /* number of colors */
-    int flags;
+    boolean hasLacons;
     int pre;        /* setup state number */
     int post;       /* teardown state number */
     short[] bos;     /* colors, if any, assigned to BOS and BOL */
@@ -38,21 +38,21 @@ class CnfaBuilder {
          short[] bos,
          short[] eos,
          int maxcolors,
-         int flags) {
+         boolean hasLacons) {
 
         this.pre = preNo;
         this.post = postNo;
         this.bos = bos;
         this.eos = eos;
         this.ncolors = maxcolors;
-        this.flags = flags;
+        this.hasLacons = hasLacons;
 
         this.arcs = new long[narcs];
         this.states = new int[nstates];
     }
 
     Cnfa build() {
-        return new Cnfa(ncolors, flags, pre, post, bos, eos, arcs, states);
+        return new Cnfa(ncolors, hasLacons, pre, post, bos, eos, arcs, states);
     }
 
     void setState(int index, int arcIndex) {

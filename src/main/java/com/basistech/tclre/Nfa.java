@@ -999,7 +999,7 @@ class Nfa {
         }
 
         int arcIndex = 0;
-        CnfaBuilder cnfaBuilder = new CnfaBuilder(stateCount, narcs, pre.no, post.no, bos, eos, cm.maxcolor() + 1, 0);
+        CnfaBuilder cnfaBuilder = new CnfaBuilder(stateCount, narcs, pre.no, post.no, bos, eos, cm.maxcolor() + 1, false);
         for (State s = states; s != null; s = s.next) {
             assert s.no < stateCount;
             cnfaBuilder.setState(s.no, arcIndex);
@@ -1015,7 +1015,7 @@ class Nfa {
                 case Compiler.LACON:
                     assert s.no != cnfaBuilder.pre;
                     arcValue = Cnfa.packCarc((short)(cnfaBuilder.ncolors + a.co), a.to.no);
-                    cnfaBuilder.flags |= Cnfa.HASLACONS;
+                    cnfaBuilder.hasLacons = true;
                     break;
                 default:
                     throw new RuntimeException("Impossible arc");

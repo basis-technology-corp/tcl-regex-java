@@ -23,9 +23,8 @@ import java.io.Serializable;
  */
 class Cnfa implements Serializable {
     static final long serialVersionUID = 1L;
-    static final int HASLACONS = 1;
     final int ncolors;        /* number of colors */
-    final int flags;
+    final boolean hasLacons;
     final int pre;        /* setup state number */
     final int post;       /* teardown state number */
     final short[] bos;     /* colors, if any, assigned to BOS and BOL */
@@ -35,9 +34,9 @@ class Cnfa implements Serializable {
     final int[] states;
 
 
-    Cnfa(int ncolors, int flags, int pre, int post, short[] bos, short[] eos, long[] arcs, int[] states) {
+    Cnfa(int ncolors, boolean hasLacons, int pre, int post, short[] bos, short[] eos, long[] arcs, int[] states) {
         this.ncolors = ncolors;
-        this.flags = flags;
+        this.hasLacons = hasLacons;
         this.pre = pre;
         this.post = post;
         this.bos = bos;

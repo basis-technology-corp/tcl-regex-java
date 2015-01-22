@@ -104,7 +104,7 @@ class Dfa {
                      ax++, ca = cnfa.arcs[ax], caco = Cnfa.carcColor(ca), catarget = Cnfa.carcTarget(ca)) {
 
                     if (caco == co) {
-                        work.set(catarget, true);
+                        work.set(catarget);
                         gotstate = true;
                         if (catarget == cnfa.post) {
                             ispost = true;
@@ -113,14 +113,11 @@ class Dfa {
                         if (0 == Cnfa.carcColor(cnfa.arcs[cnfa.states[catarget]])) {
                             noprogress = false;
                         }
-//                        if (LOG.isDebugEnabled()) {
-//                            LOG.debug(String.format("%d -> %d", i, catarget));
-//                        }
                     }
                 }
             }
         }
-        boolean dolacons = gotstate && (0 != (cnfa.flags & Cnfa.HASLACONS));
+        boolean dolacons = gotstate && cnfa.hasLacons;
         boolean sawlacons = false;
         while (dolacons) { /* transitive closure */
             dolacons = false;
@@ -143,7 +140,7 @@ class Dfa {
                         if (!lacon(cp, caco)) {
                             continue; /* NOTE CONTINUE */
                         }
-                        work.set(catarget, true);
+                        work.set(catarget);
                         dolacons = true;
                         if (catarget == cnfa.post) {
                             ispost = true;

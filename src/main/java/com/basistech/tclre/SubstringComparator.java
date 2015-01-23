@@ -20,5 +20,5 @@ package com.basistech.tclre;
  *
  */
 public interface SubstringComparator {
-    int compare(CharSequence data, int start1, int start2, int length);
+    int compare(char[] data, int start1, int start2, int length);
 }

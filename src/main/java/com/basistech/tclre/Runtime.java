@@ -34,8 +34,7 @@ class Runtime {
     int eflags;
     List<RegMatch> match;
     RegMatch details;
-    CharSequence data;
-    int dataLength; // cache this, it gets examined _a lot_.
+    char[] data;
     int[] mem; // backtracking.
 
     /**
@@ -68,8 +67,11 @@ class Runtime {
 
         this.re = re;
         this.g = re.guts;
-        this.data = data;
-        this.dataLength = this.data.length();
+        char[] dataArray = new char[data.length()];
+        for (int x = 0; x < data.length(); x++) {
+            dataArray[x] = data.charAt(x);
+        }
+        this.data = dataArray;
         this.match = Lists.newArrayList();
         match.add(null); // make room for 1.
         if (0 != (g.info & Flags.REG_UBACKREF)) {
@@ -109,13 +111,13 @@ class Runtime {
         boolean lookingAt = 0 != (eflags & Flags.REG_LOOKING_AT);
 
         if (lookingAt) {
-            close = data.length();
+            close = data.length;
             cold = 0;
         } else {
             /* First, a shot with the search RE. */
             int[] coldp = new int[1];
             Dfa s = new Dfa(this, g.search);
-            close = s.shortest(0, 0, data.length(), coldp, null);
+            close = s.shortest(0, 0, data.length, coldp, null);
             cold = coldp[0];
 
             if (close == -1) {      /* not found */
@@ -137,9 +139,9 @@ class Runtime {
 
             boolean[] hitendp = new boolean[1];
             if (shorter) {
-                end = d.shortest(begin, begin, data.length(), null, hitendp);
+                end = d.shortest(begin, begin, data.length, null, hitendp);
             } else {
-                end = d.longest(begin, data.length(), hitendp);
+                end = d.longest(begin, data.length, hitendp);
             }
             hitend = hitendp[0];
 
@@ -161,9 +163,9 @@ class Runtime {
         if (cold != -1) {
             dtstart = cold;
         } else {
-            dtstart = data.length();
+            dtstart = data.length;
         }
-        details = new RegMatch(dtstart, data.length());
+        details = new RegMatch(dtstart, data.length);
 
         if (re.nsub > 0) { // no need to do the work.
             return dissect(g.tree, begin, end);
@@ -188,10 +190,10 @@ class Runtime {
         if (cold[0] != -1) {
             dtstart = cold[0];
         } else {
-            dtstart = data.length();
+            dtstart = data.length;
         }
 
-        details = new RegMatch(dtstart, data.length());
+        details = new RegMatch(dtstart, data.length);
         return ret;
     }
 
@@ -213,7 +215,7 @@ class Runtime {
         close = 0;
         do {
             int[] cold0 = new int[1];
-            close = s.shortest(close, close, data.length(), cold0, null);
+            close = s.shortest(close, close, data.length, cold0, null);
             cold = cold0[0];
 
             if (close == -1) {
@@ -228,7 +230,7 @@ class Runtime {
                     return false;
                 }
                 estart = begin;
-                estop = data.length();
+                estop = data.length;
                 for (;;) {
                     if (shorter) {
                         end = d.shortest(begin, estart, estop, null, hitend);
@@ -268,7 +270,7 @@ class Runtime {
                     }
                 }
             }
-        } while (close < data.length());
+        } while (close < data.length);
 
         coldp[0] = cold;
         return false;

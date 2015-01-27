@@ -79,11 +79,11 @@ class ColorMap {
         return tree;
     }
 
-    static short b0(char c) {
+    private static short b0(char c) {
         return (short)(c & Constants.BYTMASK);
     }
 
-    static short b1(char c) {
+    private static short b1(char c) {
         return (short)((c >>> Constants.BYTBITS) & Constants.BYTMASK);
     }
 
@@ -92,7 +92,7 @@ class ColorMap {
      * @param c input char.
      * @return output color.
      */
-    short getcolor(char c) {
+    private short getcolor(char c) {
         // take the first tree item in the map, then go down two levels.
         // why the extra level?
         return tree[0].ptrs[b1(c)].ccolor[b0(c)];
@@ -101,7 +101,7 @@ class ColorMap {
     /**
      * setcolor - set the color of a character in a colormap
      */
-    short setcolor(char c, short co) {
+    private short setcolor(char c, short co) {
         char uc = c;
         int b;
 
@@ -175,7 +175,7 @@ class ColorMap {
         }
     }
 
-    void freecolor(short co) {
+    private void freecolor(short co) {
         assert co >= 0;
         if (co == Constants.WHITE) {
             return;
@@ -215,7 +215,7 @@ class ColorMap {
     }
 
     /**
-     * subcolor - allocate a new subcolor (if necessary) to this chr
+     * subcolor - allocate a new subcolor (if necessary) to this char
      */
     short subcolor(char c) throws RegexException {
         short co;           /* current color of c */
@@ -240,7 +240,7 @@ class ColorMap {
     /**
      * newsub - allocate a new subcolor (if necessary) for a color
      */
-    short newsub(short co) throws RegexException {
+    private short newsub(short co) throws RegexException {
         short sco; // new subclolor.
 
         ColorDesc cd = colorDescs.get(co);
@@ -295,9 +295,9 @@ class ColorMap {
     }
 
     /**
-     * subblock - allocate new subcolors for one tree block of chrs, fill in arcs
+     * subblock - allocate new subcolors for one tree block of chars, fill in arcs
      */
-    void subblock(char start, State lp, State rp) throws RegexException {
+    private void subblock(char start, State lp, State rp) throws RegexException {
         char uc = start;
         int shift;
         int level;
@@ -457,17 +457,6 @@ class ColorMap {
         }
 
         a.colorchain = null;    /* paranoia */
-    }
-
-    /**
-     * singleton - is this character in its own color?
-     */
-    boolean singleton(char c) {
-        short co;           /* color of c */
-
-        co = getcolor(c);
-        ColorDesc cd = colorDescs.get(co);
-        return cd.getNChars() == 1 && cd.sub == Constants.NOSUB;
     }
 
     /**

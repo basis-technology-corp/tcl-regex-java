@@ -76,10 +76,6 @@ class Dfa {
      * @return
      */
     StateSet miss(StateSet css, short co, int cp) {
-       // if (Thread.currentThread().isInterrupted()) {
-       //     throw new RegexInterruptedException();
-       //}
-
         if (css.outs[co] != null) {
             return css.outs[co];
         }

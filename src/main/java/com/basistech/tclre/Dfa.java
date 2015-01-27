@@ -23,9 +23,6 @@ import java.util.BitSet;
 
 /**
  * Runtime DFA.
- *
- * Note: for less than 65 states, all this boolean[] could be done with
- * a long.
  */
 class Dfa {
     final Object2ObjectMap<BitSet, StateSet> stateSets;
@@ -40,8 +37,6 @@ class Dfa {
         this.cm = hsreMatcher.g.cm;
         this.cnfa = cnfa;
         /*
-         * To match the C behavior, Benson convinced himself that we needed
-         * to preserve insertion order. He might have been wrong.
          * Note that this isn't a cache;
          * Benson believes that the maximum size here is proportional
          * to the complexity of the machine, not to the input.
@@ -204,12 +199,18 @@ class Dfa {
             hitstopp[0] = false;
         }
 
-
     /* startup */
         if (cp == 0) {
             co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
         } else {
-            co = cm.getcolor(hsreMatcher.data.charAt(cp - 1));
+            char theChar = hsreMatcher.data.charAt(cp - 1);
+            if (Character.isLowSurrogate(theChar)) {
+                // collect the other end of the surrogate.
+                char low = theChar = hsreMatcher.data.charAt(cp - 2);
+                co = cm.getcolor(low, theChar); // and get a color for the pair.
+            } else {
+                co = cm.getcolor(theChar);
+            }
         }
         css = miss(css, co, cp);
         if (css == null) {
@@ -220,15 +221,22 @@ class Dfa {
         StateSet ss;
     /* main loop */
         while (cp < realstop) {
-            co = cm.getcolor(hsreMatcher.data.charAt(cp));
+            char theChar = hsreMatcher.data.charAt(cp);
+            int increment = 1;
+            if (Character.isHighSurrogate(theChar)) {
+                co = cm.getcolor(theChar, hsreMatcher.data.charAt(cp + 1));
+                increment = 2;
+            } else {
+                co = cm.getcolor(theChar);
+            }
             ss = css.outs[co];
             if (ss == null) {
-                ss = miss(css, co, cp + 1);
+                ss = miss(css, co, cp + increment);
                 if (ss == null) {
                     break;  /* NOTE BREAK OUT */
                 }
             }
-            cp++;
+            cp = cp + increment;
             ss.setLastSeen(cp);
             css = ss;
         }
@@ -294,7 +302,12 @@ class Dfa {
             co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
         } else {
             /* Not at bos at all, set color based on prior character. */
-            co = cm.getcolor(hsreMatcher.data.charAt(cp - 1));
+            char theChar = hsreMatcher.data.charAt(cp - 1);
+            if (Character.isLowSurrogate(theChar)) {
+                co = cm.getcolor(hsreMatcher.data.charAt(cp - 2), theChar);
+            } else {
+                co = cm.getcolor(theChar);
+            }
         }
 
         css = miss(css, co, cp);
@@ -307,16 +320,23 @@ class Dfa {
 
     /* main loop */
         while (cp < realmax) {
-            co = cm.getcolor(hsreMatcher.data.charAt(cp));
+            int increment = 1;
+            char theChar = hsreMatcher.data.charAt(cp);
+            if (Character.isHighSurrogate(theChar)) {
+                co = cm.getcolor(theChar, hsreMatcher.data.charAt(cp + 1));
+                increment = 2;
+            } else {
+                co = cm.getcolor(theChar);
+            }
             ss = css.outs[co];
             if (ss == null) {
-                ss = miss(css, co, cp + 1);
+                ss = miss(css, co, cp + increment);
                 if (ss == null) {
                     break;  /* NOTE BREAK OUT */
                 }
             }
 
-            cp++;
+            cp = cp + increment;
             ss.setLastSeen(cp);
             css = ss;
             if (ss.poststate && cp >= realmin) {
@@ -336,6 +356,10 @@ class Dfa {
         if (ss.poststate && cp > min) {
             assert cp >= realmin;
             cp--;
+            if (Character.isLowSurrogate(hsreMatcher.data.charAt(cp))) {
+                cp--;
+            }
+
         } else if (cp == hsreMatcher.dataLength && max == hsreMatcher.dataLength) {
             co = cnfa.eos[0 != (hsreMatcher.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             ss = miss(css, co, cp);

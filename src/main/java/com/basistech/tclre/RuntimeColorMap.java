@@ -52,6 +52,21 @@ class RuntimeColorMap implements Serializable {
         return data[c];
     }
 
+    /**
+     * Return a color for a surrogate pair.
+     * @param c1
+     * @param c2
+     * @return
+     */
+    short getcolor(char c1, char c2) {
+        int codepoint = Character.toCodePoint(c1, c2);
+        if (codepoint <= Character.MAX_VALUE) {
+            return data[codepoint];
+        } else {
+            return Constants.WHITE; // for now, surrogates aren't covered by any color.
+        }
+    }
+
     /*
      * Avoid reading and writing 2^16 shorts by turning it into a sparse data structure.
      */

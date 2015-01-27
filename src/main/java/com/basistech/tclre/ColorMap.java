@@ -26,8 +26,39 @@ import org.slf4j.LoggerFactory;
 /**
  * Manage the assignment of colors for characters. Arcs are labelled with colors, which group characters.
  * code from regc_color.c.
- * TODO: is all the complex management of the tree really worthwhile? When the dust settles, tree[0] is a non-sparse map from all possible char values
- * TODO: to colors. Could it be represented as simple short[] all along?
+
+ * What do we know:
+ * When the code is not busy processing a [] or subexpression of some kind, the 'tree' in here is a map from characters to colors.
+ * Initially, all characters are color 0 (WHITE). When the compiler needs a color for an arc, it calls 'newsub'.
+ *
+ * Think in terms of an 'epoch'. An epoch is the time from one call to okcolors to the next. (There's an implicit call to okcolors at
+ * the start of a compilation.) okcolors is called at the end of processing an atom; a range, a subexpression, or an ordinary item
+ * such as a character not in a range.
+ *
+ * When the compiler sees a character or a range during an epoch, it calls 'subcolor' or 'subrange'. This asks for a new color to be allocated to the
+ * character or to each of a range of characters.
+ * <pre>
+ * - It gets the ColorDesc for the color currently assigned to the character.
+ * - It allocates a new color desc and color number.
+ * - It fills in the new color number as the 'sub' of the old color.
+ * - It returns the sub color number to the rest of the compiler.
+ * </pre>
+ *
+ *
+ * Subsequent calls to subcolor in an epoch for other characters with the same current color get the same subcolor.
+ * Note that in the subrange case, it will call newsub for each item, but once a color has a subcolor, it reuses it, so all the other characters
+ * in the range end up (sub)colored identically.
+ *
+ * So, for an expression like [a-z]ab, we start with color 0 owning everything. When we hit the range, we allocate subcolors for all of a-z -- but they
+ * all get the same subcolor. At the ']', okcolors ends the epoch, and 'promotes' the subcolors to colors. Then it processes 'a'. Now a is in color 1,
+ * which gets a subcolor of 2. At the end of the epoch, that promotes, and now a is color 2 and color 1 has no subcolor. The same thing
+ * happens to 'b', giving it yet another color split from color 1.
+ *
+ * There's a wad of complexity in here related to blocks; if a range is large enough to span a 'block' the code works to align colors to blocks.
+ * I'm thinking this is all expendable.
+ *
+ * As colors are promoted, the nfa gets new arcs. It does not appear to lose the old arcs; I suspect that the optimization process somehow
+ * removes them.
  */
 class ColorMap {
     static final Logger LOG = LoggerFactory.getLogger(ColorMap.class);
@@ -79,11 +110,11 @@ class ColorMap {
         return tree;
     }
 
-    static short b0(char c) {
+    private static short b0(char c) {
         return (short)(c & Constants.BYTMASK);
     }
 
-    static short b1(char c) {
+    private static short b1(char c) {
         return (short)((c >>> Constants.BYTBITS) & Constants.BYTMASK);
     }
 
@@ -92,7 +123,7 @@ class ColorMap {
      * @param c input char.
      * @return output color.
      */
-    short getcolor(char c) {
+    private short getcolor(char c) {
         // take the first tree item in the map, then go down two levels.
         // why the extra level?
         return tree[0].ptrs[b1(c)].ccolor[b0(c)];
@@ -101,7 +132,7 @@ class ColorMap {
     /**
      * setcolor - set the color of a character in a colormap
      */
-    short setcolor(char c, short co) {
+    private short setcolor(char c, short co) {
         char uc = c;
         int b;
 
@@ -156,7 +187,7 @@ class ColorMap {
         return (short)(colorDescs.size() - 1);
     }
 
-    short newcolor() {
+    private short newcolor() {
         if (free != -1) {
             assert free > 0; // slot 0 can't be free.
             int toReturn = free;
@@ -175,7 +206,7 @@ class ColorMap {
         }
     }
 
-    void freecolor(short co) {
+    private void freecolor(short co) {
         assert co >= 0;
         if (co == Constants.WHITE) {
             return;
@@ -204,7 +235,7 @@ class ColorMap {
     /**
      * pseudocolor - allocate a false color to be managed by other means.
      *
-     * @return
+     * @return a color, otherwise unused.
      */
     short pseudocolor() {
         short co = newcolor();
@@ -215,7 +246,9 @@ class ColorMap {
     }
 
     /**
-     * subcolor - allocate a new subcolor (if necessary) to this chr
+     * subcolor - allocate a new subcolor (if necessary) to this char
+     * This is the only API that allocates colors. Compiler calls here to assign a color
+     * to a character.
      */
     short subcolor(char c) throws RegexException {
         short co;           /* current color of c */
@@ -240,7 +273,7 @@ class ColorMap {
     /**
      * newsub - allocate a new subcolor (if necessary) for a color
      */
-    short newsub(short co) throws RegexException {
+    private short newsub(short co) throws RegexException {
         short sco; // new subclolor.
 
         ColorDesc cd = colorDescs.get(co);
@@ -295,9 +328,9 @@ class ColorMap {
     }
 
     /**
-     * subblock - allocate new subcolors for one tree block of chrs, fill in arcs
+     * subblock - allocate new subcolors for one tree block of chars, fill in arcs
      */
-    void subblock(char start, State lp, State rp) throws RegexException {
+    private void subblock(final char start, final State lp, final State rp) throws RegexException {
         char uc = start;
         int shift;
         int level;
@@ -403,16 +436,14 @@ class ColorMap {
                 scd.sub = Constants.NOSUB;
                 while ((a = cd.arcs) != null) {
                     assert a.co == co;
-                /* uncolorchain(cm, a); */
                     cd.arcs = a.colorchain;
                     a.setColor(sco);
-                /* colorchain(cm, a); */
                     a.colorchain = scd.arcs;
                     scd.arcs = a;
                 }
                 freecolor(co);
             } else {
-            /* parent's arcs must gain parallel subcolor arcs */
+                /* parent's arcs must gain parallel subcolor arcs */
                 cd.sub = Constants.NOSUB;
                 scd = colorDescs.get(sco);
 
@@ -457,17 +488,6 @@ class ColorMap {
         }
 
         a.colorchain = null;    /* paranoia */
-    }
-
-    /**
-     * singleton - is this character in its own color?
-     */
-    boolean singleton(char c) {
-        short co;           /* color of c */
-
-        co = getcolor(c);
-        ColorDesc cd = colorDescs.get(co);
-        return cd.getNChars() == 1 && cd.sub == Constants.NOSUB;
     }
 
     /**

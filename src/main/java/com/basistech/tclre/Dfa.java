@@ -206,8 +206,9 @@ class Dfa {
             char theChar = hsreMatcher.data.charAt(cp - 1);
             if (Character.isLowSurrogate(theChar)) {
                 // collect the other end of the surrogate.
-                char low = theChar = hsreMatcher.data.charAt(cp - 2);
-                co = cm.getcolor(low, theChar); // and get a color for the pair.
+                char high = theChar = hsreMatcher.data.charAt(cp - 2);
+                int codepoint = Character.toCodePoint(high, theChar);
+                co = cm.getcolor(codepoint); // and get a color for the pair.
             } else {
                 co = cm.getcolor(theChar);
             }
@@ -224,7 +225,8 @@ class Dfa {
             char theChar = hsreMatcher.data.charAt(cp);
             int increment = 1;
             if (Character.isHighSurrogate(theChar)) {
-                co = cm.getcolor(theChar, hsreMatcher.data.charAt(cp + 1));
+                int codepoint = Character.toCodePoint(theChar, hsreMatcher.data.charAt(cp + 1));
+                co = cm.getcolor(codepoint);
                 increment = 2;
             } else {
                 co = cm.getcolor(theChar);
@@ -304,7 +306,8 @@ class Dfa {
             /* Not at bos at all, set color based on prior character. */
             char theChar = hsreMatcher.data.charAt(cp - 1);
             if (Character.isLowSurrogate(theChar)) {
-                co = cm.getcolor(hsreMatcher.data.charAt(cp - 2), theChar);
+                int codepoint = Character.toCodePoint(hsreMatcher.data.charAt(cp - 2), theChar);
+                co = cm.getcolor(codepoint);
             } else {
                 co = cm.getcolor(theChar);
             }
@@ -323,7 +326,8 @@ class Dfa {
             int increment = 1;
             char theChar = hsreMatcher.data.charAt(cp);
             if (Character.isHighSurrogate(theChar)) {
-                co = cm.getcolor(theChar, hsreMatcher.data.charAt(cp + 1));
+                int codepoint = Character.toCodePoint(theChar,  hsreMatcher.data.charAt(cp + 1));
+                co = cm.getcolor(codepoint);
                 increment = 2;
             } else {
                 co = cm.getcolor(theChar);

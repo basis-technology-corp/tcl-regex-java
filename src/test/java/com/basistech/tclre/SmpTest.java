@@ -19,6 +19,7 @@ import org.junit.Test;
 import static com.basistech.tclre.Utils.Matches.matches;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Characters outside the SMP (woo-woo)
@@ -35,8 +36,21 @@ public class SmpTest {
     @Test
     public void smpPattern() throws Exception {
         assertThat("b", not(matches("\uD800\uDF80", PatternFlags.BASIC)));
-        assertThat("b\uD800\uDF80", not(matches(".\uD800\uDF80", PatternFlags.BASIC)));
-        // This syntax doesn't work, because we don't let ICU parse inside the brackets.
+        assertThat("b\uD800\uDF80", matches(".\uD800\uDF80", PatternFlags.BASIC));
         assertThat("\uD800\uDF80", matches("[\\U00010380-\\U0001039F]", PatternFlags.ADVANCED));
+    }
+
+    @Test
+    public void findCharClass() throws Exception {
+        RePattern pattern = HsrePattern.compile("[\\U00010380]", PatternFlags.ADVANCED);
+        ReMatcher matcher = pattern.matcher("\uD800\uDF80.\uD800\uDF80.\uD800\uDF80.\uD800\uDF80.\uD800\uDF80.\uD800\uDF80");
+        assertTrue(matcher.find());
+    }
+
+    @Test
+    public void find() throws Exception {
+        RePattern pattern = HsrePattern.compile("\uD800\uDF80", PatternFlags.ADVANCED);
+        ReMatcher matcher = pattern.matcher("\uD800\uDF80.\uD800\uDF80.\uD800\uDF80.\uD800\uDF80.\uD800\uDF80.\uD800\uDF80");
+        assertTrue(matcher.find());
     }
 }

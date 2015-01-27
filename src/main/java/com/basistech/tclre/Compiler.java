@@ -793,18 +793,27 @@ class Compiler {
         case '+':
         case '?':
         case '{':
-            throw new RegexException("REG_BADRPT");
+            throw new RegexException("Pattern syntax error (*+?} misplaced).");
 
     /* then plain characters, and minor variants on that theme */
         case ')':       /* unbalanced paren */
             if ((cflags & Flags.REG_ADVANCED) != Flags.REG_EXTENDED) {
-                throw new RegexException("REG_EPAREN");
+                throw new RegexException("Unbalanced parenthesis.");
             }
         /* legal in EREs due to specification botch */
             note(Flags.REG_UPBOTCH);
         /* fallthrough into case PLAIN */
         case PLAIN:
-            onechr((char)nextvalue, lp, rp);
+            // look out for surrogates as ordinary chars.
+            if (nextvalue < Character.MAX_VALUE && Character.isHighSurrogate((char)nextvalue)) {
+                char high = (char)nextvalue;
+                lex.next();
+                char low = (char)nextvalue;
+                int codepoint = Character.toCodePoint(high, low);
+                onechr(codepoint, lp, rp);
+            } else {
+                onechr(nextvalue, lp, rp);
+            }
             cm.okcolors(nfa);
             lex.next();
             break;

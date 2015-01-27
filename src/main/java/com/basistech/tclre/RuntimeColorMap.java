@@ -83,21 +83,17 @@ class RuntimeColorMap implements Serializable {
     }
 
     /**
-     * Return a color for a surrogate pair.
-     * @param c1 high surrogate
-     * @param c2 low surrogate
-     * @return a color for the resulting codepoint.
+     * Retrieve the color for a full codepoint.
+     * @param codepoint
+     * @return
      */
-    short getcolor(char c1, char c2) {
-        int codepoint = Character.toCodePoint(c1, c2);
+    short getcolor(int codepoint) {
         try {
             return fullMap.get(codepoint);
         } catch (NullPointerException npe) {
-            throw new RuntimeException(String.format("Pair %04x %04x -> CP %08x no mapping", (int)c1, (int)c2, codepoint));
+            throw new RuntimeException(String.format(" CP %08x no mapping", codepoint));
         }
     }
-
-
 
     private void writeObject(ObjectOutputStream stream) throws IOException {
         // TreeRangeMap is not Serializable.

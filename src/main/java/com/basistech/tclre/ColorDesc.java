@@ -20,41 +20,22 @@ package com.basistech.tclre;
  * Color descriptor.
  */
 class ColorDesc {
-    static final int FREECOL = 1; // currently free
-    static final int PSEUDO = 2;  // pseudocolor, no real chars
 
-    int free; // free chain.
     short sub; // open subcolor (if any); free chain ptr */
     Arc arcs; /* color chain; linked list of arcs. */
-    int flags;
-
-    ColorMap.Tree block; /* block of color if any */
+    private boolean pseudo;
     private int nchars; // number of chars of this color
 
     ColorDesc() {
         sub = Constants.NOSUB;
-        free = -1;
     }
 
-    void reset() {
-        nchars = 0;
-        sub = Constants.NOSUB;
-        flags = 0;
-        arcs = null;
-        block = null;
-    }
-
-    void markFree() {
-        flags = FREECOL;
-        block = null; // allow GC to take it.
-    }
-
-    boolean unusedColor() {
-        return (flags & FREECOL) != 0;
+    void markPseudo() {
+        pseudo = true;
     }
 
     boolean pseudo() {
-        return (flags & PSEUDO) != 0;
+        return pseudo;
     }
 
     void setNChars(int nchars) {

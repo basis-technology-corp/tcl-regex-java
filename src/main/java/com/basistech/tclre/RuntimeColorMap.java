@@ -37,18 +37,10 @@ class RuntimeColorMap implements Serializable {
 
     /**
      * Construct over a tree. It is the caller's responsibility to make an immutable copy.
-     * @param colorMapTree -- the tree as built in the ColorMap.
+     * @param data -- the map as built in {@link com.basistech.tclre.ColorMap}
      */
-    RuntimeColorMap(ColorMap.Tree colorMapTree) {
-        data = new short[Character.MAX_VALUE + 1];
-        for (int x = 0; x < 256; x++) {
-            if (colorMapTree.ptrs[x] != null) {
-                for (int y = 0; y < 256; y++) {
-                    int index = (x * 256) + y;
-                    data[index] = colorMapTree.ptrs[x].ccolor[y];
-                }
-            }
-        }
+    RuntimeColorMap(short[] data) {
+        this.data = data;
     }
 
     /**

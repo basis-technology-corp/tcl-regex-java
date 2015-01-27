@@ -273,10 +273,10 @@ final class Compiler {
         /*TODO: this isn't right for surrogate pairs, and it's pretty heavy for case-insensitive comparison.
          */
         @Override
-        public int compare(char[] data, int start1, int start2, int length) {
+        public int compare(CharSequence data, int start1, int start2, int length) {
             for (int x = 0; x < length; x++) {
-                final int c1 = data[start1 + x];
-                final int c2 = data[start2 + x];
+                final int c1 = data.charAt(start1 + x);
+                final int c2 = data.charAt(start2 + x);
                 int thisCompare;
                 if (caseInsensitive) {
                     thisCompare = Normalizer.compare(c1, c2, Normalizer.COMPARE_IGNORE_CASE);

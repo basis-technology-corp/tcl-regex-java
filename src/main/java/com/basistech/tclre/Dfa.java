@@ -185,7 +185,7 @@ class Dfa {
         //
         RuntimeSubexpression subex = hsreMatcher.g.lookaheadConstraintMachine(n);
         Dfa d = new Dfa(hsreMatcher, subex.machine);
-        end = d.longest(cp, hsreMatcher.data.length, null);
+        end = d.longest(cp, hsreMatcher.data.length(), null);
         return (subex.number != 0) ? (end != -1) : (end == -1);
     }
 
@@ -196,7 +196,7 @@ class Dfa {
      */
     int longest(int start, int stop, boolean[] hitstopp) {
         int cp;
-        int realstop = (stop == hsreMatcher.data.length) ? stop : stop + 1;
+        int realstop = (stop == hsreMatcher.dataLength) ? stop : stop + 1;
         short co;
         StateSet css;
         int post;
@@ -213,7 +213,7 @@ class Dfa {
         if (cp == 0) {
             co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
         } else {
-            co = cm.getcolor(hsreMatcher.data[cp - 1]);
+            co = cm.getcolor(hsreMatcher.data.charAt(cp - 1));
         }
         css = miss(css, co, cp);
         if (css == null) {
@@ -224,7 +224,7 @@ class Dfa {
         StateSet ss;
     /* main loop */
         while (cp < realstop) {
-            co = cm.getcolor(hsreMatcher.data[cp]);
+            co = cm.getcolor(hsreMatcher.data.charAt(cp));
             ss = css.outs[co];
             if (ss == null) {
                 ss = miss(css, co, cp + 1);
@@ -238,7 +238,7 @@ class Dfa {
         }
 
     /* shutdown */
-        if (cp == hsreMatcher.data.length && stop == hsreMatcher.data.length) {
+        if (cp == hsreMatcher.dataLength && stop == hsreMatcher.dataLength) {
             if (hitstopp != null) {
                 hitstopp[0] = true;
             }
@@ -279,8 +279,8 @@ class Dfa {
      */
     int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop) {
         int cp;
-        int realmin = min == hsreMatcher.data.length ? min : min + 1;
-        int realmax = max == hsreMatcher.data.length ? max : max + 1;
+        int realmin = min == hsreMatcher.dataLength ? min : min + 1;
+        int realmax = max == hsreMatcher.dataLength ? max : max + 1;
         short co;
         StateSet ss;
         StateSet css;
@@ -298,7 +298,7 @@ class Dfa {
             co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
         } else {
             /* Not at bos at all, set color based on prior character. */
-            co = cm.getcolor(hsreMatcher.data[cp - 1]);
+            co = cm.getcolor(hsreMatcher.data.charAt(cp - 1));
         }
 
         css = miss(css, co, cp);
@@ -311,7 +311,7 @@ class Dfa {
 
     /* main loop */
         while (cp < realmax) {
-            co = cm.getcolor(hsreMatcher.data[cp]);
+            co = cm.getcolor(hsreMatcher.data.charAt(cp));
             ss = css.outs[co];
             if (ss == null) {
                 ss = miss(css, co, cp + 1);
@@ -340,7 +340,7 @@ class Dfa {
         if (ss.poststate && cp > min) {
             assert cp >= realmin;
             cp--;
-        } else if (cp == hsreMatcher.data.length && max == hsreMatcher.data.length) {
+        } else if (cp == hsreMatcher.dataLength && max == hsreMatcher.dataLength) {
             co = cnfa.eos[0 != (hsreMatcher.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             ss = miss(css, co, cp);
         /* match might have ended at eol */

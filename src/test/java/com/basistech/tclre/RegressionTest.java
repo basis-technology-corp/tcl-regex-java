@@ -85,7 +85,7 @@ public class RegressionTest extends Utils {
         String exp = "\\m(?:0?[1-9]|1[0-2])([-/\\.\\s])(?:0?[1-9]|[12]\\d|3[01])\\1(?:\\d{2}|\\d{4})\\M";
         RePattern pattern = HsrePattern.compile(exp, EnumSet.of(PatternFlags.ADVANCED));
         ReMatcher matcher = pattern.matcher(")");
-        matcher.reset(new InterruptibleCharSequence("1/1/1996".toCharArray(), 0, "1/1/1996".length()));
+        matcher.reset(new String("1/1/1996".toCharArray(), 0, "1/1/1996".length()));
         matcher.region(0, 8);
         assertTrue(matcher.lookingAt());
         assertThat(matcher.groupCount(), is(equalTo(1)));
@@ -98,7 +98,7 @@ public class RegressionTest extends Utils {
         String date = "02-08-2008";
         RePattern pattern = HsrePattern.compile(exp, EnumSet.of(PatternFlags.ADVANCED));
         ReMatcher matcher = pattern.matcher(")");
-        matcher.reset(new InterruptibleCharSequence(date.toCharArray(), 0, date.length()));
+        matcher.reset(new String(date.toCharArray(), 0, date.length()));
         matcher.region(0, date.length());
         assertTrue(matcher.lookingAt());
 

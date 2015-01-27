@@ -20,7 +20,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.basistech.tclre.HsrePattern;
-import com.basistech.tclre.InterruptibleCharSequence;
 import com.basistech.tclre.PatternFlags;
 import com.basistech.tclre.ReMatcher;
 import com.basistech.tclre.RePattern;
@@ -152,7 +151,7 @@ matchExact(null, buffer, offset, 0) <== 0 length
         RePattern pattern = HsrePattern.compile("^\\s{0,5}");
         ReMatcher matcher = pattern.matcher("");
         char[] input = new char[10];
-        matcher.reset(new InterruptibleCharSequence(input, 5, 5));
+        matcher.reset(new String(input, 5, 5));
         matcher.matches();
     }
 
@@ -166,8 +165,8 @@ matchExact(null, buffer, offset, 0) <== 0 length
     public void crashSpacesRangeChinese() throws Exception {
         RePattern pattern = HsrePattern.compile("\\s{0,5}", PatternFlags.ADVANCED);
         ReMatcher matcher = pattern.matcher("");
-        matcher.reset(new InterruptibleCharSequence("管辖，公司".toCharArray(), 0, 5)).find();
-        matcher.reset(new InterruptibleCharSequence("管辖，公司".toCharArray(), 0, 5)).region(0, 5).matches();
+        matcher.reset(new String("管辖，公司".toCharArray(), 0, 5)).find();
+        matcher.reset(new String("管辖，公司".toCharArray(), 0, 5)).region(0, 5).matches();
     }
 
 }

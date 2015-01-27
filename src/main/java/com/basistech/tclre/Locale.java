@@ -216,7 +216,7 @@ final class Locale {
      * This is a shortcut, preferably an efficient one, for simple characters;
      * messy cases are done via range().
      */
-    static UnicodeSet allcases(char c) {
+    static UnicodeSet allcases(int c) {
         UnicodeSet set = new UnicodeSet();
         set.add(c);
         set.closeOver(UnicodeSet.ADD_CASE_MAPPINGS);

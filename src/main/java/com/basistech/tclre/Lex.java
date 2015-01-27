@@ -872,14 +872,14 @@ class Lex {
      */
     //CHECKSTYLE:OFF
     boolean lexescape() throws RegexException {
-        char c;
+        int c;
         int save;
 
         assert 0 != (v.cflags & Flags.REG_ADVF);
 
         assert !ateos();
         c = charAtNowAdvance();
-        if (!iscalnum(c)) {
+        if (!iscalnum((char)c)) {
             return retv(Compiler.PLAIN, c);
         }
 
@@ -898,9 +898,8 @@ class Lex {
             return retv(Compiler.PLAIN, '\\');
 
         case 'c':
-            note(Flags.REG_UUNPORT);
             if (ateos()) {
-                throw new RegexException("REG_EESCAPE");
+                throw new RegexException("Incomplete \\c escape.");
             }
             return retv(Compiler.PLAIN, (char)(charAtNowAdvance() & 037));
 
@@ -913,7 +912,6 @@ class Lex {
             return retv(Compiler.CCLASS, 'D');
 
         case 'e':
-            note(Flags.REG_UUNPORT);
             return retv(Compiler.PLAIN, '\033');
 
         case 'f':
@@ -948,6 +946,10 @@ class Lex {
 
         case 'U':
             c = lexdigits(16, 8, 8);
+            // This escape is for UTF-32 characters. There are, ahem, certain requirements.
+            if (c > Character.MAX_CODE_POINT) {
+                throw new RegexException("Invalid UTF-32 escape.");
+            }
             return retv(Compiler.PLAIN, c);
 
         case 'v':
@@ -962,7 +964,6 @@ class Lex {
             return retv(Compiler.CCLASS, 'W');
 
         case 'x':
-            note(Flags.REG_UUNPORT);
             c = lexdigits(16, 1, 255);  /* REs >255 long outside spec */
             return retv(Compiler.PLAIN, c);
 
@@ -990,7 +991,7 @@ class Lex {
             v.now--;    /* put first digit back */
             c = lexdigits(10, 1, 255);  /* REs >255 long outside spec */
         /* ugly heuristic (first test is "exactly 1 digit?") */
-            if (v.now - save == 0 || (int)c <= v.getSubs().size()) {
+            if (v.now - save == 0 || c <= v.getSubs().size()) {
                 note(Flags.REG_UBACKREF);
                 return retv(Compiler.BACKREF, (char)c);
             }
@@ -998,28 +999,25 @@ class Lex {
             v.now = save;
         /* and fall through into octal number */
         case '0':
-            note(Flags.REG_UUNPORT);
             v.now--;    /* put first digit back */
             c = lexdigits(8, 1, 3);
 
             return retv(Compiler.PLAIN, c);
 
         default:
-            assert iscalpha(c);
-            throw new RegexException("REG_EESCAPE"); // unknown escape.
+            throw new RegexException("Invalid escape"); // unknown escape.
         }
     }
     //CHECKSTYLE:ON
 
     /*
- - lexdigits - slurp up digits and return chr value
- ^ static chr lexdigits(struct vars *, int, int, int);
+ - lexdigits - slurp up digits and return codepoint value
  */
-    char            /* chr value; errors signalled via ERR */
+    int            /* chr value; errors signalled via ERR */
     lexdigits(int base, int minlen, int maxlen) throws RegexException {
         int n;          /* unsigned to avoid overflow misbehavior */
         int len;
-        char c;
+        int c;
         int d;
         final char ub = (char)base;
 
@@ -1037,7 +1035,7 @@ class Lex {
             case '7':
             case '8':
             case '9':
-                d = digitval(c);
+                d = digitval((char)c);
                 break;
             case 'a':
             case 'A':
@@ -1079,9 +1077,9 @@ class Lex {
             n = n * ub + d;
         }
         if (len < minlen) {
-            throw new RegexException("REG_EESCAPE");
+            throw new RegexException("Not enough digits.");
         }
 
-        return (char)n;
+        return n;
     }
 }

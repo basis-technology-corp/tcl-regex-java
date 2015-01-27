@@ -50,7 +50,6 @@ final class Flags {
     static final int REG_UBBS = 000100;
     static final int REG_UNONPOSIX = 000200;
     static final int REG_UUNSPEC = 000400;
-    static final int REG_UUNPORT = 001000;
     static final int REG_ULOCALE = 002000;
     static final int REG_UEMPTYMATCH = 004000;
     static final int REG_UIMPOSSIBLE = 010000;

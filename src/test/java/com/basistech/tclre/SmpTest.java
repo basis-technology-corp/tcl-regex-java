@@ -31,4 +31,12 @@ public class SmpTest {
         assertThat("\uD800\uDF80b", matches(".b", PatternFlags.BASIC));
         assertThat("b\uD800\uDF80", matches("b.", PatternFlags.BASIC));
     }
+
+    @Test
+    public void smpPattern() throws Exception {
+        assertThat("b", not(matches("\uD800\uDF80", PatternFlags.BASIC)));
+        assertThat("b\uD800\uDF80", not(matches(".\uD800\uDF80", PatternFlags.BASIC)));
+        // This syntax doesn't work, because we don't let ICU parse inside the brackets.
+        assertThat("\uD800\uDF80", matches("[\\U00010380-\\U0001039F]", PatternFlags.ADVANCED));
+    }
 }

@@ -1300,36 +1300,46 @@ class Compiler {
      */
     void brackpart(State lp, State rp) throws RegexException {
         UnicodeSet set;
-        char c;
+        /*
+         * OK, well; if the user uses \U the item that comes next can be a full codepoint.
+         * If the user does not, it might be part of a surrogate.
+         */
+        int c;
         // start and end chars of a range
-        char startc;
-        char endc = 0;
+        int startc;
+        int endc = 0;
         int ele;
 
     /* parse something, get rid of special cases, take shortcuts */
         switch (nexttype) {
         case RANGE:         /* a-b-c or other botch */
-            throw new RegexException("REG_ERANGE");
+            throw new RegexException("Invalid syntax in range expression.");
         case PLAIN:
-            c = (char)nextvalue;
+            c = nextvalue;
             lex.next();
-        /* shortcut for ordinary chr (not range, not MCCE leader) */
+            if (c <= Character.MAX_VALUE && Character.isHighSurrogate((char)c)) {
+                // some idiot could write a high surrogate and then immediate \\Uxxxxx, woof.
+                char low = (char)nextvalue;
+                lex.next();
+                startc = Character.toCodePoint((char)c, low);
+            } else {
+                startc = c;
+            }
+        /* shortcut for ordinary char (not range, not MCCE leader) */
             if (!see(RANGE)) {
-                onechr(c, lp, rp);
+                onechr(startc, lp, rp);
                 return;
             }
-            // since element returns the input char for a one-char element,
-            // and this is guaranteed to be a 1-char element ...
-            startc = c;
             break;
+        // COLLEL and ECLASS are of dubious utility and don't try to get surrogates right.
         case COLLEL:
             String charName = scanplain();
             if (charName.length() == 0) {
-                throw new RegexException("REG_ECOLLATE");
+                throw new RegexException("Missing character name for collation.");
             }
             ele = Locale.element(charName);
             if (ele == -1) {
-                throw new RegexException("Unvalid character name " + charName);
+                throw new RegexException("Invalid character name " + charName);
             } else {
                 startc = (char)ele;
             }
@@ -1345,20 +1355,20 @@ class Compiler {
             } else {
                 startc = (char)ele;
             }
-            set = Locale.eclass(startc, 0 != (cflags & Flags.REG_ICASE));
+            set = Locale.eclass((char)startc, 0 != (cflags & Flags.REG_ICASE));
             dovec(set, lp, rp);
             return;
         case CCLASS:
             String className = scanplain();
             if (className.length() == 0) {
-                throw new RegexException("REG_ECTYPE");
+                throw new RegexException("Missing class name for char class.");
             }
             set = Locale.cclass(className, 0 != (cflags & Flags.REG_ICASE));
             dovec(set, lp, rp);
             return;
 
         default:
-            throw new RegexException("REG_ASSERT");
+            throw new RegexException("Impossible lexical state.");
         }
 
         if (see(RANGE)) {
@@ -1366,37 +1376,34 @@ class Compiler {
             switch (nexttype) {
             case PLAIN:
             case RANGE:
-                c = (char)nextvalue;
+                c = nextvalue;
                 lex.next();
-                endc = c;
+                if (c <= Character.MAX_VALUE && Character.isHighSurrogate((char)c)) {
+                    char low = (char)nextvalue;
+                    lex.next();
+                    endc = Character.toCodePoint((char)c, low);
+                } else {
+                    endc = c;
+                }
                 break;
             case COLLEL:
                 String charName = scanplain();
                 if (charName.length() == 0) {
-                    throw new RegexException("REG_ECOLLATE");
+                    throw new RegexException("Missing character name in collation.");
                 }
 
                 // look up named character.
                 ele = Locale.element(charName);
                 if (ele == -1) {
-                    throw new RegexException("Unvalid character name " + charName);
+                    throw new RegexException("Invalid character name " + charName);
                 }
                 break;
             default:
-                throw new RegexException("REG_ERANGE");
+                throw new RegexException("Invalid syntax in range.");
 
             }
         } else {
             endc = startc;
-        }
-
-    /*
-     * Ranges are unportable.  Actually, standard C does
-     * guarantee that digits are contiguous, but making
-     * that an exception is just too complicated.
-     */
-        if (startc != endc) {
-            note(Flags.REG_UUNPORT);
         }
 
         set = new UnicodeSet(startc, endc);
@@ -1481,7 +1488,7 @@ class Compiler {
      * onechr - fill in arcs for a plain character, and possible case complements
      * This is mostly a shortcut for efficient handling of the common case.
      */
-    void onechr(char c, State lp, State rp) throws RegexException {
+    void onechr(int c, State lp, State rp) throws RegexException {
         if (0 == (cflags & Flags.REG_ICASE)) {
             nfa.newarc(PLAIN, cm.subcolor(c), lp, rp);
             return;
@@ -1502,22 +1509,15 @@ class Compiler {
             int rangeStart = set.getRangeStart(rx);
             int rangeEnd = set.getRangeEnd(rx);
             /*
-             * Note: ICU operates in UTF-32 here, not UTF-16! For now, we stop when we exit the BMP.
+             * Note: ICU operates in UTF-32 here, and the ColorMap is happy to play along.
              */
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("%s %d %4x %4x", set, rx, rangeStart, rangeEnd));
             }
-            if (rangeStart > 0xffff) {
-                LOG.debug("truncating range start > BMP");
-                break;
-            } else if (rangeEnd >= 0xffff) {
-                LOG.debug("truncating range > BMP");
-                rangeEnd = 0xffff;
-            }
             if (rangeStart == rangeEnd) {
-                nfa.newarc(PLAIN, cm.subcolor((char)rangeStart), lp, rp);
+                nfa.newarc(PLAIN, cm.subcolor(rangeStart), lp, rp);
             }
-            cm.subrange((char)rangeStart, (char)rangeEnd, lp, rp);
+            cm.subrange(rangeStart, rangeEnd, lp, rp);
         }
     }
 

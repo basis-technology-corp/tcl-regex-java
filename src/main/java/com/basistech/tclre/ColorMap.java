@@ -156,7 +156,7 @@ class ColorMap {
         return (short)(colorDescs.size() - 1);
     }
 
-    short newcolor() {
+    private short newcolor() {
         if (free != -1) {
             assert free > 0; // slot 0 can't be free.
             int toReturn = free;
@@ -204,7 +204,7 @@ class ColorMap {
     /**
      * pseudocolor - allocate a false color to be managed by other means.
      *
-     * @return
+     * @return a color, otherwise unused.
      */
     short pseudocolor() {
         short co = newcolor();
@@ -216,6 +216,8 @@ class ColorMap {
 
     /**
      * subcolor - allocate a new subcolor (if necessary) to this char
+     * This is the only API that allocates colors. Compiler calls here to assign a color
+     * to a character.
      */
     short subcolor(char c) throws RegexException {
         short co;           /* current color of c */
@@ -403,16 +405,14 @@ class ColorMap {
                 scd.sub = Constants.NOSUB;
                 while ((a = cd.arcs) != null) {
                     assert a.co == co;
-                /* uncolorchain(cm, a); */
                     cd.arcs = a.colorchain;
                     a.setColor(sco);
-                /* colorchain(cm, a); */
                     a.colorchain = scd.arcs;
                     scd.arcs = a;
                 }
                 freecolor(co);
             } else {
-            /* parent's arcs must gain parallel subcolor arcs */
+                /* parent's arcs must gain parallel subcolor arcs */
                 cd.sub = Constants.NOSUB;
                 scd = colorDescs.get(sco);
 

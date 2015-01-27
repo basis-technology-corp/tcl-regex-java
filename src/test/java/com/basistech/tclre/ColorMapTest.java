@@ -80,7 +80,8 @@ public class ColorMapTest {
         State to = Mockito.mock(State.class);
         cm.subrange('a', 'z', from, to);
 
-        verify(nfa, times(26)).newarc(Compiler.PLAIN, (short) 1, from, to);
+        // we no longer make 26 identical arcs, we make one.
+        verify(nfa, times(1)).newarc(Compiler.PLAIN, (short) 1, from, to);
 
         cm.okcolors(nfa);
 
@@ -100,7 +101,7 @@ public class ColorMapTest {
         cm.subrange('a', 'z', from, to);
         InOrder inOrder = inOrder(nfa);
 
-        inOrder.verify(nfa, times(26)).newarc(Compiler.PLAIN, (short) 1, from, to);
+        inOrder.verify(nfa, times(1)).newarc(Compiler.PLAIN, (short) 1, from, to);
         cm.okcolors(nfa);
 
         cm.subcolor('b');
@@ -124,12 +125,12 @@ public class ColorMapTest {
         cm.subrange('a', 'z', from, to);
         InOrder inOrder = inOrder(nfa);
 
-        inOrder.verify(nfa, times(26)).newarc(Compiler.PLAIN, (short) 1, from, to);
+        inOrder.verify(nfa, times(1)).newarc(Compiler.PLAIN, (short) 1, from, to);
         cm.okcolors(nfa);
 
         cm.subrange('b', 'c', from, to);
         cm.okcolors(nfa);
-        inOrder.verify(nfa, times(2)).newarc(Compiler.PLAIN, (short) 2, from, to);
+        inOrder.verify(nfa, times(1)).newarc(Compiler.PLAIN, (short) 2, from, to);
 
         RuntimeColorMap runtime = runtime(cm);
         assertEquals(1, runtime.getcolor('a'));

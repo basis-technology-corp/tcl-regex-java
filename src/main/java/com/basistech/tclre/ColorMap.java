@@ -223,8 +223,13 @@ class ColorMap {
          * Note that if the new range is a subset of an old range, they will all get the
          * same subcolor.
          */
+        short prevColor = -1;
         for (char ch = from; ch <= to; ch++) {
-            compiler.getNfa().newarc(Compiler.PLAIN, subcolor(ch), lp, rp);
+            short color = subcolor(ch);
+            if (color != prevColor) {
+                compiler.getNfa().newarc(Compiler.PLAIN, color, lp, rp);
+                prevColor = color;
+            }
         }
     }
 

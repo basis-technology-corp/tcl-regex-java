@@ -21,6 +21,7 @@ import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 
+import com.google.common.collect.BoundType;
 import com.google.common.collect.Lists;
 
 import com.google.common.collect.Range;
@@ -75,7 +76,7 @@ class ColorMap {
     private final List<ColorDesc> colorDescs; // all the color descs. A list for resizability.
 
     ColorMap(Compiler compiler) {
-        map = new short[0xffff];
+        map = new short[Character.MAX_VALUE + 1];
         Arrays.fill(map, Constants.WHITE);
         this.compiler = compiler;
 
@@ -223,7 +224,7 @@ class ColorMap {
          * same subcolor.
          */
         for (char ch = from; ch <= to; ch++) {
-            compiler.getNfa().newarc(Compiler.PLAIN, subcolor(from), lp, rp);
+            compiler.getNfa().newarc(Compiler.PLAIN, subcolor(ch), lp, rp);
         }
     }
 
@@ -382,9 +383,22 @@ class ColorMap {
      */
     private void dumpcolor(int co, ColorDesc cd) {
         RangeSet<Character> rangeSet = TreeRangeSet.create();
-        for (char c = 0; c <= '\uffff'; c++) {
-            if (map[c] == co) {
-                rangeSet.add(Range.singleton(c));
+        int start = 0;
+        while(start <= 0xffff) {
+            if (map[start] == co) {
+                int end;
+                for (end = start + 1; end <= 0xffff && map[end] == co; end++) {
+                    //
+                }
+                // end is one past end of range, so ...
+                if (end <= Character.MAX_VALUE) {
+                    rangeSet.add(Range.closedOpen((char) start, (char) end));
+                } else {
+                    rangeSet.add(Range.closed((char)start, Character.MAX_VALUE));
+                }
+                start = end;
+            } else {
+                start++;
             }
         }
         StringWriter sw = new StringWriter();
@@ -392,11 +406,17 @@ class ColorMap {
         pw.format("Color %d - %d chars %s\n", co, cd.getNChars(), cd.pseudo() ? " (pseudo)" : "");
         for (Range<Character> range : rangeSet.asRanges()) {
             Character lower = range.lowerEndpoint();
+            if (range.lowerBoundType() == BoundType.OPEN) {
+                lower++;
+            }
             Character upper = range.upperEndpoint();
+            if (range.upperBoundType() == BoundType.OPEN) {
+                upper--;
+            }
             if (lower == upper) {
-                pw.format(" %s (U+%04x)\n", UCharacter.getName(lower), (int)lower);
+                pw.format(" %s (U+%04x)\n", UCharacter.getExtendedName(lower), (int)lower);
             } else {
-                pw.format(" U+%04x - U+%04x (%s - %s)\n", (int)lower, (int) upper, UCharacter.getName(lower), UCharacter.getName(upper));
+                pw.format(" U+%04x - U+%04x (%s - %s)\n", (int)lower, (int) upper, UCharacter.getExtendedName(lower), UCharacter.getExtendedName(upper));
             }
         }
         pw.flush();

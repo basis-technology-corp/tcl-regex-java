@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * from regcomp.c
  */
-final class Compiler {
+class Compiler {
     /* token type codes, some also used as NFA arc types */
     static final int EMPTY = 'n';       /* no token present */
     static final int EOS = 'e';     /* end of string */

@@ -217,14 +217,13 @@ class ColorMap {
      * subrange - allocate new subcolors to this range of chars, fill in arcs.
      */
     void subrange(char from, char to, State lp, State rp) throws RegexException {
-
         /*
          * For each char in the range, acquire a subcolor and make the arc.
          * Note that if the new range is a subset of an old range, they will all get the
          * same subcolor.
          */
         for (char ch = from; ch <= to; ch++) {
-            compiler.nfa.newarc(Compiler.PLAIN, subcolor(from), lp, rp);
+            compiler.getNfa().newarc(Compiler.PLAIN, subcolor(from), lp, rp);
         }
     }
 

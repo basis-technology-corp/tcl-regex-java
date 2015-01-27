@@ -14,8 +14,27 @@
 
 package com.basistech.tclre;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import static org.junit.Assert.assertEquals;
+
 /**
- * Created by benson on 1/27/15.
+ * Unit testing the color map.
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ColorMapTest {
+
+    @Mock
+    Compiler compiler;
+
+    @Test
+    public void testSimpleCases() throws Exception {
+        ColorMap cm = new ColorMap(compiler);
+        assertEquals(Constants.WHITE, cm.subcolor('a'));
+    }
+
+
 }

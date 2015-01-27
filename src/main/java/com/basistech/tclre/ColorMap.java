@@ -309,7 +309,7 @@ class ColorMap {
         uf = from;
         i = ((uf + Constants.BYTTAB - 1) & (char)~Constants.BYTMASK) - uf;
         for (; from <= to && i > 0; i--, from++) {
-            compiler.nfa.newarc(Compiler.PLAIN, subcolor(from), lp, rp);
+            compiler.getNfa().newarc(Compiler.PLAIN, subcolor(from), lp, rp);
         }
 
         if (from > to) {            /* didn't reach a boundary */
@@ -323,7 +323,7 @@ class ColorMap {
 
     /* clean up any remaining partial table */
         for (; from <= to; from++) {
-            compiler.nfa.newarc(Compiler.PLAIN, subcolor(from), lp, rp);
+            compiler.getNfa().newarc(Compiler.PLAIN, subcolor(from), lp, rp);
         }
     }
 
@@ -384,7 +384,7 @@ class ColorMap {
         /* find loop must have run at least once */
             lastt.ptrs[b] = t;
 
-            compiler.nfa.newarc(Compiler.PLAIN, sco, lp, rp);
+            compiler.getNfa().newarc(Compiler.PLAIN, sco, lp, rp);
             cd.incrementNChars(Constants.BYTTAB);
             scd.incrementNChars(Constants.BYTTAB);
             return;
@@ -397,7 +397,7 @@ class ColorMap {
             cd = colorDescs.get(co);
             sco = newsub(co);
             ColorDesc scd = colorDescs.get(sco);
-            compiler.nfa.newarc(Compiler.PLAIN, sco, lp, rp);
+            compiler.getNfa().newarc(Compiler.PLAIN, sco, lp, rp);
             previ = i;
             do {
                 t.ccolor[i++] = sco;

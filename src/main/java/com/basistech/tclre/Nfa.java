@@ -77,7 +77,7 @@ class Nfa {
         newarc('$', (short)0, finalState, post);
     }
 
-    final void newarc(int t, short co, State from, State to) {
+    void newarc(int t, short co, State from, State to) {
         Arc a;
 
         assert from != null && to != null;

@@ -16,10 +16,18 @@
 
 package com.basistech.tclre;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.List;
 
+import com.google.common.collect.BoundType;
 import com.google.common.collect.Lists;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
+import com.ibm.icu.lang.UCharacter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,60 +70,23 @@ import org.slf4j.LoggerFactory;
  */
 class ColorMap {
     static final Logger LOG = LoggerFactory.getLogger(ColorMap.class);
-    final Tree[] tree;
+    private final short[] map;
     // this is called 'v' in the C code.
-    Compiler compiler; // for compile error reporting
-    int free; // beginning of free chain (if non-zero)
-    List<ColorDesc> colorDescs; // all the color descs. A list for resizability.
+    private Compiler compiler; // for compile error reporting
+    private final List<ColorDesc> colorDescs; // all the color descs. A list for resizability.
 
     ColorMap(Compiler compiler) {
-        tree = buildTree();
+        map = new short[Character.MAX_VALUE + 1];
+        Arrays.fill(map, Constants.WHITE);
         this.compiler = compiler;
 
-        free = -1;
         colorDescs = Lists.newArrayList();
-
-        // reg_color.c: initcm.
 
         ColorDesc white = new ColorDesc(); // [WHITE]
         colorDescs.add(white);
         assert colorDescs.size() == 1;
         white.sub = Constants.NOSUB;
         white.setNChars(65536);
-        white.block = tree[Constants.NBYTS - 1];
-    }
-
-    private static Tree[] buildTree() {
-        Tree[] tree = new Tree[Constants.NBYTS];
-        // allocate top-level array of tree objects.
-        for (int tx = 0; tx < tree.length; tx++) {
-            tree[tx] = new Tree();
-        }
-        // Make each top-level's collection of next-level pointers point to the next item
-        // at the top level.
-        for (int tx = 0; tx < tree.length - 1; tx++) {
-            Tree t = tree[tx];
-            Tree nextT = tree[tx + 1];
-            for (int i = Constants.BYTTAB - 1; i >= 0; i--) {
-                t.ptrs[i] = nextT;
-            }
-        }
-
-        // bottom level is solid white.
-        Tree t = tree[Constants.NBYTS - 1];
-        for (int i = Constants.BYTTAB - 1; i >= 0; i--) {
-            t.ccolor[i] = Constants.WHITE;
-        }
-
-        return tree;
-    }
-
-    private static short b0(char c) {
-        return (short)(c & Constants.BYTMASK);
-    }
-
-    private static short b1(char c) {
-        return (short)((c >>> Constants.BYTBITS) & Constants.BYTMASK);
     }
 
     /**
@@ -124,59 +95,17 @@ class ColorMap {
      * @return output color.
      */
     private short getcolor(char c) {
-        // take the first tree item in the map, then go down two levels.
-        // why the extra level?
-        return tree[0].ptrs[b1(c)].ccolor[b0(c)];
+        return map[c]; // chars are unsigned.
     }
 
     /**
      * setcolor - set the color of a character in a colormap
      */
     private short setcolor(char c, short co) {
-        char uc = c;
-        int b;
-
-        if (co == Constants.COLORLESS) {
-            return Constants.COLORLESS;
-        }
-
-        Tree t = tree[0];
-        Tree lastt;
-        for (int level = 0, shift = Constants.BYTBITS * (Constants.NBYTS - 1);
-                shift > 0;
-                level++, shift -= Constants.BYTBITS) {
-            b = (uc >>> shift) & Constants.BYTMASK;
-            lastt = t;
-            t = lastt.ptrs[b];
-            assert t != null;
-
-            Tree fillt = tree[level + 1];
-            boolean bottom = shift <= Constants.BYTBITS;
-            Tree cb = bottom ? colorDescs.get(t.ccolor[0]).block : fillt;
-            if (t == fillt || t == cb) {    /* must allocate a new block */
-                Tree newt = new Tree();
-                if (bottom) {
-                    newt.ccolor = t.ccolor.clone();
-                } else {
-                    newt.ptrs = t.ptrs.clone();
-                }
-                t = newt;
-                lastt.ptrs[b] = t;
-            }
-        }
-
-        b = uc & Constants.BYTMASK;
-        short prev = t.ccolor[b];
-        t.ccolor[b] = (short)co;
+        short prev = map[c];
+        map[c] = co;
         return prev;
     }
-
-    /*
-     * The C code goes to lengths to compress the array of
-     * color descs in various ways. This code preserves the
-     * concept of a color value as an index into the array,
-     * but takes a simpler approach to storage.
-     */
 
     /**
      * Maximum valid color, which might encompass some free colors.
@@ -188,22 +117,22 @@ class ColorMap {
     }
 
     private short newcolor() {
-        if (free != -1) {
-            assert free > 0; // slot 0 can't be free.
-            int toReturn = free;
-            ColorDesc cd = colorDescs.get(toReturn);
-            assert cd.unusedColor();
-            assert cd.arcs == null;
-            free = cd.free;
-            cd.reset();
-            return (short)toReturn;
-        } else {
-            ColorDesc newcd = new ColorDesc();
-            int colorIndex = colorDescs.size();
-            colorDescs.add(newcd);
-            assert colorIndex != -1;
-            return (short)colorIndex;
+        short colorIndex = -1;
+        for (short x = 0; x < colorDescs.size(); x++) {
+            if (colorDescs.get(x) == null) {
+                colorIndex = x;
+                break;
+            }
         }
+
+        ColorDesc newcd = new ColorDesc();
+        if (colorIndex == -1) {
+            colorIndex = (short)colorDescs.size();
+            colorDescs.add(newcd);
+        } else {
+            colorDescs.set(colorIndex, newcd);
+        }
+        return colorIndex;
     }
 
     private void freecolor(short co) {
@@ -212,24 +141,13 @@ class ColorMap {
             return;
         }
 
-        // if this is the very last one, don't bother with a free list!
+        // if this is the very last one, shrink
         if (co == colorDescs.size() - 1) {
             colorDescs.remove(co); // just shrink the List.
             return;
         }
 
-        // if not the last one, participate in the free list.
-        ColorDesc cd = colorDescs.get(co);
-        assert cd.arcs == null;
-        assert cd.sub == Constants.NOSUB;
-        assert cd.getNChars() == 0;
-        cd.markFree();
-
-        if (free != -1) {
-            final ColorDesc colorDesc = colorDescs.get(free);
-            colorDesc.free = co;
-        }
-        free = co;
+        colorDescs.set(co, null);
     }
 
     /**
@@ -241,7 +159,7 @@ class ColorMap {
         short co = newcolor();
         ColorDesc cd = colorDescs.get(co);
         cd.setNChars(1);
-        cd.flags = ColorDesc.PSEUDO;
+        cd.markPseudo();
         return co;
     }
 
@@ -297,114 +215,21 @@ class ColorMap {
     }
 
     /**
-     * subrange - allocate new subcolors to this range of chrs, fill in arcs
+     * subrange - allocate new subcolors to this range of chars, fill in arcs.
      */
     void subrange(char from, char to, State lp, State rp) throws RegexException {
-        char uf;
-        int i;
-
-        assert from <= to;
-
-    /* first, align "from" on a tree-block boundary */
-        uf = from;
-        i = ((uf + Constants.BYTTAB - 1) & (char)~Constants.BYTMASK) - uf;
-        for (; from <= to && i > 0; i--, from++) {
-            compiler.nfa.newarc(Compiler.PLAIN, subcolor(from), lp, rp);
-        }
-
-        if (from > to) {            /* didn't reach a boundary */
-            return;
-        }
-
-        /* deal with whole blocks */
-        for (; to - from >= Constants.BYTTAB; from += Constants.BYTTAB) {
-            subblock(from, lp, rp);
-        }
-
-    /* clean up any remaining partial table */
-        for (; from <= to; from++) {
-            compiler.nfa.newarc(Compiler.PLAIN, subcolor(from), lp, rp);
-        }
-    }
-
-    /**
-     * subblock - allocate new subcolors for one tree block of chars, fill in arcs
-     */
-    private void subblock(final char start, final State lp, final State rp) throws RegexException {
-        char uc = start;
-        int shift;
-        int level;
-        int i;
-        int b = -1; // Java is not sure this gets initialized; find out for sure.
-        Tree t;
-        Tree cb;
-        Tree fillt;
-        Tree lastt = null;
-        int previ;
-        int ndone;
-        short co;
-        short sco;
-
-        assert (uc % Constants.BYTTAB) == 0;
-
-    /* find its color block, making new pointer blocks as needed */
-        t = tree[0]; //
-        fillt = null;
-        for (level = 0, shift = Constants.BYTBITS * (Constants.NBYTS - 1); shift > 0;
-                level++, shift -= Constants.BYTBITS) {
-            b = (uc >>> shift) & Constants.BYTMASK;
-            lastt = t;
-            t = lastt.ptrs[b];
-
-            assert t != null;
-            fillt = tree[level + 1];
-            if (t == fillt && shift > Constants.BYTBITS) {  /* need new ptr block */
-                t = new Tree();
-                t.ptrs = fillt.ptrs.clone();
-                lastt.ptrs[b] = t;
+        /*
+         * For each char in the range, acquire a subcolor and make the arc.
+         * Note that if the new range is a subset of an old range, they will all get the
+         * same subcolor.
+         */
+        short prevColor = -1;
+        for (char ch = from; ch <= to; ch++) {
+            short color = subcolor(ch);
+            if (color != prevColor) {
+                compiler.getNfa().newarc(Compiler.PLAIN, color, lp, rp);
+                prevColor = color;
             }
-        }
-
-    /* special cases:  fill block or solid block */
-        co = t.ccolor[0];
-        ColorDesc cd = colorDescs.get(co);
-        cb = cd.block;
-        if (t == fillt || t == cb) {
-        /* either way, we want a subcolor solid block */
-            sco = newsub(co);
-            ColorDesc scd = colorDescs.get(sco);
-            t = scd.block;
-            if (t == null) {    /* must set it up */
-                t = new Tree();
-                for (i = 0; i < Constants.BYTTAB; i++) {
-                    t.ccolor[i] = sco;
-                }
-                scd.block = t;
-            }
-        /* find loop must have run at least once */
-            lastt.ptrs[b] = t;
-
-            compiler.nfa.newarc(Compiler.PLAIN, sco, lp, rp);
-            cd.incrementNChars(Constants.BYTTAB);
-            scd.incrementNChars(Constants.BYTTAB);
-            return;
-        }
-
-    /* general case, a mixed block to be altered */
-        i = 0;
-        while (i < Constants.BYTTAB) {
-            co = t.ccolor[i];
-            cd = colorDescs.get(co);
-            sco = newsub(co);
-            ColorDesc scd = colorDescs.get(sco);
-            compiler.nfa.newarc(Compiler.PLAIN, sco, lp, rp);
-            previ = i;
-            do {
-                t.ccolor[i++] = sco;
-            } while (i < Constants.BYTTAB && t.ccolor[i] == co);
-            ndone = i - previ;
-            cd.incrementNChars(-ndone);
-            scd.incrementNChars(ndone);
         }
     }
 
@@ -419,9 +244,13 @@ class ColorMap {
 
         for (short co = 0; co < colorDescs.size(); co++) {
             cd = colorDescs.get(co);
+            if (cd == null) {
+                continue; // not in use at all, so can't have a subcolor.
+            }
+
             sco = cd.sub;
 
-            if (cd.unusedColor() || sco == Constants.NOSUB) {
+            if (sco == Constants.NOSUB) {
             /* has no subcolor, no further action */
             } else if (sco == co) {
             /* is subcolor, let parent deal with it */
@@ -501,7 +330,7 @@ class ColorMap {
 
         for (co = 0; co < colorDescs.size(); co++) {
             cd = colorDescs.get(co);
-            if (!cd.unusedColor()
+            if (cd != null
                     && cd.sub != co
                     && co != but
                     && !cd.pseudo()) {
@@ -523,7 +352,7 @@ class ColorMap {
         assert of != from;
         for (co = 0; co < colorDescs.size(); co++) {
             cd = colorDescs.get(co);
-            if (!cd.unusedColor() && !cd.pseudo()) {
+            if (cd != null && !cd.pseudo()) {
                 if (of.findarc(Compiler.PLAIN, co) == null) {
                     nfa.newarc(type, co, from, to);
                 }
@@ -532,121 +361,70 @@ class ColorMap {
     }
 
     /**
+     * Return the map for use in the runtime.
+     * @return the map.
+     */
+    short[] getMap() {
+        return map;
+    }
+
+    /**
      * dumpcolors - debugging output
      */
     void dumpcolors() {
-        ColorDesc cd;
-        short co;
-        char c;
-        String has;
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("colorDescs.size() {}", colorDescs.size());
+        /*
+         * we want to organize this by colors.
+         */
+        for (int co = 0; co < colorDescs.size(); co++) {
+            ColorDesc cd = colorDescs.get(co);
+            if (cd != null) {
+                dumpcolor(co, cd);
+            }
         }
-        fillcheck(0);
+    }
 
-        for (co = 1; co < colorDescs.size(); co++) {
-            cd = colorDescs.get(co);
-            if (!cd.unusedColor()) {
-                assert cd.getNChars() > 0;
-                has = cd.block != null ? "#" : "";
-                StringBuilder msg = new StringBuilder();
-                if (cd.pseudo()) {
-                    msg.append(String.format("#%2d%s(pseudo): ", (int)co, has));
+    /*
+     * Not speedy. This is for debugging.
+     */
+    private void dumpcolor(int co, ColorDesc cd) {
+        RangeSet<Character> rangeSet = TreeRangeSet.create();
+        int start = 0;
+        while(start <= 0xffff) {
+            if (map[start] == co) {
+                int end;
+                for (end = start + 1; end <= 0xffff && map[end] == co; end++) {
+                    //
+                }
+                // end is one past end of range, so ...
+                if (end <= Character.MAX_VALUE) {
+                    rangeSet.add(Range.closedOpen((char) start, (char) end));
                 } else {
-                    msg.append(String.format("#%2d%s(%d): ", (int)co, has, cd.getNChars()));
+                    rangeSet.add(Range.closed((char)start, Character.MAX_VALUE));
                 }
-                /* it's hard to do this more efficiently */
-                /* these can get large ... */
-                char startRange = 0xffff;
-                int rangeCount = 0;
-                for (c = Constants.CHR_MIN; c < Constants.CHR_MAX; c++) {
-                    if (getcolor(c) == co) {
-                        if (c == startRange + rangeCount) { // does it extend the range?
-                            rangeCount++;
-                        } else if (startRange != (char)0xffff) {
-                            if (rangeCount == 0) {
-                                msg.append(dumpchr(startRange));
-                            } else {
-                                dumpMapRange(msg, startRange, rangeCount);
-                            }
-                            startRange = c;
-                            rangeCount = 1;
-                        } else {
-                            startRange = c; // first attempt at a range.
-                            rangeCount = 1;
-                        }
-                    }
-                }
-                if (rangeCount != 0) {
-                    dumpMapRange(msg, startRange, rangeCount);
-                }
-
-                assert c == Constants.CHR_MAX;
-                if (getcolor(c) == co) {
-                    msg.append(dumpchr(c));
-                }
-                LOG.debug(msg.toString());
+                start = end;
+            } else {
+                start++;
             }
         }
-    }
-
-    private void dumpMapRange(StringBuilder msg, char startRange, int rangeCount) {
-        if (rangeCount == 1) {
-            msg.append(dumpchr(startRange));
-        } else {
-            msg.append(String.format("[%s-%s]", dumpchr(startRange),
-                    dumpchr((char)(startRange + rangeCount - 1))));
-        }
-    }
-
-    /**
-     * - fillcheck - check proper filling of a tree
-     */
-    void fillcheck(int level) {
-        int i;
-        Tree t;
-        Tree fillt = tree[level + 1];
-
-        assert level < Constants.NBYTS - 1; /* this level has pointers */
-
-        for (i = Constants.BYTTAB - 1; i >= 0; i--) {
-            t = tree[0].ptrs[i];
-            if (t == null) {
-                // this might not be an error, it was just a debug message in c.
-                throw new RuntimeException("null in filled color tree");
-            } else if (t == fillt) {
-                // do nothing
-            } else if (level < Constants.NBYTS - 2) /* more pointer blocks below */ {
-                fillcheck(level + 1);
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        pw.format("Color %d - %d chars %s\n", co, cd.getNChars(), cd.pseudo() ? " (pseudo)" : "");
+        for (Range<Character> range : rangeSet.asRanges()) {
+            Character lower = range.lowerEndpoint();
+            if (range.lowerBoundType() == BoundType.OPEN) {
+                lower++;
+            }
+            Character upper = range.upperEndpoint();
+            if (range.upperBoundType() == BoundType.OPEN) {
+                upper--;
+            }
+            if (lower == upper) {
+                pw.format(" %s (U+%04x)\n", UCharacter.getExtendedName(lower), (int)lower);
+            } else {
+                pw.format(" U+%04x - U+%04x (%s - %s)\n", (int)lower, (int) upper, UCharacter.getExtendedName(lower), UCharacter.getExtendedName(upper));
             }
         }
+        pw.flush();
+        LOG.debug(sw.toString());
     }
-
-    /**
-     * dumpchr - print a chr
-     * Kind of char-centric but works well enough for debug use.
-     */
-
-    String dumpchr(char c) {
-        if (c == '\\') {
-            return "\\\\";
-        } else if (c > ' ' && c <= '~') {
-            return Character.toString(c);
-        } else {
-            return String.format("\\u%04x", (int)c);
-        }
-    }
-
-    /**
-     * Color tree
-     */
-    /* C unions this. We use more memory instead. See TODO
-     comments at top of file as to whether this all makes sense.
-     */
-    static class Tree {
-        short[] ccolor = new short[Constants.BYTTAB];
-        Tree[] ptrs = new Tree[Constants.BYTTAB];
-    }
-
 }

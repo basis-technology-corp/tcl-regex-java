@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * from regcomp.c
  */
-final class Compiler {
+class Compiler {
     /* token type codes, some also used as NFA arc types */
     static final int EMPTY = 'n';       /* no token present */
     static final int EOS = 'e';     /* end of string */
@@ -66,7 +66,8 @@ final class Compiler {
     int nexttype;       /* type of next token */
     int nextvalue;      /* value (if any) of next token */
     int lexcon;     /* lexical context type (see lex.c) */
-    Nfa nfa;    /* the NFA */
+    // this bit of cleanup to allow some mocking in testing the color map.
+    private Nfa nfa;    /* the NFA */
     ColorMap cm;    /* character color map */
     short nlcolor;      /* color of newline */
     State wordchrs; /* state in nfa holding word-char outarcs */
@@ -1526,5 +1527,9 @@ final class Compiler {
 
     interface AtomSetter {
         void set(Subre s);
+    }
+
+    Nfa getNfa() {
+        return nfa;
     }
 }

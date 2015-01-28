@@ -170,6 +170,17 @@ public class MatcherTest extends Assert {
         }
     }
 
+    @Test
+    public void iterationWithSmpResumeNonGreedy() throws Exception {
+        RePattern pattern = HsrePattern.compile("x+?", PatternFlags.ADVANCED);
+        ReMatcher matcher = pattern.matcher("x\uD802\uDC40x\uD802\uDC40x\uD802\uDC40x\uD802\uDC40x\uD802\uDC40x");
+        for (int x = 0; x < 6; x++) {
+            assertTrue(matcher.find());
+            assertEquals("start for iteration " + x, x * 3, matcher.start());
+            assertEquals("end for iteration " + x, (x * 3) + 1, matcher.end());
+        }
+    }
+
     /*
       adjacencyRule with "^\s{0,5}"
       adjacencyLength = 0

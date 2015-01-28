@@ -38,6 +38,7 @@ public class SmpTest {
         assertThat("b", not(matches("\uD800\uDF80", PatternFlags.BASIC)));
         assertThat("b\uD800\uDF80", matches(".\uD800\uDF80", PatternFlags.BASIC));
         assertThat("\uD800\uDF80", matches("[\\U00010380-\\U0001039F]", PatternFlags.ADVANCED));
+        assertThat("\uD800\uDF80", matches("[\uD800\uDF80-\uD800\uDF8F]", PatternFlags.ADVANCED));
     }
 
     @Test

@@ -366,21 +366,6 @@ class Compiler {
     }
 
     /**
-     * findarc - find arc, if any, from given source with given type and color
-     * If there is more than one such arc, the result is random.
-     */
-    Arc findarc(State s, int type, short co) {
-        Arc a;
-
-        for (a = s.outs; a != null; a = a.outchain) {
-            if (a.type == type && a.co == co) {
-                return a;
-            }
-        }
-        return null;
-    }
-
-    /**
      * - cparc - allocate a new arc within an NFA, copying details from old one
      * ^ static VOID cparc(struct nfa *, struct arc *, struct state *,
      * ^    struct state *);
@@ -407,34 +392,6 @@ class Compiler {
         }
         assert old.nins == 0;
         assert old.ins == null;
-    }
-
-    /**
-     * copyins - copy all in arcs of a state to another state
-     */
-    void copyins(Nfa nfa, State old, State newState) {
-        Arc a;
-
-        assert old != newState;
-
-        for (a = old.ins; a != null; a = a.inchain) {
-            cparc(nfa, a, a.from, newState);
-        }
-    }
-
-    /**
-     * moveouts - move all out arcs of a state to another state
-     * ^ static VOID moveouts(struct nfa *, struct state *, struct state *);
-     */
-    void moveouts(Nfa nfa, State old, State newState) {
-        Arc a;
-
-        assert old != newState;
-
-        while ((a = old.outs) != null) {
-            cparc(nfa, a, newState, a.to);
-            nfa.freearc(a);
-        }
     }
 
     /**
@@ -632,7 +589,7 @@ class Compiler {
         if (!see(stopper)) {
             assert stopper == ')' && see(EOS);
             //ERR(REG_EPAREN);
-            throw new RegexException("REG_EPAREN");
+            throw new RegexException("Unbalanced parentheses.");
         }
 
     /* optimize out simple cases */
@@ -1176,7 +1133,7 @@ class Compiler {
         }
 
         if (see(DIGIT) || n > DUPMAX) {
-            throw new RegexException("REG_BADBR");
+            throw new RegexException("Unvalid reference number.");
         }
         return n;
     }

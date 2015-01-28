@@ -19,7 +19,6 @@ package com.basistech.tclre;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
-import com.google.common.collect.Sets;
 import com.google.common.collect.TreeRangeMap;
 
 import java.io.IOException;

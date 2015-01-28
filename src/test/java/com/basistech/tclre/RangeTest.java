@@ -35,8 +35,6 @@ public class RangeTest extends Utils {
         assertThat("Q\u4e01A$\u4e09bGcHd", matches(exp));
     }
 
-
-
     @Test
     public void testNegativeRange() throws Exception {
         RePattern exp = HsrePattern.compile("[^a]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);

@@ -267,7 +267,15 @@ class Dfa {
             }
         }
         if (post != -1) {       /* found one */
-            return post - 1;
+            /* Post points after the codepoint after the last one in the match (!) */
+            /* So, if that is an SMP codepoint, we need to back up 2 to get to the beginning of it,
+             * and thus be just after the last character of the match. */
+            char postChar = hsreMatcher.data.charAt(post - 1);
+            if (Character.isLowSurrogate(postChar)) {
+                return post - 2;
+            } else {
+                return post - 1;
+            }
         }
         return -1;
     }

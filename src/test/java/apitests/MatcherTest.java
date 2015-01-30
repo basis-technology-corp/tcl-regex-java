@@ -137,15 +137,58 @@ public class MatcherTest extends Assert {
         }
     }
 
+    @Test
+    public void iterationWithSmp() throws Exception {
+        RePattern pattern = HsrePattern.compile("\uD800\uDF80", PatternFlags.ADVANCED);
+        ReMatcher matcher = pattern.matcher("\uD800\uDF80.\uD800\uDF80.\uD800\uDF80.\uD800\uDF80.\uD800\uDF80.\uD800\uDF80");
+        for (int x = 0; x < 6; x++) {
+            assertTrue(matcher.find());
+            assertEquals("start for iteration " + x, x * 3, matcher.start());
+            assertEquals("end for iteration " + x, (x * 3) + 2, matcher.end());
+        }
+    }
+
+    @Test
+    public void iterationWithSmpAndSmpResume() throws Exception {
+        RePattern pattern = HsrePattern.compile("\uD800\uDF80", PatternFlags.ADVANCED);
+        ReMatcher matcher = pattern.matcher("\uD800\uDF80\uD802\uDC40\uD800\uDF80\uD802\uDC40\uD800\uDF80\uD802\uDC40\uD800\uDF80\uD802\uDC40\uD800\uDF80\uD802\uDC40\uD800\uDF80");
+        for (int x = 0; x < 6; x++) {
+            assertTrue(matcher.find());
+            assertEquals("start for iteration " + x, x * 4, matcher.start());
+            assertEquals("end for iteration " + x, (x * 4) + 2, matcher.end());
+        }
+    }
+
+    @Test
+    public void iterationWithSmpResume() throws Exception {
+        RePattern pattern = HsrePattern.compile("x", PatternFlags.ADVANCED);
+        ReMatcher matcher = pattern.matcher("x\uD802\uDC40x\uD802\uDC40x\uD802\uDC40x\uD802\uDC40x\uD802\uDC40x");
+        for (int x = 0; x < 6; x++) {
+            assertTrue(matcher.find());
+            assertEquals("start for iteration " + x, x * 3, matcher.start());
+            assertEquals("end for iteration " + x, (x * 3) + 1, matcher.end());
+        }
+    }
+
+    @Test
+    public void iterationWithSmpResumeNonGreedy() throws Exception {
+        RePattern pattern = HsrePattern.compile("x+?", PatternFlags.ADVANCED);
+        ReMatcher matcher = pattern.matcher("x\uD802\uDC40x\uD802\uDC40x\uD802\uDC40x\uD802\uDC40x\uD802\uDC40x");
+        for (int x = 0; x < 6; x++) {
+            assertTrue(matcher.find());
+            assertEquals("start for iteration " + x, x * 3, matcher.start());
+            assertEquals("end for iteration " + x, (x * 3) + 1, matcher.end());
+        }
+    }
+
     /*
-    adjacencyRule with "^\s{0,5}"
-adjacencyLength = 0
+      adjacencyRule with "^\s{0,5}"
+      adjacencyLength = 0
 
-then, matchExact is called:
+      then, matchExact is called:
 
-matchExact(null, buffer, offset, 0) <== 0 length
+        matchExact(null, buffer, offset, 0) <== 0 length
      */
-
     @Test
     public void zeroLengthInput() throws Exception {
         RePattern pattern = HsrePattern.compile("^\\s{0,5}");

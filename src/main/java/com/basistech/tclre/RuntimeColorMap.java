@@ -16,12 +16,17 @@
 
 package com.basistech.tclre;
 
-import it.unimi.dsi.fastutil.chars.Char2ShortArrayMap;
-import it.unimi.dsi.fastutil.chars.Char2ShortMap;
+import com.google.common.collect.BoundType;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
+import com.google.common.collect.TreeRangeMap;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Immutable, sharable, color map.
@@ -31,53 +36,94 @@ import java.lang.reflect.Field;
  * we could use an Short2ShortOpenHashMap instead.
   */
 class RuntimeColorMap implements Serializable {
-    static final long serialVersionUID = 1L;
-    /* A somewhat sparse representation. */
-    private final short[] data;
+    static final long serialVersionUID = 2L;
+    /* for the BMP, we have this array */
+    private final transient short[] bmpMap;
+    private final RangeMap<Integer, Short> fullMap;
 
     /**
-     * Construct over a tree. It is the caller's responsibility to make an immutable copy.
-     * @param data -- the map as built in {@link com.basistech.tclre.ColorMap}
+     * Make a runtime color map. It might be sensible for the BMP optimization
+     * to be saved someplace and not recomputed here.
+     * @param fullMap -- the map as built in {@link com.basistech.tclre.ColorMap}
      */
-    RuntimeColorMap(short[] data) {
-        this.data = data;
+    RuntimeColorMap(RangeMap<Integer, Short> fullMap) {
+        this.fullMap = fullMap;
+        this.bmpMap = new short[Character.MAX_VALUE + 1];
+        computeBmp(fullMap);
+    }
+
+    private void computeBmp(RangeMap<Integer, Short> fullMap) {
+        for (Map.Entry<Range<Integer>, Short> me : fullMap.asMapOfRanges().entrySet()) {
+            Range<Integer> range = me.getKey();
+            int min = range.lowerEndpoint();
+            if (range.lowerBoundType() == BoundType.OPEN) {
+                min++;
+            }
+            if (min < Character.MAX_VALUE) {
+                int rmax = range.upperEndpoint();
+                if (range.upperBoundType() == BoundType.OPEN) {
+                    rmax--;
+                }
+                int max = Math.min(Character.MAX_VALUE, rmax);
+                for (int x = min; x <= max; x++) {
+                    this.bmpMap[x] = me.getValue();
+                }
+            }
+        }
     }
 
     /**
      * Retrieve the color for a character.
-     * @param c
-     * @return
+     * @param c a character (BMP)
+     * @return the color
      */
     short getcolor(char c) {
-        return data[c];
+        return bmpMap[c];
     }
 
-    /*
-     * Avoid reading and writing 2^16 shorts by turning it into a sparse data structure.
+    /**
+     * Retrieve the color for a full codepoint.
+     * @param codepoint
+     * @return
      */
-    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
-        Char2ShortMap map = new Char2ShortArrayMap();
-        map.defaultReturnValue((short)0);
-        for (int x = 0; x <= Character.MAX_VALUE; x++) {
-            if (data[x] != 0) {
-                map.put((char)x, data[x]);
-            }
+    short getcolor(int codepoint) {
+        try {
+            return fullMap.get(codepoint);
+        } catch (NullPointerException npe) {
+            throw new RuntimeException(String.format(" CP %08x no mapping", codepoint));
         }
-        out.writeObject(map);
     }
+
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+        // TreeRangeMap is not Serializable.
+        Set<Map.Entry<Range<Integer>, Short>> entries = fullMap.asMapOfRanges().entrySet();
+        stream.writeInt(entries.size());
+        for (Map.Entry<Range<Integer>, Short> me : entries) {
+            stream.writeObject(me.getKey());
+            stream.writeShort(me.getValue());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         try {
-            Field dataField = RuntimeColorMap.class.getDeclaredField("data");
+            Field dataField = RuntimeColorMap.class.getDeclaredField("bmpMap");
             dataField.setAccessible(true);
             dataField.set(this, new short[Character.MAX_VALUE + 1]);
+            dataField = RuntimeColorMap.class.getDeclaredField("fullMap");
+            dataField.setAccessible(true);
+            dataField.set(this, TreeRangeMap.create());
         } catch (NoSuchFieldException e) {
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        Char2ShortMap map = (Char2ShortMap) in.readObject();
-        for (char c : map.keySet()) {
-            data[c] = map.get(c); // thank goodness that Java doesn't have actual immutable arrays.
+        int count = in.readInt();
+        for (int x = 0; x < count; x ++) {
+            Range<Integer> k = (Range<Integer>) in.readObject();
+            short v = in.readShort();
+            fullMap.put(k, v);
         }
+        computeBmp(fullMap);
     }
 }

@@ -20,13 +20,6 @@ package com.basistech.tclre;
  * Some constants.
  */
 final class Constants {
-    static final int CHRBITS = 16;
-    static final int CHR_MIN = 0;
-    static final int CHR_MAX = 0xffff;
-    static final int BYTBITS = 8;
-    static final int BYTTAB = 1 << BYTBITS;
-    static final int BYTMASK = BYTTAB - 1;
-    static final int NBYTS = (CHRBITS + BYTBITS - 1) / BYTBITS;
     static final short COLORLESS = -1;
     static final short NOSUB = COLORLESS;
     static final short WHITE = 0;

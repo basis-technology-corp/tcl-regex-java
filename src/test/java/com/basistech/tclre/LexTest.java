@@ -125,7 +125,7 @@ public class LexTest extends Utils{
         exp = HsrePattern.compile("\\cC\\B\\w\\D\\S\\W", PatternFlags.ADVANCED);
         assertThat("\u0003\\_!$@", matches(exp));
 
-        exp = HsrePattern.compile("[\\uABCD][\\uEF89][\\U12345678]?", PatternFlags.ADVANCED);
+        exp = HsrePattern.compile("[\\uABCD][\\uEF89][\\U0001039F]?", PatternFlags.ADVANCED);
         assertThat("\uABCD\uEF89", matches(exp));
         HsrePattern.compile(".*[[:<:]].*[[:>:]].*", PatternFlags.ADVANCED);
         /* TODO:This works against C++, but doesn't work here. It's deprecated, though. */

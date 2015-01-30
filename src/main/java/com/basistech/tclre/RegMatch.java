@@ -19,7 +19,7 @@ package com.basistech.tclre;
 import com.google.common.base.Objects;
 
 /**
- * Created by benson on 6/5/14.
+ * Store information about a capturing pattern.
  */
 class RegMatch {
     final int start;

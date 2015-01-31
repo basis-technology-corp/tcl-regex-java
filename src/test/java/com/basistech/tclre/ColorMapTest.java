@@ -65,9 +65,9 @@ public class ColorMapTest {
     @Test
     public void testVerySimple() throws Exception {
         ColorMap cm = new ColorMap(compiler);
-        cm.subcolor('a');
+        cm.subcolor('a', false);
         cm.okcolors(nfa);
-        assertEquals(1, cm.subcolor('a'));
+        assertEquals(1, cm.subcolor('a', false));
         verify(compiler, never()).getNfa();
         verify(nfa, never()).newarc(anyInt(), anyShort(), (State)anyObject(), (State)anyObject());
     }
@@ -104,7 +104,7 @@ public class ColorMapTest {
         inOrder.verify(nfa, times(1)).newarc(Compiler.PLAIN, (short) 1, from, to);
         cm.okcolors(nfa);
 
-        cm.subcolor('b');
+        cm.subcolor('b', false);
         cm.okcolors(nfa);
         inOrder.verifyNoMoreInteractions(); // this does not result in more arcs?
 

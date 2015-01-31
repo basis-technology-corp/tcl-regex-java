@@ -65,6 +65,7 @@ import org.slf4j.LoggerFactory;
  */
 class ColorMap {
     static final Logger LOG = LoggerFactory.getLogger(ColorMap.class);
+    // the map turns out to be quite slow to read, enough to make subcolor quite slow.
     private final RangeMap<Integer, Short> map;
     // this is called 'v' in the C code.
     private Compiler compiler; // for compile error reporting
@@ -99,7 +100,7 @@ class ColorMap {
     }
 
     /**
-     * setcolor - set the color of a character in a colormap
+     * setcolor - set the color of a single character the map
      */
     private short setcolor(int c, short co) {
         short prev = map.get(c);
@@ -168,7 +169,7 @@ class ColorMap {
      * This is the only API that allocates colors. Compiler calls here to assign a color
      * to a character.
      */
-    short subcolor(int c) throws RegexException {
+    short subcolor(int c, boolean rangeInProgress) throws RegexException {
         short co;           /* current color of c */
         short sco;          /* new subcolor */
 
@@ -184,7 +185,9 @@ class ColorMap {
         cd.incrementNChars(-1);
         ColorDesc scd = colorDescs.get(sco);
         scd.incrementNChars(1);
-        setcolor(c, sco);
+        if (!rangeInProgress) {
+            setcolor(c, sco);
+        }
         return sco;
     }
 
@@ -192,7 +195,7 @@ class ColorMap {
      * newsub - allocate a new subcolor (if necessary) for a color
      */
     private short newsub(short co) throws RegexException {
-        short sco; // new subclolor.
+        short sco; // new subcolor.
 
         ColorDesc cd = colorDescs.get(co);
 
@@ -224,13 +227,19 @@ class ColorMap {
          * same subcolor.
          */
         short prevColor = -1;
+        int prevColorStart = -1;
         for (int ch = from; ch <= to; ch++) {
-            short color = subcolor(ch);
+            short color = subcolor(ch, true);
             if (color != prevColor) {
+                if (prevColorStart != -1) {
+                    map.put(Range.closedOpen(prevColorStart, ch), prevColor);
+                }
+                prevColorStart = ch;
                 compiler.getNfa().newarc(Compiler.PLAIN, color, lp, rp);
                 prevColor = color;
             }
         }
+        map.put(Range.closed(prevColorStart, to), prevColor);
     }
 
     /**

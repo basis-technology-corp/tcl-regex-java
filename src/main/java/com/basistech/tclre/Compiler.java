@@ -172,7 +172,7 @@ class Compiler {
         lex.lexstart();
         if (0 != (cflags & Flags.REG_NLSTOP) || 0 != (cflags & Flags.REG_NLANCH)) {
         /* assign newline a unique color */
-            nlcolor = cm.subcolor(newline(), false);
+            nlcolor = cm.subcolor(newline());
             cm.okcolors(nfa);
         }
 
@@ -1456,7 +1456,7 @@ class Compiler {
      */
     void onechr(int c, State lp, State rp) throws RegexException {
         if (0 == (cflags & Flags.REG_ICASE)) {
-            nfa.newarc(PLAIN, cm.subcolor(c, false), lp, rp);
+            nfa.newarc(PLAIN, cm.subcolor(c), lp, rp);
             return;
         }
 
@@ -1480,8 +1480,9 @@ class Compiler {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("%s %d %4x %4x", set, rx, rangeStart, rangeEnd));
             }
+            //TODO: this arc is probably redundant.
             if (rangeStart == rangeEnd) {
-                nfa.newarc(PLAIN, cm.subcolor(rangeStart, false), lp, rp);
+                nfa.newarc(PLAIN, cm.subcolor(rangeStart), lp, rp);
             }
             cm.subrange(rangeStart, rangeEnd, lp, rp);
         }

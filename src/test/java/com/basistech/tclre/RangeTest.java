@@ -64,6 +64,11 @@ public class RangeTest extends Utils {
     public void rangeSplit() throws Exception {
         RePattern exp = HsrePattern.compile("[a-z]ab", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
         assertThat("zab", matches(exp));
-
+        // make two ranges, then split both.
+        exp = HsrePattern.compile("[a-f][g-z][e-h]", PatternFlags.ADVANCED, PatternFlags.EXPANDED);
+        assertThat("bif", matches(exp));
+        assertThat("bie", matches(exp));
+        assertThat("fie", matches(exp));
+        assertThat("azh", matches(exp));
     }
 }

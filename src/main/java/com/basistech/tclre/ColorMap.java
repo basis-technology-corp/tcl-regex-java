@@ -21,13 +21,13 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.BoundType;
 import com.google.common.collect.Lists;
 
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.ibm.icu.lang.UCharacter;
 
 /**
  * Manage the assignment of colors for characters. Arcs are labelled with colors, which group characters.
@@ -64,7 +64,6 @@ import org.slf4j.LoggerFactory;
  * removes them.
  */
 class ColorMap {
-    static final Logger LOG = LoggerFactory.getLogger(ColorMap.class);
     private final RangeMap<Integer, Short> map;
     // this is called 'v' in the C code.
     private Compiler compiler; // for compile error reporting
@@ -96,15 +95,6 @@ class ColorMap {
         } catch (NullPointerException npe) {
             throw new RegexRuntimeException(String.format("Failed to map codepoint U+%08X.", c));
         }
-    }
-
-    /**
-     * setcolor - set the color of a character in a colormap
-     */
-    private short setcolor(int c, short co) {
-        short prev = map.get(c);
-        map.put(Range.singleton(c), co);
-        return prev;
     }
 
     /**
@@ -165,10 +155,13 @@ class ColorMap {
 
     /**
      * subcolor - allocate a new subcolor (if necessary) to this char
-     * This is the only API that allocates colors. Compiler calls here to assign a color
-     * to a character.
+     * Internal API that can do a range of characters; called from
+     * {@link #subrange}.
+     *
+     * @param c The character, or first character in a range, to process.
+     * @param rangeCount the number of characters.
      */
-    short subcolor(int c) throws RegexException {
+    private short subcolor(int c, int rangeCount) throws RegexException {
         short co;           /* current color of c */
         short sco;          /* new subcolor */
 
@@ -181,18 +174,29 @@ class ColorMap {
         }
 
         ColorDesc cd = colorDescs.get(co);
-        cd.incrementNChars(-1);
+        cd.incrementNChars(-rangeCount);
         ColorDesc scd = colorDescs.get(sco);
-        scd.incrementNChars(1);
-        setcolor(c, sco);
+        scd.incrementNChars(rangeCount);
+
+        map.put(Range.closedOpen(c, c + rangeCount), sco);
         return sco;
+    }
+
+    /**
+     * Allocate a color for one character. In the range case, call {@link #subrange}.
+     * @param c the character
+     * @return the subcolor
+     * @throws RegexException
+     */
+    short subcolor(int c) throws RegexException {
+        return subcolor(c, 1);
     }
 
     /**
      * newsub - allocate a new subcolor (if necessary) for a color
      */
     private short newsub(short co) throws RegexException {
-        short sco; // new subclolor.
+        short sco; // new subcolor.
 
         ColorDesc cd = colorDescs.get(co);
 
@@ -216,20 +220,35 @@ class ColorMap {
 
     /**
      * subrange - allocate new subcolors to this range of chars, fill in arcs.
+     * The range will overlap existing ranges; even in the simplest case,
+     * it will overlap the initial WHITE range. For each existing range that
+     * it overlaps, allocate a new color, mark the range as mapping to that color,
+     * and add an arc between the states for that color.
      */
     void subrange(int from, int to, State lp, State rp) throws RegexException {
-        /*
-         * For each char in the range, acquire a subcolor and make the arc.
-         * Note that if the new range is a subset of an old range, they will all get the
-         * same subcolor.
+        /* Avoid one call to map.get() for each character in the range.
+         * This map will usually contain one item, but in complex cases more.
+         * For example, if we had [a-f][g-h] and then someone asked for [f-g], there
+         * would be two. Each of these new ranges will get a new color via subcolor.
          */
-        short prevColor = -1;
-        for (int ch = from; ch <= to; ch++) {
-            short color = subcolor(ch);
-            if (color != prevColor) {
-                compiler.getNfa().newarc(Compiler.PLAIN, color, lp, rp);
-                prevColor = color;
+        Map<Range<Integer>, Short> curColors = map.subRangeMap(Range.closed(from, to)).asMapOfRanges();
+        /*
+         * To avoid concurrent mod problems, we need to copy the ranges we are working from.
+         */
+        List<Range<Integer>> ranges = Lists.newArrayList(curColors.keySet());
+        for (Range<Integer> rangeToProcess : ranges) {
+            // bound management here irritating.
+            int start = rangeToProcess.lowerEndpoint();
+            if (rangeToProcess.lowerBoundType() == BoundType.OPEN) {
+                start++;
             }
+            int end = rangeToProcess.upperEndpoint();
+            if (rangeToProcess.upperBoundType() == BoundType.CLOSED) {
+                end++;
+            }
+            // allocate a new subcolor and account it owning the entire range.
+            short color = subcolor(start, end - start);
+            compiler.getNfa().newarc(Compiler.PLAIN, color, lp, rp);
         }
     }
 
@@ -392,10 +411,11 @@ class ColorMap {
         pw.format("Color %d - %d chars %s\n", co, cd.getNChars(), cd.pseudo() ? " (pseudo)" : "");
         for (Map.Entry<Range<Integer>, Short> me : map.asMapOfRanges().entrySet()) {
             if (me.getValue() == co) {
-                pw.format(" %s\n", me.getKey());
+                pw.format(" %s %s\n", me.getKey(), UCharacter.getExtendedName(me.getKey().lowerEndpoint()));
             }
         }
         pw.flush();
-        LOG.debug(sw.toString());
+        String r = sw.toString();
+        System.out.println(r);
     }
 }

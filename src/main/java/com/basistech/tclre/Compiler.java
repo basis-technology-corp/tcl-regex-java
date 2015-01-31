@@ -1480,6 +1480,7 @@ class Compiler {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("%s %d %4x %4x", set, rx, rangeStart, rangeEnd));
             }
+            //TODO: this arc is probably redundant.
             if (rangeStart == rangeEnd) {
                 nfa.newarc(PLAIN, cm.subcolor(rangeStart), lp, rp);
             }

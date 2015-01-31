@@ -14,6 +14,8 @@
 
 package com.basistech.tclre;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
@@ -23,7 +25,11 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyShort;
@@ -137,6 +143,32 @@ public class ColorMapTest {
         assertEquals(2, runtime.getcolor('b'));
         assertEquals(1, runtime.getcolor('z'));
         assertEquals(Constants.WHITE, runtime.getcolor('A'));
+    }
+
+    @Test
+    public void testMoreComplexSubrange() throws Exception {
+        when(compiler.getNfa()).thenReturn(nfa); // supply the NFA
+        ColorMap cm = new ColorMap(compiler);
+        State from = Mockito.mock(State.class);
+        State to = Mockito.mock(State.class);
+        cm.subrange('a', 'f', from, to);
+        cm.okcolors(nfa);
+        from = Mockito.mock(State.class);
+        to = Mockito.mock(State.class);
+        cm.subrange('g', 'z', from, to);
+        cm.okcolors(nfa);
+        from = Mockito.mock(State.class);
+        to = Mockito.mock(State.class);
+        cm.subrange('e', 'h', from, to);
+        cm.okcolors(nfa);
+        Map<Range<Integer>, Short> ranges = cm.getMap().asMapOfRanges();
+        assertEquals(6, ranges.size());
+        List<Range<Integer>> keys = Lists.newArrayList(ranges.keySet());
+        assertEquals(Range.closedOpen(0, (int)'a'), keys.get(0));
+        assertEquals(Range.closedOpen((int)'a', (int)'e'), keys.get(1));
+        assertEquals(Range.closedOpen((int)'e', (int)'g'), keys.get(2));
+        assertEquals(Range.closedOpen((int)'g', (int)'i'), keys.get(3));
+        assertEquals(Range.closedOpen((int)'i', (int)'z' + 1), keys.get(4));
     }
 
     // This proves that, once the dust settles, the colors are what you would expect.

@@ -31,25 +31,28 @@ import com.ibm.icu.lang.UCharacter;
 
 /**
  * Manage the assignment of colors for characters. Arcs are labelled with colors, which group characters.
- * code from regc_color.c.
-
- * What do we know:
- * When the code is not busy processing a [] or subexpression of some kind, the 'tree' in here is a map from characters to colors.
- * Initially, all characters are color 0 (WHITE). When the compiler needs a color for an arc, it calls 'newsub'.
+ * Original code was in regc_color.c.
+ * <p/>
+ * At any point in time, all possible characters are assigned a color.
+ * Initially, all characters are color 0 (WHITE). Characters get other colors when the compiler encounters them
+ * in an expression. The compiler processes characters two ways: either as single characters,
+ * or in ranges. When the compiler sees a single character in isolation, it calls {@link #subcolor(int)}.
+ * When it processes a range, it calls {@link #subrange}.
+ * <p/>
+ * This class expects the compiler to call {@link #okcolors} at the end of each 'atom'. An atom is character in isolation, a range, or a subexpression.
+ * <p/>
+ * During the period from one call to {@link #okcolors} to the next, this class can maintain an open 'subcolor' for each color.
+ * The idea here is that each new item moves some characters from the color they have at the beginning of the period to a new color.
+ * One period is always connecting two states with one or more arcs. If all the characters have the same color, there is one arc;
+ * if the characters end up with disparate colors, it is multiple arcs. In a single period, all the characters that are moved out of
+ * a particular color have to move into the same new color. Thus, the process of allocating a subcolor works like:
  *
- * Think in terms of an 'epoch'. An epoch is the time from one call to okcolors to the next. (There's an implicit call to okcolors at
- * the start of a compilation.) okcolors is called at the end of processing an atom; a range, a subexpression, or an ordinary item
- * such as a character not in a range.
- *
- * When the compiler sees a character or a range during an epoch, it calls 'subcolor' or 'subrange'. This asks for a new color to be allocated to the
- * character or to each of a range of characters.
  * <pre>
  * - It gets the ColorDesc for the color currently assigned to the character.
  * - It allocates a new color desc and color number.
  * - It fills in the new color number as the 'sub' of the old color.
  * - It returns the sub color number to the rest of the compiler.
  * </pre>
- *
  *
  * Subsequent calls to subcolor in an epoch for other characters with the same current color get the same subcolor.
  * Note that in the subrange case, it will call newsub for each item, but once a color has a subcolor, it reuses it, so all the other characters

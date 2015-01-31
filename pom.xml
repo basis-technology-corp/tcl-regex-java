@@ -18,7 +18,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tcl-regex</artifactId>
     <groupId>com.basistech.tclre</groupId>
-    <version>0.13.1-SNAPSHOT</version>
+    <version>0.13.1</version>
     <packaging>bundle</packaging>
     <description>Java port of the regex engine from Tcl</description>
     <parent>
@@ -34,7 +34,7 @@
     <scm>
         <connection>scm:git:git@github.com:basis-technology-corp/tcl-regex-java.git</connection>
         <developerConnection>scm:git:git@github.com:basis-technology-corp/tcl-regex-java.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>tcl-regex-0.13.1</tag>
     </scm>
     <distributionManagement>
         <site>

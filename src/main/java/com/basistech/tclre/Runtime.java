@@ -105,28 +105,28 @@ class Runtime {
         int close;
         boolean hitend;
         boolean shorter = 0 != (g.tree.flags & Subre.SHORTER);
-
         boolean lookingAt = 0 != (eflags & Flags.REG_LOOKING_AT);
+        int[] coldp = new int[1];
+        Dfa d = new Dfa(this, cnfa);
 
         if (lookingAt) {
-            close = data.length();
-            cold = 0;
+            /* don't bother with a 'search re', just constrain the regular RE and run it 'shortest'. */
+            close = d.shortest(0, 0, data.length(), coldp, null, true);
         } else {
             /* First, a shot with the search RE. */
-            int[] coldp = new int[1];
             Dfa s = new Dfa(this, g.search);
             close = s.shortest(0, 0, data.length(), coldp, null, false);
-            cold = coldp[0];
+        }
+        cold = coldp[0];
 
-            if (close == -1) {      /* not found */
-                return false;
-            }
+        if (close == -1) {      /* not found */
+            return false;
         }
 
     /* find starting point and match */
         open = cold;
         cold = -1;
-        Dfa d = new Dfa(this, cnfa);
+
         boolean first = true;
         for (begin = open; begin <= close; begin++) {
             /*

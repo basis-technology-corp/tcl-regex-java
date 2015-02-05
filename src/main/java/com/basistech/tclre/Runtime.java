@@ -115,7 +115,7 @@ class Runtime {
             /* First, a shot with the search RE. */
             int[] coldp = new int[1];
             Dfa s = new Dfa(this, g.search);
-            close = s.shortest(0, 0, data.length(), coldp, null);
+            close = s.shortest(0, 0, data.length(), coldp, null, false);
             cold = coldp[0];
 
             if (close == -1) {      /* not found */
@@ -137,7 +137,7 @@ class Runtime {
 
             boolean[] hitendp = new boolean[1];
             if (shorter) {
-                end = d.shortest(begin, begin, data.length(), null, hitendp);
+                end = d.shortest(begin, begin, data.length(), null, hitendp, false);
             } else {
                 end = d.longest(begin, data.length(), hitendp);
             }
@@ -208,12 +208,16 @@ class Runtime {
         int estop;
         boolean shorter = 0 != (g.tree.flags & Subre.SHORTER);
         boolean hitend[] = new boolean[1];
+        boolean lookingAt = 0 != (eflags & Flags.REG_LOOKING_AT);
 
         assert d != null && s != null;
         close = 0;
         do {
             int[] cold0 = new int[1];
-            close = s.shortest(close, close, data.length(), cold0, null);
+            /*
+             * Call search NFA to see if this is possible at all.
+             */
+            close = s.shortest(close, close, data.length(), cold0, null, lookingAt);
             cold = cold0[0];
 
             if (close == -1) {
@@ -224,14 +228,16 @@ class Runtime {
             cold = -1;
 
             for (begin = open; begin <= close; begin++) {
-                if (begin > 0 && 0 != (eflags & Flags.REG_LOOKING_AT)) {
+
+                if (begin > 0 && lookingAt) {
+                    // Is this possible given the looking-at constraint in the call to shortest above?
                     return false;
                 }
                 estart = begin;
                 estop = data.length();
                 for (;;) {
                     if (shorter) {
-                        end = d.shortest(begin, estart, estop, null, hitend);
+                        end = d.shortest(begin, estart, estop, null, hitend, false);
                     } else {
                         end = d.longest(begin, estop, hitend);
                     }
@@ -340,7 +346,7 @@ class Runtime {
 
     /* pick a tentative midpoint */
         if (shorter) {
-            mid = d.shortest(begin, begin, end, null, null);
+            mid = d.shortest(begin, begin, end, null, null, false);
         } else {
             mid = d.longest(begin, end, null);
         }
@@ -356,7 +362,7 @@ class Runtime {
                 throw new RuntimeException("no midpoint");
             }
             if (shorter) {
-                mid = d.shortest(begin, mid + 1, end, null, null);
+                mid = d.shortest(begin, mid + 1, end, null, null, false);
             } else {
                 mid = d.longest(begin, mid - 1, null);
             }
@@ -529,7 +535,7 @@ class Runtime {
 
     /* pick a tentative midpoint */
         if (mem[t.retry] == 0) {
-            mid = d.shortest(begin, begin, end, null, null);
+            mid = d.shortest(begin, begin, end, null, null, false);
             if (mid == -1) {
                 return false;
             }
@@ -553,7 +559,7 @@ class Runtime {
             /* all possibilities exhausted */
                 return false;
             }
-            mid = d.shortest(begin, mid + 1, end, null, null);
+            mid = d.shortest(begin, mid + 1, end, null, null, false);
             if (mid == -1) {
             /* failed to find a new one */
                 return false;

@@ -176,7 +176,7 @@ class Dfa {
         //
         RuntimeSubexpression subex = runtime.g.lookaheadConstraintMachine(n);
         Dfa d = new Dfa(runtime, subex.machine);
-        end = d.longest(cp, runtime.data.length(), null);
+        end = d.longest(cp, runtime.data.length(), null, false);
         return (subex.number != 0) ? (end != -1) : (end == -1);
     }
 
@@ -185,7 +185,7 @@ class Dfa {
      *
      * @return endpoint or -1
      */
-    int longest(int start, int stop, boolean[] hitstopp) {
+    int longest(int start, int stop, boolean[] hitstop, boolean requireInitialProgress) {
         int cp;
         int realstop = (stop == runtime.dataLength) ? stop : stop + 1;
         short co;
@@ -195,8 +195,8 @@ class Dfa {
     /* initialize */
         css = initialize(start);
         cp = start;
-        if (hitstopp != null) {
-            hitstopp[0] = false;
+        if (hitstop != null) {
+            hitstop[0] = false;
         }
 
     /* startup */
@@ -217,6 +217,7 @@ class Dfa {
         if (css == null) {
             return -1;
         }
+
         css.setLastSeen(cp);
 
         StateSet ss;
@@ -238,6 +239,12 @@ class Dfa {
                     break;  /* NOTE BREAK OUT */
                 }
             }
+
+             /* When simulating a ^, we quit if we didn't make progress with the first char. */
+            if (ss.noprogress && requireInitialProgress) {
+                return -1;
+            }
+
             cp = cp + increment;
             ss.setLastSeen(cp);
             css = ss;
@@ -245,8 +252,8 @@ class Dfa {
 
     /* shutdown */
         if (cp == runtime.dataLength && stop == runtime.dataLength) {
-            if (hitstopp != null) {
-                hitstopp[0] = true;
+            if (hitstop != null) {
+                hitstop[0] = true;
             }
             co = cnfa.eos[0 != (runtime.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             ss = miss(css, co, cp);

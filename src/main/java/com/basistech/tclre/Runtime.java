@@ -108,19 +108,14 @@ class Runtime {
 
         boolean lookingAt = 0 != (eflags & Flags.REG_LOOKING_AT);
 
-        if (lookingAt) {
-            close = data.length();
-            cold = 0;
-        } else {
-            /* First, a shot with the search RE. */
-            int[] coldp = new int[1];
-            Dfa s = new Dfa(this, g.search);
-            close = s.shortest(0, 0, data.length(), coldp, null, false);
-            cold = coldp[0];
+        /* First, a shot with the search RE. */
+        int[] coldp = new int[1];
+        Dfa s = new Dfa(this, g.search);
+        close = s.shortest(0, 0, data.length(), coldp, null, lookingAt);
+        cold = coldp[0];
 
-            if (close == -1) {      /* not found */
-                return false;
-            }
+        if (close == -1) {      /* not found */
+            return false;
         }
 
     /* find starting point and match */

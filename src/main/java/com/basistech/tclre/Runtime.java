@@ -105,28 +105,29 @@ class Runtime {
         int close;
         boolean hitend;
         boolean shorter = 0 != (g.tree.flags & Subre.SHORTER);
-
         boolean lookingAt = 0 != (eflags & Flags.REG_LOOKING_AT);
+        int[] coldp = new int[1];
+        Dfa d = new Dfa(this, cnfa);
 
         if (lookingAt) {
-            close = data.length();
-            cold = 0;
+            /* don't bother with a 'search re', just constrain the regular RE and run it 'shortest'. */
+            close = d.shortest(0, 0, data.length(), coldp, null, true);
         } else {
             /* First, a shot with the search RE. */
-            int[] coldp = new int[1];
             Dfa s = new Dfa(this, g.search);
             close = s.shortest(0, 0, data.length(), coldp, null, false);
-            cold = coldp[0];
+        }
+        cold = coldp[0];
 
-            if (close == -1) {      /* not found */
-                return false;
-            }
+        if (close == -1) {      /* not found */
+            return false;
         }
 
     /* find starting point and match */
         open = cold;
         cold = -1;
-        Dfa d = new Dfa(this, cnfa);
+
+        boolean first = true;
         for (begin = open; begin <= close; begin++) {
             /*
              * if LOOKING_AT, we can't validly have a 'begin' after 'open'.
@@ -137,9 +138,9 @@ class Runtime {
 
             boolean[] hitendp = new boolean[1];
             if (shorter) {
-                end = d.shortest(begin, begin, data.length(), null, hitendp, false);
+                end = d.shortest(begin, begin, data.length(), null, hitendp, first && lookingAt);
             } else {
-                end = d.longest(begin, data.length(), hitendp);
+                end = d.longest(begin, data.length(), hitendp, first && lookingAt);
             }
             hitend = hitendp[0];
 
@@ -149,6 +150,7 @@ class Runtime {
             if (end != -1) { /* success */
                 break;      /* NOTE BREAK OUT */
             }
+            first = false;
         }
 
         if (end == -1) {
@@ -239,7 +241,7 @@ class Runtime {
                     if (shorter) {
                         end = d.shortest(begin, estart, estop, null, hitend, false);
                     } else {
-                        end = d.longest(begin, estop, hitend);
+                        end = d.longest(begin, estop, hitend, false);
                     }
                     if (hitend[0] && cold == -1) {
                         cold = begin;
@@ -348,14 +350,14 @@ class Runtime {
         if (shorter) {
             mid = d.shortest(begin, begin, end, null, null, false);
         } else {
-            mid = d.longest(begin, end, null);
+            mid = d.longest(begin, end, null, false);
         }
         if (mid == -1) {
             throw new RuntimeException("Impossible mid.");
         }
 
     /* iterate until satisfaction or failure */
-        while (d2.longest(mid, end, null) != end) {
+        while (d2.longest(mid, end, null, false) != end) {
         /* that midpoint didn't work, find a new one */
             if (mid == stop) {
             /* all possibilities exhausted! */
@@ -364,7 +366,7 @@ class Runtime {
             if (shorter) {
                 mid = d.shortest(begin, mid + 1, end, null, null, false);
             } else {
-                mid = d.longest(begin, mid - 1, null);
+                mid = d.longest(begin, mid - 1, null, false);
             }
             if (mid == -1) {
                 throw new RuntimeException("Failed midpoint");
@@ -391,7 +393,7 @@ class Runtime {
         for (; t != null; t = t.right) {
             assert t.left != null && t.left.machine.states.length > 0;
             d = new Dfa(this, t.left.machine);
-            if (d.longest(begin, end, null) == end) {
+            if (d.longest(begin, end, null, false) == end) {
                 return dissect(t.left, begin, end);
             }
         }
@@ -462,7 +464,7 @@ class Runtime {
 
     /* pick a tentative midpoint */
         if (mem[t.retry] == 0) {
-            mid = d.longest(begin, end, null);
+            mid = d.longest(begin, end, null, false);
             if (mid == -1) {
                 return false;
             }
@@ -475,7 +477,7 @@ class Runtime {
         for (;;) {
         /* try this midpoint on for size */
             boolean cdmatch = cdissect(t.left, begin, mid);
-            if (cdmatch && d2.longest(mid, end, null) == end
+            if (cdmatch && d2.longest(mid, end, null, false) == end
                     && (cdissect(t.right, mid, end))) {
                 break;          /* NOTE BREAK OUT */
 
@@ -486,7 +488,7 @@ class Runtime {
             /* all possibilities exhausted */
                 return false;
             }
-            mid = d.longest(begin, mid - 1, null);
+            mid = d.longest(begin, mid - 1, null, false);
             if (mid == -1) {
             /* failed to find a new one */
                 return false;
@@ -549,7 +551,7 @@ class Runtime {
         /* try this midpoint on for size */
             boolean cdmatch = cdissect(t.left, begin, mid);
             if (cdmatch
-                    && d2.longest(mid, end, null) == end
+                    && d2.longest(mid, end, null, false) == end
                     && (cdissect(t.right, mid, end))) {
                 break;          /* NOTE BREAK OUT */
             }
@@ -655,7 +657,7 @@ class Runtime {
 
         if (mem[t.retry] == UNTRIED) {
             d = new Dfa(this, t.left.machine);
-            if (d.longest(begin, end, null) != end) {
+            if (d.longest(begin, end, null, false) != end) {
                 mem[t.retry] = TRIED;
                 return caltdissect(t.right, begin, end);
             }

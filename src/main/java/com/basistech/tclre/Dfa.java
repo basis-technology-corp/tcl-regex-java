@@ -289,9 +289,10 @@ class Dfa {
      * @param max     match must end at or before here
      * @param coldp   store coldstart pointer here, if non-null. This is the _beginning_ of the match region.
      * @param hitstop record whether hit end of total input
+     * @param requireInitialProgress
      * @return endpoint or -1
      */
-    int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop) {
+    int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop, boolean requireInitialProgress) {
         int cp;
         int realmin = min == hsreMatcher.dataLength ? min : min + 1;
         int realmax = max == hsreMatcher.dataLength ? max : max + 1;
@@ -346,6 +347,11 @@ class Dfa {
                 if (ss == null) {
                     break;  /* NOTE BREAK OUT */
                 }
+            }
+
+            /* When simulating a ^, we quit if we didn't make progress with the first char. */
+            if (ss.noprogress && requireInitialProgress) {
+                return -1;
             }
 
             cp = cp + increment;

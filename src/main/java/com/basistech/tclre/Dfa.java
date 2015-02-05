@@ -30,11 +30,11 @@ class Dfa {
     final int ncolors; // length of outarc and inchain vectors (really?)
     final Cnfa cnfa;
     final RuntimeColorMap cm;
-    final Runtime hsreMatcher;
+    final Runtime runtime;
 
-    Dfa(Runtime hsreMatcher, Cnfa cnfa) {
-        this.hsreMatcher = hsreMatcher;
-        this.cm = hsreMatcher.g.cm;
+    Dfa(Runtime runtime, Cnfa cnfa) {
+        this.runtime = runtime;
+        this.cm = runtime.g.cm;
         this.cnfa = cnfa;
         /*
          * Note that this isn't a cache;
@@ -174,9 +174,9 @@ class Dfa {
         // that adds a.co to ncolors. So that means that you'd think that the lacons
         // indexing would be related... The 'arc' should have a 'color' which is an index
         //
-        RuntimeSubexpression subex = hsreMatcher.g.lookaheadConstraintMachine(n);
-        Dfa d = new Dfa(hsreMatcher, subex.machine);
-        end = d.longest(cp, hsreMatcher.data.length(), null);
+        RuntimeSubexpression subex = runtime.g.lookaheadConstraintMachine(n);
+        Dfa d = new Dfa(runtime, subex.machine);
+        end = d.longest(cp, runtime.data.length(), null);
         return (subex.number != 0) ? (end != -1) : (end == -1);
     }
 
@@ -187,7 +187,7 @@ class Dfa {
      */
     int longest(int start, int stop, boolean[] hitstopp) {
         int cp;
-        int realstop = (stop == hsreMatcher.dataLength) ? stop : stop + 1;
+        int realstop = (stop == runtime.dataLength) ? stop : stop + 1;
         short co;
         StateSet css;
         int post;
@@ -201,12 +201,12 @@ class Dfa {
 
     /* startup */
         if (cp == 0) {
-            co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
+            co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
         } else {
-            char theChar = hsreMatcher.data.charAt(cp - 1);
+            char theChar = runtime.data.charAt(cp - 1);
             if (Character.isLowSurrogate(theChar)) {
                 // collect the other end of the surrogate.
-                char high = theChar = hsreMatcher.data.charAt(cp - 2);
+                char high = theChar = runtime.data.charAt(cp - 2);
                 int codepoint = Character.toCodePoint(high, theChar);
                 co = cm.getcolor(codepoint); // and get a color for the pair.
             } else {
@@ -222,10 +222,10 @@ class Dfa {
         StateSet ss;
     /* main loop */
         while (cp < realstop) {
-            char theChar = hsreMatcher.data.charAt(cp);
+            char theChar = runtime.data.charAt(cp);
             int increment = 1;
             if (Character.isHighSurrogate(theChar)) {
-                int codepoint = Character.toCodePoint(theChar, hsreMatcher.data.charAt(cp + 1));
+                int codepoint = Character.toCodePoint(theChar, runtime.data.charAt(cp + 1));
                 co = cm.getcolor(codepoint);
                 increment = 2;
             } else {
@@ -244,11 +244,11 @@ class Dfa {
         }
 
     /* shutdown */
-        if (cp == hsreMatcher.dataLength && stop == hsreMatcher.dataLength) {
+        if (cp == runtime.dataLength && stop == runtime.dataLength) {
             if (hitstopp != null) {
                 hitstopp[0] = true;
             }
-            co = cnfa.eos[0 != (hsreMatcher.eflags & Flags.REG_NOTEOL) ? 0 : 1];
+            co = cnfa.eos[0 != (runtime.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             ss = miss(css, co, cp);
         /* special case:  match ended at eol? */
             if (ss != null && ss.poststate) {
@@ -270,7 +270,7 @@ class Dfa {
             /* Post points after the codepoint after the last one in the match (!) */
             /* So, if that is an SMP codepoint, we need to back up 2 to get to the beginning of it,
              * and thus be just after the last character of the match. */
-            char postChar = hsreMatcher.data.charAt(post - 1);
+            char postChar = runtime.data.charAt(post - 1);
             if (Character.isLowSurrogate(postChar)) {
                 return post - 2;
             } else {
@@ -289,13 +289,13 @@ class Dfa {
      * @param max     match must end at or before here
      * @param coldp   store coldstart pointer here, if non-null. This is the _beginning_ of the match region.
      * @param hitstop record whether hit end of total input
-     * @param requireInitialProgress
+     * @param requireInitialProgress implementing LOOKING_AT by requiring progress on the first character.
      * @return endpoint or -1
      */
     int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop, boolean requireInitialProgress) {
         int cp;
-        int realmin = min == hsreMatcher.dataLength ? min : min + 1;
-        int realmax = max == hsreMatcher.dataLength ? max : max + 1;
+        int realmin = min == runtime.dataLength ? min : min + 1;
+        int realmax = max == runtime.dataLength ? max : max + 1;
         short co;
         StateSet ss;
         StateSet css;
@@ -309,13 +309,13 @@ class Dfa {
 
     /* startup */
         if (cp == 0) {
-            /* If the NOTBOL flag is true, we take color as bos[0], else 1. So, bos[1] is when we are at the _effective_ bos, [0] when we are not. */
-            co = cnfa.bos[0 != (hsreMatcher.eflags & Flags.REG_NOTBOL) ? 0 : 1];
+            /* If the NOTBOL flag is true, we take color as bos[0], else 1. bos[0] is really BOS, while [1] is supposed to be BOL. So, I guess, if it's NOTBOL, it's BOS. */
+            co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
         } else {
             /* Not at bos at all, set color based on prior character. */
-            char theChar = hsreMatcher.data.charAt(cp - 1);
+            char theChar = runtime.data.charAt(cp - 1);
             if (Character.isLowSurrogate(theChar)) {
-                int codepoint = Character.toCodePoint(hsreMatcher.data.charAt(cp - 2), theChar);
+                int codepoint = Character.toCodePoint(runtime.data.charAt(cp - 2), theChar);
                 co = cm.getcolor(codepoint);
             } else {
                 co = cm.getcolor(theChar);
@@ -333,9 +333,9 @@ class Dfa {
     /* main loop */
         while (cp < realmax) {
             int increment = 1;
-            char theChar = hsreMatcher.data.charAt(cp);
+            char theChar = runtime.data.charAt(cp);
             if (Character.isHighSurrogate(theChar)) {
-                int codepoint = Character.toCodePoint(theChar,  hsreMatcher.data.charAt(cp + 1));
+                int codepoint = Character.toCodePoint(theChar,  runtime.data.charAt(cp + 1));
                 co = cm.getcolor(codepoint);
                 increment = 2;
             } else {
@@ -374,12 +374,12 @@ class Dfa {
         if (ss.poststate && cp > min) {
             assert cp >= realmin;
             cp--;
-            if (Character.isLowSurrogate(hsreMatcher.data.charAt(cp))) {
+            if (Character.isLowSurrogate(runtime.data.charAt(cp))) {
                 cp--;
             }
 
-        } else if (cp == hsreMatcher.dataLength && max == hsreMatcher.dataLength) {
-            co = cnfa.eos[0 != (hsreMatcher.eflags & Flags.REG_NOTEOL) ? 0 : 1];
+        } else if (cp == runtime.dataLength && max == runtime.dataLength) {
+            co = cnfa.eos[0 != (runtime.eflags & Flags.REG_NOTEOL) ? 0 : 1];
             ss = miss(css, co, cp);
         /* match might have ended at eol */
             if ((ss == null || !ss.poststate) && hitstop != null) {

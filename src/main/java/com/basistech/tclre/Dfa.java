@@ -297,6 +297,8 @@ class Dfa {
      * @param coldp   store coldstart pointer here, if non-null. This is the _beginning_ of the match region.
      * @param hitstop record whether hit end of total input
      * @param requireInitialProgress implementing LOOKING_AT by requiring progress on the first character.
+     *                               This does not make sense if start is not 0, and the results of that combination
+     *                               are not defined.
      * @return endpoint or -1
      */
     int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop, boolean requireInitialProgress) {
@@ -317,6 +319,7 @@ class Dfa {
     /* startup */
         if (cp == 0) {
             /* If the NOTBOL flag is true, we take color as bos[0], else 1. bos[0] is really BOS, while [1] is supposed to be BOL. So, I guess, if it's NOTBOL, it's BOS. */
+            /* The combination of NOTBOL and lookingAt is not defined. */
             co = cnfa.bos[0 != (runtime.eflags & Flags.REG_NOTBOL) ? 0 : 1];
         } else {
             /* Not at bos at all, set color based on prior character. */
@@ -338,6 +341,7 @@ class Dfa {
         ss = css;
 
     /* main loop */
+        boolean first = true;
         while (cp < realmax) {
             int increment = 1;
             char theChar = runtime.data.charAt(cp);
@@ -357,7 +361,7 @@ class Dfa {
             }
 
             /* When simulating a ^, we quit if we didn't make progress with the first char. */
-            if (ss.noprogress && requireInitialProgress) {
+            if (first && ss.noprogress && requireInitialProgress) {
                 return -1;
             }
 
@@ -367,6 +371,7 @@ class Dfa {
             if (ss.poststate && cp >= realmin) {
                 break;      /* NOTE BREAK OUT */
             }
+            first = false;
         }
 
         if (ss == null) {

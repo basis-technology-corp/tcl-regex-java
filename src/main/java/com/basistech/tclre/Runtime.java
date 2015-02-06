@@ -110,14 +110,24 @@ class Runtime {
         Dfa d = new Dfa(this, cnfa);
 
         if (lookingAt) {
-            /* don't bother with a 'search re', just constrain the regular RE and run it 'shortest'. */
-            close = d.shortest(0, 0, data.length(), coldp, null, true);
+            /*
+             * shortest is faster than longest. So, we want to check with it.
+             * However, since we aren't making a 'search re' with an extra .* on
+             * the front, we don't add an extra requirement to make progress on the
+             * very first arc. If the expression has something like a* at the front,
+             * it can 'no-progress' consuming the a characters.
+             * All of this casts doubts on the 'requireInitialProgress' feature -- at all.
+             * These initial calls to shortest should be all the opportunity we need
+             * to do 'lookingAt'.
+             */
+            close = d.shortest(0, 0, data.length(), coldp, null, false);
+            cold = 0;
         } else {
             /* First, a shot with the search RE. */
             Dfa s = new Dfa(this, g.search);
             close = s.shortest(0, 0, data.length(), coldp, null, false);
+            cold = coldp[0];
         }
-        cold = coldp[0];
 
         if (close == -1) {      /* not found */
             return false;
@@ -127,10 +137,11 @@ class Runtime {
         open = cold;
         cold = -1;
 
-        boolean first = true;
         for (begin = open; begin <= close; begin++) {
             /*
              * if LOOKING_AT, we can't validly have a 'begin' after 'open'.
+             * I'm not sure this test can even ever go off, since the 'shortest' test
+             * up above should accomplish the same thing.
              */
             if (begin > 0 && lookingAt) {
                 return false;
@@ -138,9 +149,9 @@ class Runtime {
 
             boolean[] hitendp = new boolean[1];
             if (shorter) {
-                end = d.shortest(begin, begin, data.length(), null, hitendp, first && lookingAt);
+                end = d.shortest(begin, begin, data.length(), null, hitendp, false);
             } else {
-                end = d.longest(begin, data.length(), hitendp, first && lookingAt);
+                end = d.longest(begin, data.length(), hitendp, false);
             }
             hitend = hitendp[0];
 
@@ -150,7 +161,6 @@ class Runtime {
             if (end != -1) { /* success */
                 break;      /* NOTE BREAK OUT */
             }
-            first = false;
         }
 
         if (end == -1) {
@@ -219,8 +229,15 @@ class Runtime {
             /*
              * Call search NFA to see if this is possible at all.
              */
-            close = s.shortest(close, close, data.length(), cold0, null, lookingAt);
-            cold = cold0[0];
+            if (lookingAt) {
+                // in the looking at case, we use the un-search-ified RE.
+                close = d.shortest(close, close, data.length(), cold0, null, false);
+                cold = 0;
+
+            } else {
+                close = s.shortest(close, close, data.length(), cold0, null, false);
+                cold = cold0[0];
+            }
 
             if (close == -1) {
                 break;              /* NOTE BREAK */

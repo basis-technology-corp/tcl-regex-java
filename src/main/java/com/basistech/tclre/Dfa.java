@@ -176,7 +176,7 @@ class Dfa {
         //
         RuntimeSubexpression subex = runtime.g.lookaheadConstraintMachine(n);
         Dfa d = new Dfa(runtime, subex.machine);
-        end = d.longest(cp, runtime.data.length(), null, false);
+        end = d.longest(cp, runtime.data.length(), null);
         return (subex.number != 0) ? (end != -1) : (end == -1);
     }
 
@@ -185,7 +185,7 @@ class Dfa {
      *
      * @return endpoint or -1
      */
-    int longest(int start, int stop, boolean[] hitstop, boolean requireInitialProgress) {
+    int longest(int start, int stop, boolean[] hitstop) {
         int cp;
         int realstop = (stop == runtime.dataLength) ? stop : stop + 1;
         short co;
@@ -240,11 +240,6 @@ class Dfa {
                 }
             }
 
-             /* When simulating a ^, we quit if we didn't make progress with the first char. */
-            if (ss.noprogress && requireInitialProgress) {
-                return -1;
-            }
-
             cp = cp + increment;
             ss.setLastSeen(cp);
             css = ss;
@@ -296,12 +291,9 @@ class Dfa {
      * @param max     match must end at or before here
      * @param coldp   store coldstart pointer here, if non-null. This is the _beginning_ of the match region.
      * @param hitstop record whether hit end of total input
-     * @param requireInitialProgress implementing LOOKING_AT by requiring progress on the first character.
-     *                               This does not make sense if start is not 0, and the results of that combination
-     *                               are not defined.
      * @return endpoint or -1
      */
-    int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop, boolean requireInitialProgress) {
+    int shortest(int start, int min, int max, int[] coldp, boolean[] hitstop) {
         int cp;
         int realmin = min == runtime.dataLength ? min : min + 1;
         int realmax = max == runtime.dataLength ? max : max + 1;
@@ -358,11 +350,6 @@ class Dfa {
                 if (ss == null) {
                     break;  /* NOTE BREAK OUT */
                 }
-            }
-
-            /* When simulating a ^, we quit if we didn't make progress with the first char. */
-            if (first && ss.noprogress && requireInitialProgress) {
-                return -1;
             }
 
             cp = cp + increment;

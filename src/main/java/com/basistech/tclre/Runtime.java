@@ -91,11 +91,27 @@ class Runtime {
 
     /**
      * find - find a match for the main NFA (no-complications case)
-     * This method uses a strategy that we may want to change. First, it runs the 'search machine',
-     * which tells you if the expression can be found anywhere, and, if so, where is the furthest possible
-     * end. If succeeds, it does an iteration to find the exact bounds. In C, there was an option to
-     * only do the first step, to return a simple boolean with no bounds. We have no API for that.
-     * So, it would be good to benchmark to determine if the two-step process is faster or slower than the alternative.
+     * <p>
+     * First, it runs the 'search machine' in non-greedy mode (shortest). The 'search machine' is the NFA with
+     * .* added to the front and the back, more or less. See 'makesearch'. In many cases, running the search machine
+     * 'shortest' is considerably faster than running the actual regular expression in greedy (longest). So,
+     * even though this may seem like it would take extra time doing an extra scan, the alternative is much slower.
+     * The search machine tells you if the expression can be found anywhere, and, if so, where is the furthest possible
+     * end.
+     * </p>
+     * <p>
+     * If the search machine succeeds, the does an iteration to find the exact bounds;
+     * the loop uses 'longest' or 'shortest' as appropriate to the flags. In C, there was an option to
+     * _only_ run the search machine and return a simple boolean with no bounds.
+     * We have no API for that via an ExecFlag.
+     * </p>
+     * <p>
+     * If the top-level API call is 'lookingAt', we never want to scan down the data looking for matches. But 'shortest'
+     * can still be much faster than 'longest'. So, the code runs the original machine first. If non-greedy expressions
+     * were very common, I suppose that it would be faster to omit this step in that case. Thereafter, the loop has
+     * a check to bail if these is no match at the beginning of the data, which is the constraint of lookingAt.
+     * </p>
+     *
      */
     boolean find(Cnfa cnfa) {
         int begin;

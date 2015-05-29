@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
  */
 class Nfa {
     private static final Logger LOG = LoggerFactory.getLogger(Nfa.class);
+    private static final boolean isDebug = System.getProperty("tclre.debug") != null;
+
     private static final int INCOMPATIBLE = 1;
     private static final int SATISFIED = 2;
     private static final int COMPATIBLE = 3;
@@ -383,7 +385,7 @@ class Nfa {
      * dumpnfa - dump an NFA in human-readable form
      */
     void dumpnfa() {
-        if (!LOG.isDebugEnabled()) {
+        if (!LOG.isDebugEnabled() || !isDebug) {
             return;
         }
 
@@ -420,7 +422,7 @@ class Nfa {
     void dumpstate(State s) {
         Arc a;
 
-        if (!LOG.isDebugEnabled()) {
+        if (!LOG.isDebugEnabled() || !isDebug) {
             return;
         }
 

@@ -55,6 +55,7 @@ class Compiler {
     static final int SOME = 2;
     static final int INF = 3;
     private static final Logger LOG = LoggerFactory.getLogger(Compiler.class);
+    private static final boolean isDebug = System.getProperty("tclre.debug") != null;
     char[] pattern;
     int now;        /* scan pointer into string */
     int stop;       /* end of string */
@@ -185,7 +186,7 @@ class Compiler {
     /* finish setup of nfa and its subre tree */
         nfa.specialcolors();
 
-        if (LOG.isDebugEnabled()) {
+        if (LOG.isDebugEnabled() && isDebug) {
             LOG.debug("========= RAW ==========");
             nfa.dumpnfa();
             LOG.debug(tree.dumpst(true));
@@ -196,7 +197,7 @@ class Compiler {
         markst(tree);
         cleanst();
 
-        if (LOG.isDebugEnabled()) {
+        if (LOG.isDebugEnabled() && isDebug) {
             LOG.debug("========= TREE FIXED ==========");
             LOG.debug(tree.dumpst(true));
         }
@@ -215,7 +216,7 @@ class Compiler {
         }
 
     /* build compacted NFAs for tree, lacons, fast search */
-        if (LOG.isDebugEnabled()) {
+        if (LOG.isDebugEnabled() && isDebug) {
             LOG.debug("========= SEARCH ==========");
         }
     /* can sacrifice main NFA now, so use it as work area */
@@ -508,7 +509,7 @@ class Compiler {
 
         assert t.begin != null;
 
-        if (LOG.isDebugEnabled()) {
+        if (LOG.isDebugEnabled() && isDebug) {
             LOG.debug(String.format("========= TREE NODE %s ==========", t.shortId()));
         }
 
@@ -1477,7 +1478,7 @@ class Compiler {
             /*
              * Note: ICU operates in UTF-32 here, and the ColorMap is happy to play along.
              */
-            if (LOG.isDebugEnabled()) {
+            if (LOG.isDebugEnabled() && isDebug) {
                 LOG.debug(String.format("%s %d %4x %4x", set, rx, rangeStart, rangeEnd));
             }
             //TODO: this arc is probably redundant.

@@ -8,5 +8,4 @@ jdk:
   - openjdk7
 
 notifications:
-  email:
-    - benson@basistech.com
+  slack: basistech:CmiPHtjrkssw6MO9NcQFzaEj

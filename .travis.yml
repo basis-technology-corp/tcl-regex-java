@@ -1,11 +1,9 @@
 language: java
-
 script: mvn verify
-
 jdk:
-  - oraclejdk8
-  - oraclejdk7
-  - openjdk7
-
+- oraclejdk8
+- oraclejdk7
+- openjdk7
 notifications:
-  slack: basistech:CmiPHtjrkssw6MO9NcQFzaEj
+  slack: 
+    secure: ZRvPBeRzx5lPVg2tbLg31jf+/WQ1BKl1delmN4tgmmSzFxoOKL1DrRsOnpVctINbEbfNHQrJ8IiifG63E0Kq0jneo6QpFKhIf8fLiMVJDwCjpFQHoIMrr8S+RCW/aeffsSjn/WJwXyAaWCsv1soe5Oah1tOHy2HxjJe9MfWg+Xg=

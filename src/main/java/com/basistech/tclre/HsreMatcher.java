@@ -1,18 +1,18 @@
 /*
- * Copyright 2014 Basis Technology Corp.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
+* Copyright 2014 Basis Technology Corp.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.basistech.tclre;
 
@@ -28,7 +28,7 @@ final class HsreMatcher implements ReMatcher {
     private CharSequence data;
     private final EnumSet<ExecFlags> flags;
     private final HsrePattern pattern;
-    private Runtime runtime;
+    private final Runtime runtime;
     private int regionStart;
     private int regionEnd;
     private int nextFindOffset;
@@ -41,8 +41,7 @@ final class HsreMatcher implements ReMatcher {
         this.flags = flags;
         regionStart = 0;
         regionEnd = data.length();
-
-        String originalPattern = pattern.pattern();
+        runtime = new Runtime();
     }
 
     /**
@@ -75,8 +74,6 @@ final class HsreMatcher implements ReMatcher {
             execFlags.add(ExecFlags.LOOKING_AT);
         }
 
-        // TODO: this is a pessimization; we should be able to make one at construction and reuse it.
-        runtime = new Runtime();
         try {
             boolean found = runtime.exec(pat, data.subSequence(startOffset, regionEnd), execFlags);
             if (found) {

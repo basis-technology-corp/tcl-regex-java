@@ -1,18 +1,18 @@
 /*
- * Copyright 2014 Basis Technology Corp.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
+* Copyright 2014 Basis Technology Corp.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.basistech.tclre;
 
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test for the lexer.
  */
-public class LexTest extends Utils{
+public class LexTest extends Utils {
     private void assertCatchCompileTime(String regex) {
         try {
             HsrePattern.compile(regex, PatternFlags.ADVANCED);
@@ -36,6 +36,7 @@ public class LexTest extends Utils{
         }
     }
 
+    //CHECKSTYLE:OFF
     @Test
     public void testLex() throws Exception {
         RePattern exp = HsrePattern.compile("a.*+[bc]d$+", PatternFlags.QUOTE);
@@ -49,7 +50,7 @@ public class LexTest extends Utils{
         exp = HsrePattern.compile("(?i)aaBB", PatternFlags.ADVANCED);
         assertThat("aAbB", matches(exp));
         exp = HsrePattern.compile("(?c)aaBB", PatternFlags.ADVANCED);
-        assertThat("aaBB",matches(exp));
+        assertThat("aaBB", matches(exp));
         assertThat("aAbB", not(matches(exp)));
         exp = HsrePattern.compile("a\\nb", PatternFlags.ADVANCED);
         assertThat("a\nb", matches(exp));
@@ -90,7 +91,7 @@ public class LexTest extends Utils{
         assertCatchCompileTime("a[\\");
         exp = HsrePattern.compile("a[\\d]", PatternFlags.ADVANCED);
         assertThat("a3", matches(exp));
-        assertThat("ab",not(matches(exp)));
+        assertThat("ab", not(matches(exp)));
         exp = HsrePattern.compile("a[\\w]", PatternFlags.ADVANCED);
         assertThat("aQ", matches(exp));
         assertThat("a$", not(matches(exp)));
@@ -142,6 +143,6 @@ public class LexTest extends Utils{
         assertThat("a", matches(exp));
         exp = HsrePattern.compile("\\(.*\\)\\<\\(.*\\)\\>\\(.*\\)", PatternFlags.BASIC);
         /* Amazingly, this works in this form in BASIC */
-        assertThat("^%*&^AbulBakr@#$#@$", matches(exp, new String[]{"^%*&^","AbulBakr", "@#$#@$"}));
+        assertThat("^%*&^AbulBakr@#$#@$", matches(exp, new String[]{"^%*&^", "AbulBakr", "@#$#@$"}));
     }
 }

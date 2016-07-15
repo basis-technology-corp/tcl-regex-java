@@ -1,18 +1,18 @@
 /*
- * Copyright 2014 Basis Technology Corp.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
+* Copyright 2014 Basis Technology Corp.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.basistech.tclre;
 
@@ -23,62 +23,62 @@ package com.basistech.tclre;
  */
 class Lex {
     /* lexical contexts */
-    static final int L_ERE = 1; /* mainline ERE/ARE */
-    static final int L_BRE = 2; /* mainline BRE */
-    static final int L_Q = 3;   /* Flags.REG_QUOTE */
-    static final int L_EBND = 4; /* ERE/ARE bound */
-    static final int L_BBND = 5;    /* BRE bound */
-    static final int L_BRACK = 6;   /* brackets */
-    static final int L_CEL = 7; /* collating element */
-    static final int L_ECL = 8; /* equivalence class */
-    static final int L_CCL = 9; /* character class */
+    private static final int L_ERE = 1; /* mainline ERE/ARE */
+    private static final int L_BRE = 2; /* mainline BRE */
+    private static final int L_Q = 3;   /* Flags.REG_QUOTE */
+    private static final int L_EBND = 4; /* ERE/ARE bound */
+    private static final int L_BBND = 5;    /* BRE bound */
+    private static final int L_BRACK = 6;   /* brackets */
+    private static final int L_CEL = 7; /* collating element */
+    private static final int L_ECL = 8; /* equivalence class */
+    private static final int L_CCL = 9; /* character class */
 
     /*
      * string constants to interpolate as expansions of things like \d
      */
     //CHECKSTYLE:OFF
-    static final char backd[] = {       /* \d */
+    private static final char backd[] = {       /* \d */
             '[', '[', ':',
             'd', 'i', 'g', 'i', 't',
             ':', ']', ']'
     };
 
-    static final char backD[] = {       /* \D */
+    private static final char backD[] = {       /* \D */
             '[', '^', '[', ':',
             'd', 'i', 'g', 'i', 't',
             ':', ']', ']'
     };
-    static final char brbackd[] = { /* \d within brackets */
+    private static final char brbackd[] = { /* \d within brackets */
             '[', ':',
             'd', 'i', 'g', 'i', 't',
             ':', ']'
     };
-    static final char backs[] = {       /* \s */
+    private static final char backs[] = {       /* \s */
             '[', '[', ':',
             's', 'p', 'a', 'c', 'e',
             ':', ']', ']'
     };
-    static final char backS[] = {       /* \S */
+    private static final char backS[] = {       /* \S */
             '[', '^', '[', ':',
             's', 'p', 'a', 'c', 'e',
             ':', ']', ']'
     };
-    static final char brbacks[] = { /* \s within brackets */
+    private static final char brbacks[] = { /* \s within brackets */
             '[', ':',
             's', 'p', 'a', 'c', 'e',
             ':', ']'
     };
-    static final char backw[] = {       /* \w */
+    private static final char backw[] = {       /* \w */
             '[', '[', ':',
             'a', 'l', 'n', 'u', 'm',
             ':', ']', '_', ']'
     };
-    static final char backW[] = {       /* \W */
+    private static final char backW[] = {       /* \W */
             '[', '^', '[', ':',
             'a', 'l', 'n', 'u', 'm',
             ':', ']', '_', ']'
     };
-    static final char brbackw[] = { /* \w within brackets */
+    private static final char brbackw[] = { /* \w within brackets */
             '[', ':',
             'a', 'l', 'n', 'u', 'm',
             ':', ']', '_'
@@ -1013,8 +1013,8 @@ class Lex {
     /*
  - lexdigits - slurp up digits and return codepoint value
  */
-    int            /* chr value; errors signalled via ERR */
-    lexdigits(int base, int minlen, int maxlen) throws RegexException {
+                /* chr value; errors signalled via ERR */
+    private int lexdigits(int base, int minlen, int maxlen) throws RegexException {
         int n;          /* unsigned to avoid overflow misbehavior */
         int len;
         int c;

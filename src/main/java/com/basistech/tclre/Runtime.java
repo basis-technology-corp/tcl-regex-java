@@ -1,21 +1,22 @@
 /*
- * Copyright 2014 Basis Technology Corp.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
+* Copyright 2014 Basis Technology Corp.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.basistech.tclre;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -25,18 +26,17 @@ import com.google.common.collect.Lists;
  * The internal implementation of matching.
  */
 class Runtime {
-    static final int UNTRIED = 0;   /* not yet tried at all */
-    static final int TRYING = 1;    /* top matched, trying submatches */
-    static final int TRIED = 2;     /* top didn't match or submatches exhausted */
+    private static final int UNTRIED = 0;   /* not yet tried at all */
+    private static final int TRYING = 1;    /* top matched, trying submatches */
+    private static final int TRIED = 2;     /* top didn't match or submatches exhausted */
 
-    HsrePattern re;
     Guts g;
     int eflags;
     List<RegMatch> match;
-    RegMatch details;
     CharSequence data;
     int dataLength; // cache this, it gets examined _a lot_.
-    int[] mem; // backtracking.
+    private HsrePattern re;
+    private int[] mem; // backtracking.
 
     /**
      * exec - match regular expression
@@ -44,6 +44,7 @@ class Runtime {
     boolean exec(HsrePattern re, CharSequence data, EnumSet<ExecFlags> execFlags) throws RegexException {
     /* sanity checks */
     /* setup */
+
 
         if (0 != (re.guts.info & Flags.REG_UIMPOSSIBLE)) {
             throw new RegexException("Regex marked impossible");
@@ -70,14 +71,22 @@ class Runtime {
         this.g = re.guts;
         this.data = data;
         this.dataLength = this.data.length();
-        this.match = Lists.newArrayList();
+        if (this.match != null) {
+            this.match.clear();
+        } else {
+            this.match = Lists.newArrayList();
+        }
         match.add(null); // make room for 1.
         if (0 != (g.info & Flags.REG_UBACKREF)) {
             while (match.size() < g.nsub + 1) {
                 match.add(null);
             }
         }
-        mem = new int[g.ntree];
+        if (mem != null && mem.length >= g.ntree) {
+            Arrays.fill(mem, 0);
+        } else {
+            mem = new int[g.ntree];
+        }
        
     /* do it */
         assert g.tree != null;
@@ -185,48 +194,28 @@ class Runtime {
 
         /* and pin down details */
         match.set(0, new RegMatch(begin, end));
-        int dtstart;
-        if (cold != -1) {
-            dtstart = cold;
-        } else {
-            dtstart = data.length();
-        }
-        details = new RegMatch(dtstart, data.length());
 
-        if (re.nsub > 0) { // no need to do the work.
-            return dissect(g.tree, begin, end);
-        } else {
-            return true;
-        }
+        // no need to do the work.
+        return re.nsub <= 0 || dissect(g.tree, begin, end);
     }
 
 
     /**
      * cfind - find a match for the main NFA (with complications)
      */
-    boolean cfind(Cnfa cnfa) {
+    private boolean cfind(Cnfa cnfa) {
         int[] cold = new int[1];
 
         Dfa s = new Dfa(this, g.search);
         Dfa d = new Dfa(this, cnfa);
 
-        boolean ret = cfindloop(d, s, cold);
-
-        int dtstart;
-        if (cold[0] != -1) {
-            dtstart = cold[0];
-        } else {
-            dtstart = data.length();
-        }
-
-        details = new RegMatch(dtstart, data.length());
-        return ret;
+        return cfindloop(d, s, cold);
     }
 
     /**
      * cfindloop - the heart of cfind
      */
-    boolean cfindloop(Dfa d, Dfa s, int[] coldp) {
+    private boolean cfindloop(Dfa d, Dfa s, int[] coldp) {
         int begin;
         int end;
         int cold;
@@ -318,7 +307,7 @@ class Runtime {
     /**
      * subset - set any subexpression relevant to a successful subre
      */
-    void subset(RuntimeSubexpression sub, int begin, int end) {
+    private void subset(RuntimeSubexpression sub, int begin, int end) {
         int n = sub.number;
 
         assert n > 0;
@@ -333,7 +322,7 @@ class Runtime {
     /**
      * dissect - determine subexpression matches (uncomplicated case)
      */
-    boolean dissect(RuntimeSubexpression t, int begin, int end) {
+    private boolean dissect(RuntimeSubexpression t, int begin, int end) {
         switch (t.op) {
         case '=':       /* terminal node */
             assert t.left == null && t.right == null;
@@ -365,16 +354,17 @@ class Runtime {
     /**
      * condissect - determine concatenation subexpression matches (uncomplicated)
      */
-    boolean condissect(RuntimeSubexpression t, int begin, int end) {
+    private boolean condissect(RuntimeSubexpression t, int begin, int end) {
         Dfa d;
         Dfa d2;
         int mid;
-        boolean shorter = (t.left.flags & Subre.SHORTER) != 0;
-        int stop = shorter ? end : begin;
-
         assert t.op == '.';
         assert t.left != null && t.left.machine.states.length > 0;
         assert t.right != null && t.right.machine.states.length > 0;
+
+        boolean shorter = (t.left.flags & Subre.SHORTER) != 0;
+        int stop = shorter ? end : begin;
+
 
         d = new Dfa(this, t.left.machine);
         d2 = new Dfa(this, t.right.machine);
@@ -417,7 +407,7 @@ class Runtime {
     /**
      * altdissect - determine alternative subexpression matches (uncomplicated)
      */
-    boolean altdissect(RuntimeSubexpression t, int begin, int end) {
+    private boolean altdissect(RuntimeSubexpression t, int begin, int end) {
         Dfa d;
 
         assert t != null;
@@ -439,7 +429,7 @@ class Runtime {
      * The retry memory stores the offset of the trial midpoint from begin,
      * plus 1 so that 0 uniquely means "clean slate".
      */
-    boolean cdissect(RuntimeSubexpression t, int begin, int end) {
+    private boolean cdissect(RuntimeSubexpression t, int begin, int end) {
 
         assert t != null;
 
@@ -479,7 +469,7 @@ class Runtime {
      * The retry memory stores the offset of the trial midpoint from begin,
      * plus 1 so that 0 uniquely means "clean slate".
      */
-    boolean ccondissect(RuntimeSubexpression t, int begin, int end) {
+    private boolean ccondissect(RuntimeSubexpression t, int begin, int end) {
         Dfa d;
         Dfa d2;
         int mid;
@@ -535,7 +525,7 @@ class Runtime {
         return true;
     }
 
-    void zapmem(RuntimeSubexpression t) {
+    private void zapmem(RuntimeSubexpression t) {
         mem[t.retry] = 0;
         while (match.size() < t.number + 1) {
             match.add(null);
@@ -554,7 +544,7 @@ class Runtime {
      * The retry memory stores the offset of the trial midpoint from begin,
      * plus 1 so that 0 uniquely means "clean slate".
      */
-    boolean crevdissect(RuntimeSubexpression t, int begin, int end) {
+    private boolean crevdissect(RuntimeSubexpression t, int begin, int end) {
         Dfa d;
         Dfa d2;
         int mid;
@@ -612,7 +602,7 @@ class Runtime {
     /**
      * cbrdissect - determine backref subexpression matches
      */
-    boolean cbrdissect(RuntimeSubexpression t, int begin, int end) {
+    private boolean cbrdissect(RuntimeSubexpression t, int begin, int end) {
         int i;
         int n = t.number;
         int len;
@@ -640,10 +630,7 @@ class Runtime {
 
     /* special-case zero-length string */
         if (len == 0) {
-            if (begin == end) {
-                return true;
-            }
-            return false;
+            return begin == end;
         }
 
         /* and too-short string */
@@ -668,17 +655,14 @@ class Runtime {
         if (p != end) {         /* didn't consume all of it */
             return false;
         }
-        if (min <= i && (i <= max || max == Compiler.INFINITY)) {
-            return true;
-        }
-        return false;       /* out of range */
+        return min <= i && (i <= max || max == Compiler.INFINITY);
     }
 
     /*
      - caltdissect - determine alternative subexpression matches (w. complications)
      ^ static int caltdissect(struct vars *, struct Subre , int , int );
      */
-    boolean caltdissect(RuntimeSubexpression t, int begin, int end) {
+    private boolean caltdissect(RuntimeSubexpression t, int begin, int end) {
         Dfa d;
         if (t == null) {
             return false;

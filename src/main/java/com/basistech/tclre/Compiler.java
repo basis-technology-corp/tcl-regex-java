@@ -1,18 +1,18 @@
 /*
- * Copyright 2014 Basis Technology Corp.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
+* Copyright 2014 Basis Technology Corp.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.basistech.tclre;
 
@@ -30,7 +30,9 @@ import org.slf4j.LoggerFactory;
 /**
  * from regcomp.c
  */
+//CHECKSTYLE:OFF
 class Compiler {
+//CHECKSTYLE:ON
     /* token type codes, some also used as NFA arc types */
     static final int EMPTY = 'n';       /* no token present */
     static final int EOS = 'e';     /* end of string */
@@ -55,8 +57,9 @@ class Compiler {
     static final int SOME = 2;
     static final int INF = 3;
     private static final Logger LOG = LoggerFactory.getLogger(Compiler.class);
-    private static final boolean isDebug = System.getProperty("tclre.debug") != null;
-    char[] pattern;
+    private static final boolean IS_DEBUG = System.getProperty("tclre.debug") != null;
+
+
     int now;        /* scan pointer into string */
     int stop;       /* end of string */
     char[] savepattern;
@@ -67,27 +70,24 @@ class Compiler {
     int nexttype;       /* type of next token */
     int nextvalue;      /* value (if any) of next token */
     int lexcon;     /* lexical context type (see lex.c) */
+    char[] pattern;
+
+    private ColorMap cm;    /* character color map */
+    private short nlcolor;      /* color of newline */
+    private State wordchrs; /* state in nfa holding word-char outarcs */
+    private List<Subre> lacons; /* lookahead-constraint vector */
+    private Lex lex;
+
     // this bit of cleanup to allow some mocking in testing the color map.
     private Nfa nfa;    /* the NFA */
-    ColorMap cm;    /* character color map */
-    short nlcolor;      /* color of newline */
-    State wordchrs; /* state in nfa holding word-char outarcs */
-    Subre tree; /* subexpression tree */
-    Subre treechain;    /* all tree nodes allocated */
-    Subre treefree;     /* any free tree nodes */
-    int ntree;      /* number of tree nodes */
-    List<Subre> lacons; /* lookahead-constraint vector */
-    Lex lex;
     private long info;
     private final EnumSet<PatternFlags> originalFlags;
     private final List<Subre> subs;   /* subRE pointer vector */
 
+
     /**
      * Constructor does minimal setup; construct, then call compile().
      * The entire effect is a side-effect on 're'.
-     *
-     * @param pattern
-     * @param flags
      */
     private Compiler(String pattern, EnumSet<PatternFlags> flags) {
 
@@ -177,7 +177,7 @@ class Compiler {
             cm.okcolors(nfa);
         }
 
-        tree = parse(EOS, PLAIN, nfa.init, nfa.finalState);
+        Subre tree = parse(EOS, PLAIN, nfa.init, nfa.finalState);
         assert see(EOS);        /* even if error; ISERR() => see(EOS) */
 
 
@@ -186,18 +186,17 @@ class Compiler {
     /* finish setup of nfa and its subre tree */
         nfa.specialcolors();
 
-        if (LOG.isDebugEnabled() && isDebug) {
+        if (LOG.isDebugEnabled() && IS_DEBUG) {
             LOG.debug("========= RAW ==========");
             nfa.dumpnfa();
             LOG.debug(tree.dumpst(true));
         }
 
         optst(tree);
-        ntree = numst(tree, 1);
+        int ntree = numst(tree, 1);
         markst(tree);
-        cleanst();
 
-        if (LOG.isDebugEnabled() && isDebug) {
+        if (LOG.isDebugEnabled() && IS_DEBUG) {
             LOG.debug("========= TREE FIXED ==========");
             LOG.debug(tree.dumpst(true));
         }
@@ -216,7 +215,7 @@ class Compiler {
         }
 
     /* build compacted NFAs for tree, lacons, fast search */
-        if (LOG.isDebugEnabled() && isDebug) {
+        if (LOG.isDebugEnabled() && IS_DEBUG) {
             LOG.debug("========= SEARCH ==========");
         }
     /* can sacrifice main NFA now, so use it as work area */
@@ -238,11 +237,11 @@ class Compiler {
         return new HsrePattern(new String(pattern, 0, pattern.length), originalFlags, info, nsub, guts);
     }
 
-    static int pair(int a, int b) {
+    private static int pair(int a, int b) {
         return a * 4 + b;
     }
 
-    static int reduce(int x) {
+    private static int reduce(int x) {
         if (x == INFINITY) {
             return INF;
         } else if (x > 1) {
@@ -252,7 +251,7 @@ class Compiler {
         }
     }
 
-    char newline() {
+    private char newline() {
         return '\n';
     }
 
@@ -264,7 +263,7 @@ class Compiler {
         return subs;
     }
     
-    static class Comparer implements SubstringComparator, Serializable {
+    private static class Comparer implements SubstringComparator, Serializable {
         static final long serialVersionUID = 1L;
         private final boolean caseInsensitive;
 
@@ -297,7 +296,7 @@ class Compiler {
      * makesearch - turn an NFA into a search NFA (implicit prepend of .*?)
      * NFA must have been optimize()d already.
      */
-    void makesearch(Nfa nfa) {
+    private void makesearch(Nfa nfa) {
         Arc a;
         Arc b;
         State pre = nfa.pre;
@@ -371,7 +370,7 @@ class Compiler {
      * ^ static VOID cparc(struct nfa *, struct arc *, struct state *,
      * ^    struct state *);
      */
-    void cparc(Nfa nfa, Arc oa, State from, State to) {
+    private void cparc(Nfa nfa, Arc oa, State from, State to) {
         nfa.newarc(oa.type, oa.co, from, to);
     }
 
@@ -382,7 +381,7 @@ class Compiler {
      * for duplicate suppression, which makes it easier to just make new
      * ones to exploit the suppression built into newarc.
      */
-    void moveins(Nfa nfa, State old, State newState) {
+    private void moveins(Nfa nfa, State old, State newState) {
         Arc a;
 
         assert old != newState;
@@ -398,7 +397,7 @@ class Compiler {
     /**
      * copyouts - copy all out arcs of a state to another state
      */
-    void copyouts(Nfa nfa, State old, State newState) {
+    private void copyouts(Nfa nfa, State old, State newState) {
         Arc a;
 
         assert old != newState;
@@ -411,7 +410,7 @@ class Compiler {
     /**
      * cloneouts - copy out arcs of a state to another state pair, modifying type
      */
-    void cloneouts(Nfa nfa, State old, State from, State to, int type) {
+    private void cloneouts(Nfa nfa, State old, State from, State to, int type) {
         Arc a;
 
         assert old != from;
@@ -424,7 +423,7 @@ class Compiler {
     /**
      * optst - optimize a subRE subtree
      */
-    void optst(Subre t) {
+    private void optst(Subre t) {
         if (t == null) {
             return;
         }
@@ -443,7 +442,7 @@ class Compiler {
      *
      * @return next number
      */
-    int numst(Subre t, int start) {
+    private int numst(Subre t, int start) {
         int i;
 
         assert t != null;
@@ -463,7 +462,7 @@ class Compiler {
     /**
      * markst - mark tree nodes as INUSE
      */
-    void markst(Subre t) {
+    private void markst(Subre t) {
         assert t != null;
 
         t.flags |= Subre.INUSE;
@@ -475,19 +474,12 @@ class Compiler {
         }
     }
 
-    /**
-     * cleanst - free any tree nodes not marked INUSE
-     */
-    void cleanst() {
-        treechain = null;
-        treefree = null;        /* just on general principles */
-    }
 
     /**
      * nfatree - turn a subRE subtree into a tree of compacted NFAs
      */
-    long            /* optimize results from top node */
-    nfatree(Subre t) throws RegexException {
+                /* optimize results from top node */
+    private long nfatree(Subre t) throws RegexException {
         assert t != null && t.begin != null;
 
         if (t.left != null) {
@@ -504,12 +496,12 @@ class Compiler {
      *
      * @return results of {@link Nfa#optimize()}
      */
-    long nfanode(Subre t) throws RegexException {
+    private long nfanode(Subre t) throws RegexException {
         long ret;
 
         assert t.begin != null;
 
-        if (LOG.isDebugEnabled() && isDebug) {
+        if (LOG.isDebugEnabled() && IS_DEBUG) {
             LOG.debug(String.format("========= TREE NODE %s ==========", t.shortId()));
         }
 
@@ -523,11 +515,11 @@ class Compiler {
         return ret;
     }
 
-    int lmix(int f) {
+    private int lmix(int f) {
         return f << 2;  /* LONGER -> MIXED */
     }
 
-    int smix(int f) {
+    private int smix(int f) {
         return f << 1;  /* SHORTER -> MIXED */
     }
 
@@ -535,11 +527,11 @@ class Compiler {
         return (f & ~Subre.LOCAL) | (lmix(f) & smix(f) & Subre.MIXED);
     }
 
-    boolean eat(char t) throws RegexException {
+    private boolean eat(char t) throws RegexException {
         return see(t) && lex.next();
     }
 
-    boolean messy(int f) {
+    private boolean messy(int f) {
         return 0 != (f & (Subre.MIXED | Subre.CAP | Subre.BACKR));
     }
 
@@ -549,7 +541,7 @@ class Compiler {
      * tied together with '|'.  They appear in the tree as the left children
      * of a chain of '|' subres.
      */
-    Subre parse(int stopper, int type, State initState, State finalState) throws RegexException {
+    private Subre parse(int stopper, int type, State initState, State finalState) throws RegexException {
         State left; /* scaffolding for branch */
         State right;
         Subre branches; /* top level */
@@ -614,7 +606,7 @@ class Compiler {
      * Concatenated things are bundled up as much as possible, with separate
      * ',' nodes introduced only when necessary due to substructure.
      */
-    Subre parsebranch(int stopper, int type, State left, State right, boolean partial) throws RegexException {
+    private Subre parsebranch(int stopper, int type, State left, State right, boolean partial) throws RegexException {
         State lp;   /* left end of current construct */
         boolean seencontent = false;    /* is there anything in this branch yet? */
         Subre t;
@@ -638,7 +630,6 @@ class Compiler {
                 note(Flags.REG_UUNSPEC);
             }
 
-            assert lp == left;
             nfa.emptyarc(left, right);
         }
 
@@ -646,7 +637,7 @@ class Compiler {
     }
 
     //CHECKSTYLE:OFF
-    void parseqatom(int stopper, int type, State lp, State rp, Subre top) throws RegexException {
+    private void parseqatom(int stopper, int type, State lp, State rp, Subre top) throws RegexException {
         State s;    /* temporaries for new states */
         State s2;
         int m;
@@ -660,7 +651,7 @@ class Compiler {
         int atomtype;
         int qprefer;        /* quantifier short/long preference */
         int f;
-        AtomSetter atomp = null;
+        AtomSetter atomp;
 
     /* initial bookkeeping */
         atom = null;
@@ -1055,7 +1046,7 @@ class Compiler {
     }
     //CHECKSTYLE:ON
 
-    void delsub(Nfa nfa, State lp, State rp) {
+    private void delsub(Nfa nfa, State lp, State rp) {
         rp.tmp = rp;
         deltraverse(nfa, lp, lp);
         assert lp.nouts == 0 && rp.nins == 0;   /* did the job */
@@ -1068,7 +1059,7 @@ class Compiler {
      * deltraverse - the recursive heart of delsub
      * This routine's basic job is to destroy all out-arcs of the state.
      */
-    void deltraverse(Nfa nfa, State leftend, State s) {
+    private void deltraverse(Nfa nfa, State leftend, State s) {
         Arc a;
         State to;
 
@@ -1101,7 +1092,7 @@ class Compiler {
     /**
      * nonword - generate arcs for non-word-character ahead or behind
      */
-    void nonword(int dir, State lp, State rp) {
+    private void nonword(int dir, State lp, State rp) {
         int anchor = (dir == AHEAD) ? '$' : '^';
 
         assert dir == AHEAD || dir == BEHIND;
@@ -1114,7 +1105,7 @@ class Compiler {
     /**
      * word - generate arcs for word character ahead or behind
      */
-    void word(int dir, State lp, State rp) {
+    private void word(int dir, State lp, State rp) {
         assert dir == AHEAD || dir == BEHIND;
         cloneouts(nfa, wordchrs, lp, rp, dir);
     /* (no need for special attention to \n) */
@@ -1125,7 +1116,7 @@ class Compiler {
      *
      * @return value <= DUPMAX
      */
-    int scannum() throws RegexException {
+    private int scannum() throws RegexException {
         int n = 0;
 
         while (see(DIGIT) && n < DUPMAX) {
@@ -1148,7 +1139,7 @@ class Compiler {
      * subRE tree, although the important bits are now handled by the in-line
      * code in parse(), and when this is called, it doesn't matter any more.
      */
-    void repeat(State lp, State rp, int m, int n) throws RegexException {
+    private void repeat(State lp, State rp, int m, int n) throws RegexException {
         final int rm = reduce(m);
         final int rn = reduce(n);
         State s;
@@ -1226,7 +1217,7 @@ class Compiler {
      * This should be reconciled with the \w etc. handling in lex.c, and
      * should be cleaned up to reduce dependencies on input scanning.
      */
-    void wordchrs() throws RegexException {
+    private void wordchrs() throws RegexException {
         State left;
         State right;
 
@@ -1251,7 +1242,7 @@ class Compiler {
      * bracket - handle non-complemented bracket expression
      * Also called from cbracket for complemented bracket expressions.
      */
-    void bracket(State lp, State rp) throws RegexException {
+    private void bracket(State lp, State rp) throws RegexException {
         assert see('[');
         lex.next();
         while (!see(']') && !see(EOS)) {
@@ -1265,7 +1256,7 @@ class Compiler {
     /**
      * brackpart - handle one item (or range) within a bracket expression
      */
-    void brackpart(State lp, State rp) throws RegexException {
+    private void brackpart(State lp, State rp) throws RegexException {
         UnicodeSet set;
         /*
          * OK, well; if the user uses \U the item that comes next can be a full codepoint.
@@ -1389,7 +1380,7 @@ class Compiler {
      * @return the string. It can't return a pos; a nested pattern is popped by
      * the last lex.next() in here and so the offsets don't work.
      */
-    String scanplain() throws RegexException {
+    private String scanplain() throws RegexException {
         int startp = now;
         int endp;
 
@@ -1415,7 +1406,7 @@ class Compiler {
      * the result.  The alternative would be to invoke rainbow(), and then delete
      * arcs as the b.e. is seen... but that gets messy.
      */
-    void cbracket(State lp, State rp) throws RegexException {
+    private void cbracket(State lp, State rp) throws RegexException {
         State left = nfa.newstate();
         State right = nfa.newstate();
 
@@ -1440,7 +1431,7 @@ class Compiler {
      *
      * @return lacon number
      */
-    int newlacon(State begin, State end, int pos) {
+    private int newlacon(State begin, State end, int pos) {
         if (lacons.size() == 0) {
             // skip 0
             lacons.add(null);
@@ -1455,7 +1446,7 @@ class Compiler {
      * onechr - fill in arcs for a plain character, and possible case complements
      * This is mostly a shortcut for efficient handling of the common case.
      */
-    void onechr(int c, State lp, State rp) throws RegexException {
+    private void onechr(int c, State lp, State rp) throws RegexException {
         if (0 == (cflags & Flags.REG_ICASE)) {
             nfa.newarc(PLAIN, cm.subcolor(c), lp, rp);
             return;
@@ -1469,7 +1460,7 @@ class Compiler {
      * dovec - fill in arcs for each element of a cvec
      * all kinds of MCCE complexity removed.
      */
-    void dovec(UnicodeSet set, State lp, State rp) throws RegexException {
+    private void dovec(UnicodeSet set, State lp, State rp) throws RegexException {
 
         int rangeCount = set.getRangeCount();
         for (int rx = 0; rx < rangeCount; rx++) {
@@ -1478,7 +1469,7 @@ class Compiler {
             /*
              * Note: ICU operates in UTF-32 here, and the ColorMap is happy to play along.
              */
-            if (LOG.isDebugEnabled() && isDebug) {
+            if (LOG.isDebugEnabled() && IS_DEBUG) {
                 LOG.debug(String.format("%s %d %4x %4x", set, rx, rangeStart, rangeEnd));
             }
             //TODO: this arc is probably redundant.

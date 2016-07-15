@@ -1,18 +1,18 @@
 /*
- * Copyright 2014 Basis Technology Corp.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
+* Copyright 2014 Basis Technology Corp.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.basistech.tclre;
 
@@ -206,7 +206,8 @@ class Dfa {
             char theChar = runtime.data.charAt(cp - 1);
             if (Character.isLowSurrogate(theChar)) {
                 // collect the other end of the surrogate.
-                char high = theChar = runtime.data.charAt(cp - 2);
+                theChar = runtime.data.charAt(cp - 2);
+                char high = theChar;
                 int codepoint = Character.toCodePoint(high, theChar);
                 co = cm.getcolor(codepoint); // and get a color for the pair.
             } else {
@@ -333,7 +334,6 @@ class Dfa {
         ss = css;
 
     /* main loop */
-        boolean first = true;
         while (cp < realmax) {
             int increment = 1;
             char theChar = runtime.data.charAt(cp);
@@ -358,7 +358,6 @@ class Dfa {
             if (ss.poststate && cp >= realmin) {
                 break;      /* NOTE BREAK OUT */
             }
-            first = false;
         }
 
         if (ss == null) {

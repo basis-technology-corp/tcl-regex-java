@@ -16,7 +16,7 @@
 
 package com.basistech.tclre;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 /**
  * Store information about a capturing pattern.
@@ -58,7 +58,7 @@ class RegMatch {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("start", start)
                 .add("end", end)
                 .toString();

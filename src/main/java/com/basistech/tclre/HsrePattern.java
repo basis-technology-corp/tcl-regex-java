@@ -16,11 +16,11 @@
 
 package com.basistech.tclre;
 
+import com.google.common.base.MoreObjects;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.EnumSet;
-
-import com.google.common.base.Objects;
 
 /**
  * A compiled regular expression. The method {@link #compile(String, PatternFlags...)} serves
@@ -102,7 +102,7 @@ public class HsrePattern implements RePattern, Serializable {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("pattern", original)
                 .add("flags", originalFlags)
                 .toString();

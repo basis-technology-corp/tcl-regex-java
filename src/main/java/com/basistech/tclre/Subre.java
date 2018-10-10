@@ -16,7 +16,7 @@
 
 package com.basistech.tclre;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 /**
  * subexpression tree
@@ -156,7 +156,7 @@ class Subre {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("op", op)
                 .add("flags", flags)
                 .add("retry", retry)

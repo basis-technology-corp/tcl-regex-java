@@ -16,7 +16,7 @@
 
 package com.basistech.tclre;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 import java.util.BitSet;
 
@@ -61,7 +61,7 @@ class StateSet {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("states", states)
                 .add("noprogress", noprogress)
                 .add("poststate", poststate)

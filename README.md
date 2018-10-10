@@ -12,3 +12,6 @@ advantage over the regular expression classes provided in Java, which can run in
 
 Pull Requests are great! We will interpret them as contributions under the terms of the Apache License.
 
+## Notes ##
+
+0.13.8 is the last version that supports Java 6 and 7. Java 8 is required for newer versions.

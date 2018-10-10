@@ -17,7 +17,6 @@
 package com.basistech.tclre;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
 
 import java.util.BitSet;
 

@@ -16,9 +16,10 @@
 
 package com.basistech.tclre;
 
+import com.google.common.base.MoreObjects;
+
 import java.util.Collections;
 import java.util.EnumSet;
-import com.google.common.base.Objects;
 
 /*
  * Matcher. This is an incomplete analog of {@link java.util.regex.Matcher}.
@@ -206,7 +207,7 @@ final class HsreMatcher implements ReMatcher {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("pattern", pattern)
                 .add("flags", flags)
                 .add("regionStart", regionStart)

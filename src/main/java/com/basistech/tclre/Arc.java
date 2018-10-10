@@ -16,7 +16,7 @@
 
 package com.basistech.tclre;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 /**
  * Arc
@@ -51,7 +51,7 @@ class Arc {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("type", type)
                 .add("co", co)
                 .add("from", from)

@@ -24,7 +24,7 @@
     <parent>
         <groupId>com.basistech</groupId>
         <artifactId>open-source-parent</artifactId>
-        <version>2.0.0</version>
+        <version>4.0.0</version>
     </parent>
     <prerequisites>
         <maven>3.0.4</maven>
@@ -42,6 +42,9 @@
             <url>scm:git:git@github.com:basis-technology-corp/tcl-regex-java.git</url>
         </site>
     </distributionManagement>
+    <properties>
+        <skip-dependency-convergence>true</skip-dependency-convergence>
+    </properties>
     <dependencies>
         <!-- the order here (hamcrest, hamcrest, mockito) is important. -->
         <dependency>
@@ -68,7 +71,7 @@
         <dependency>
             <groupId>com.basistech</groupId>
             <artifactId>pax-exam-test-composite</artifactId>
-            <version>0.0.2</version>
+            <version>0.0.11</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -114,8 +117,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <configuration>
                         <encoding>utf-8</encoding>
-                        <source>1.6</source>
-                        <target>1.6</target>
+                        <source>1.8</source>
+                        <target>1.8</target>
                         <debug>true</debug>
                         <optimize>true</optimize>
                     </configuration>
@@ -123,7 +126,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-scm-publish-plugin</artifactId>
-                    <version>1.1</version>
                     <configuration>
                         <scmBranch>gh-pages</scmBranch>
                     </configuration>
@@ -131,7 +133,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.18</version>
                     <configuration>
                       <argLine>-Xmx2g</argLine>
                     </configuration>
@@ -145,7 +146,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.9</version>
                 <executions>
                     <execution>
                         <id>copy-bundles</id>
@@ -169,7 +169,7 @@
             <plugin>
                 <groupId>org.apache.servicemix.tooling</groupId>
                 <artifactId>depends-maven-plugin</artifactId>
-                <version>1.2</version>
+                <version>1.4.0</version>
                 <executions>
                     <execution>
                         <id>generate-depends-file</id>
@@ -213,7 +213,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.18</version>
                 <executions>
                     <execution>
                         <goals>
@@ -226,6 +225,9 @@
                                 <project.build.directory>${project.build.directory}</project.build.directory>
                                 <project.version>${project.version}</project.version>
                             </systemPropertyVariables>
+                            <additionalClasspathElements>
+                                <additionalClasspathElement>${project.build.directory}/classes</additionalClasspathElement>
+                            </additionalClasspathElements>
                         </configuration>
                     </execution>
                 </executions>

@@ -90,7 +90,7 @@ public interface ReMatcher extends MatchResult {
      * @param flags the new flags.
      * @return this matcher.
      */
-    ReMatcher flags(ExecFlags ... flags);
+    ReMatcher flags(ExecFlags... flags);
 
     /**
      * @return return the current set of flags associated with this matcher.

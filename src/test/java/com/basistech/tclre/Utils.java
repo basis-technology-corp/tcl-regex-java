@@ -182,7 +182,7 @@ public class Utils {
         }
 
         @Factory
-        public static Matcher<String> matches(RePattern pattern, ExecFlags ... eflags) {
+        public static Matcher<String> matches(RePattern pattern, ExecFlags... eflags) {
             EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
             for (ExecFlags ef : eflags) {
                 flagSet.add(ef);
@@ -193,7 +193,7 @@ public class Utils {
 
 
         @Factory
-        public static <T> Matcher<String> matches(RePattern pattern, String[] captures, ExecFlags ... eflags) {
+        public static <T> Matcher<String> matches(RePattern pattern, String[] captures, ExecFlags... eflags) {
             EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
             for (ExecFlags ef : eflags) {
                 flagSet.add(ef);

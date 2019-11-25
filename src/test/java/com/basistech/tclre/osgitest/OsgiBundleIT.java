@@ -86,7 +86,7 @@ public class OsgiBundleIT extends Utils {
 
         bundleUrls.add(String.format("file:%s/tcl-regex-%s.jar", projectBuildDirectory, projectVersion));
 
-        String[] bundles = bundleUrls.toArray(new String[bundleUrls.size()]);
+        String[] bundles = bundleUrls.toArray(new String[0]);
         return options(
                 provision(bundles),
                 systemPackages(

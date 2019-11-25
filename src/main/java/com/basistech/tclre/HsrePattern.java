@@ -49,7 +49,7 @@ public class HsrePattern implements RePattern, Serializable {
      * @param pattern the pattern.
      * @param flags flags that determine the interpretation of the pattern.
      * @return the compiled pattern.
-     * @throws RegexException
+     * @throws RegexException regex exception
      */
     public static RePattern compile(String pattern, EnumSet<PatternFlags> flags) throws RegexException {
         return Compiler.compile(pattern, flags);
@@ -60,7 +60,7 @@ public class HsrePattern implements RePattern, Serializable {
      * @param pattern the pattern.
      * @param flags flags that determine the interpretation of the pattern.
      * @return the compiled pattern.
-     * @throws RegexException
+     * @throws RegexException regex exception
      */
     public static RePattern compile(String pattern, PatternFlags... flags) throws RegexException {
         EnumSet<PatternFlags> flagSet = EnumSet.noneOf(PatternFlags.class);

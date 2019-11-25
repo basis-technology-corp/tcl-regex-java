@@ -26,14 +26,14 @@ import java.util.regex.MatchResult;
  * Matchers perform two operations: matching and searching. Matching ({@link #matches()}
  * attempts to satisfy the pattern with the entire string. Searching scans forward
  * through the string looking for a substring that satisfies the pattern.
- * <br/>
+ * <p></p>
  * A matcher has a region. Initially, the region is the entire data, but
  * the application may call {@link #region(int, int)} to change it. Setting a region
  * limits the data examined by the matcher, but does not change the interpretation
  * of the offset passed to {@link #find(int)} or the values returned by the
  * methods of {@link java.util.regex.MatchResult}. These are always relative to the complete
  * data.
- * <br/>
+ * <p></p>
  * Matchers support an iterative scanning process for multiple matches. After a successful call
  * to {@link #find()} or {@link #find(int)}, the matcher retains the offset of the end of the match.
  * A subsequent call to {@link #find()} starts at the character after the previous match.

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright 2014 Basis Technology Corp.
+  ~ Copyright 2014-2022 Basis Technology Corp.
   ~
   ~    Licensed under the Apache License, Version 2.0 (the "License");
   ~    you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
     <parent>
         <groupId>com.basistech</groupId>
         <artifactId>open-source-parent</artifactId>
-        <version>9.0.0</version>
+        <version>10.0.0</version>
     </parent>
     <prerequisites>
         <maven>3.0.4</maven>
@@ -87,14 +87,14 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <scope>compile</scope>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <optional>true</optional>
+            <artifactId>slf4j-api</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>args4j</groupId>
@@ -159,7 +159,7 @@
                               Exclude the ones that are not OSGi
                               components, plus OSGi itself.
                           -->
-                            <excludeArtifactIds>bndlib,org.osgi.core</excludeArtifactIds>
+                            <excludeArtifactIds>bndlib,log4j-slf4j-impl,org.osgi.core</excludeArtifactIds>
                             <excludeGroupIds>org.slf4j</excludeGroupIds>
                             <includeScope>compile</includeScope>
                         </configuration>

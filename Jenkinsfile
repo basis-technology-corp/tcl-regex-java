@@ -1,6 +1,15 @@
 env.project = "tcl-regex-java"
 
-standardProperties()
+properties([
+    parameters([
+        booleanParam(name: 'release',
+        defaultValue: false,
+        description: 'Release the project'),
+        string(name: 'version',
+        defaultValue: '',
+        description: 'Version to release, or empty to use the default next version')
+    ])
+])
 
 def options = [:]
 

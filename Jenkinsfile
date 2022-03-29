@@ -23,4 +23,6 @@ options.afterBuild = {
     }
 }
 
+options.buildArgs = ' '
+
 standardBuildSteps(options)

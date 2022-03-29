@@ -11,6 +11,8 @@ properties([
     ])
 ])
 
+standardProperties(properties)
+
 def options = [:]
 
 options.afterBuild = {

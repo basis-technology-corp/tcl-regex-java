@@ -24,7 +24,7 @@
     <parent>
         <groupId>com.basistech</groupId>
         <artifactId>open-source-parent</artifactId>
-        <version>10.0.0</version>
+        <version>11.0.0</version>
     </parent>
     <prerequisites>
         <maven>3.0.4</maven>

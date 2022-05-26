@@ -79,6 +79,18 @@
             <artifactId>pax-exam-test-composite</artifactId>
             <version>0.0.11</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.framework</artifactId>
+            <version>7.0.3</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.ibm.icu</groupId>

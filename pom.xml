@@ -24,11 +24,8 @@
     <parent>
         <groupId>com.basistech</groupId>
         <artifactId>open-source-parent</artifactId>
-        <version>10.0.0</version>
+        <version>11.0.0</version>
     </parent>
-    <prerequisites>
-        <maven>3.0.4</maven>
-    </prerequisites>
     <inceptionYear>2014</inceptionYear>
     <url>http://basis-technology-corp.github.io/tcl-regex-java</url>
     <scm>
@@ -66,7 +63,12 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ops4j.pax.url</groupId>
+            <artifactId>pax-url-aether</artifactId>
+            <version>2.6.11</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -79,6 +81,18 @@
             <groupId>com.basistech</groupId>
             <artifactId>pax-exam-test-composite</artifactId>
             <version>0.0.11</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.framework</artifactId>
+            <version>7.0.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -119,40 +133,6 @@
         <defaultGoal>install</defaultGoal>
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                        <encoding>utf-8</encoding>
-                        <source>11</source>
-                        <target>11</target>
-                        <release>11</release>
-                        <debug>true</debug>
-                        <optimize>true</optimize>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-enforcer-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>enforce-versions</id>
-                            <goals>
-                                <goal>enforce</goal>
-                            </goals>
-                            <configuration>
-                                <rules>
-                                    <requireMavenVersion>
-                                        <version>3.0.4</version>
-                                    </requireMavenVersion>
-                                    <requireJavaVersion>
-                                        <version>[17,)</version>
-                                    </requireJavaVersion>
-                                </rules>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-scm-publish-plugin</artifactId>
@@ -232,6 +212,7 @@
                             <goal>verify</goal>
                         </goals>
                         <configuration>
+                            <argLine>--add-opens java.base/java.security=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED</argLine>
                             <systemPropertyVariables>
                                 <java.awt.headless>true</java.awt.headless>
                                 <project.build.directory>${project.build.directory}</project.build.directory>

@@ -17,7 +17,7 @@
 package com.basistech.tclre;
 
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
+//import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -55,7 +55,7 @@ public class Utils {
             description.appendText(String.format("Group %d was not [%d,%d)", index, start, end));
         }
 
-        @Factory
+//        @Factory
         public static <T> Matcher<ReMatcher> groupIs(int index, int start, int end) {
             return new MatcherMatches(index, start, end);
         }
@@ -152,22 +152,22 @@ public class Utils {
             }
         }
 
-        @Factory
+//        @Factory
         public static Matcher<String> matches(String pattern, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
             return new Matches(pattern, null, pflags, eflags);
         }
 
-        @Factory
+//        @Factory
         public static Matcher<String> matches(String pattern, String[] captures, EnumSet<PatternFlags> pflags, EnumSet<ExecFlags> eflags) {
             return new Matches(pattern, captures, pflags, eflags);
         }
 
-        @Factory
+//        @Factory
         public static Matcher<String> matches(String pattern) {
             return new Matches(pattern, null, EnumSet.noneOf(PatternFlags.class), EnumSet.noneOf(ExecFlags.class));
         }
 
-        @Factory
+//        @Factory
         public static Matcher<String> matches(String pattern, PatternFlags... pflags) {
             EnumSet<PatternFlags> flagSet = EnumSet.noneOf(PatternFlags.class);
             for (PatternFlags pf : pflags) {
@@ -176,12 +176,12 @@ public class Utils {
             return new Matches(pattern, null, flagSet, EnumSet.noneOf(ExecFlags.class));
         }
 
-        @Factory
+//        @Factory
         public static Matcher<String> matches(RePattern pattern) {
             return new Matches(pattern, EnumSet.noneOf(ExecFlags.class));
         }
 
-        @Factory
+//        @Factory
         public static Matcher<String> matches(RePattern pattern, ExecFlags... eflags) {
             EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
             for (ExecFlags ef : eflags) {
@@ -192,7 +192,7 @@ public class Utils {
 
 
 
-        @Factory
+//        @Factory
         public static <T> Matcher<String> matches(RePattern pattern, String[] captures, ExecFlags... eflags) {
             EnumSet<ExecFlags> flagSet = EnumSet.noneOf(ExecFlags.class);
             for (ExecFlags ef : eflags) {
@@ -201,7 +201,7 @@ public class Utils {
             return new Matches(pattern, captures, flagSet);
         }
 
-        @Factory
+//        @Factory
         public static <T> Matcher<String> matches(String pattern, String[] captures, PatternFlags... pflags) {
             EnumSet<PatternFlags> flagSet = EnumSet.noneOf(PatternFlags.class);
             for (PatternFlags pf : pflags) {

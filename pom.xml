@@ -18,17 +18,14 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tcl-regex</artifactId>
     <groupId>com.basistech.tclre</groupId>
-    <version>0.14.5-SNAPSHOT</version>
+    <version>0.14.6-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <description>Java port of the regex engine from Tcl</description>
     <parent>
         <groupId>com.basistech</groupId>
         <artifactId>open-source-parent</artifactId>
-        <version>10.0.0</version>
+        <version>11.0.0</version>
     </parent>
-    <prerequisites>
-        <maven>3.0.4</maven>
-    </prerequisites>
     <inceptionYear>2014</inceptionYear>
     <url>http://basis-technology-corp.github.io/tcl-regex-java</url>
     <scm>
@@ -59,8 +56,8 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <version>1.9.5</version>
+            <artifactId>mockito-core</artifactId>
+            <version>4.5.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -75,9 +72,27 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.ops4j.pax.url</groupId>
+            <artifactId>pax-url-aether</artifactId>
+            <version>2.6.11</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.basistech</groupId>
             <artifactId>pax-exam-test-composite</artifactId>
             <version>0.0.11</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.framework</artifactId>
+            <version>7.0.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -120,17 +135,6 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                        <encoding>utf-8</encoding>
-                        <source>1.8</source>
-                        <target>1.8</target>
-                        <debug>true</debug>
-                        <optimize>true</optimize>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-scm-publish-plugin</artifactId>
                     <configuration>
                         <scmBranch>gh-pages</scmBranch>
@@ -140,7 +144,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
-                      <argLine>-Xmx2g @{argLine}</argLine>
+                      <argLine>-Xmx2g --add-opens=java.base/java.lang=ALL-UNNAMED</argLine>
                     </configuration>
                 </plugin>
             </plugins>
@@ -196,29 +200,11 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>1.16</version>
-                <executions>
-                    <execution>
-                        <id>animal-sniffer</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <signature>
-                        <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java18</artifactId>
-                        <version>1.0</version>
-                    </signature>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <argLine>--add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED</argLine>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -226,6 +212,7 @@
                             <goal>verify</goal>
                         </goals>
                         <configuration>
+                            <argLine>--add-opens java.base/java.security=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED</argLine>
                             <systemPropertyVariables>
                                 <java.awt.headless>true</java.awt.headless>
                                 <project.build.directory>${project.build.directory}</project.build.directory>

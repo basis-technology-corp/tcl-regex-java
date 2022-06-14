@@ -23,16 +23,16 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyShort;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyShort;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -65,7 +65,7 @@ public class ColorMapTest {
         cm.okcolors(nfa);
         assertEquals(Constants.WHITE, runtime(cm).getcolor('a'));
         verify(compiler, never()).getNfa();
-        verify(nfa, never()).newarc(anyInt(), anyShort(), (State)anyObject(), (State)anyObject());
+        verify(nfa, never()).newarc(anyInt(), anyShort(), any(State.class), any(State.class));
     }
 
     @Test
@@ -75,7 +75,7 @@ public class ColorMapTest {
         cm.okcolors(nfa);
         assertEquals(1, cm.subcolor('a'));
         verify(compiler, never()).getNfa();
-        verify(nfa, never()).newarc(anyInt(), anyShort(), (State)anyObject(), (State)anyObject());
+        verify(nfa, never()).newarc(anyInt(), anyShort(), any(State.class), any(State.class));
     }
 
     @Test
@@ -191,7 +191,7 @@ public class ColorMapTest {
                     );
                     return null;
                 }
-            }).when(nfa).newarc(anyInt(), anyShort(), (State) anyObject(), (State) anyObject());
+            }).when(nfa).newarc(anyInt(), anyShort(), any(State.class), any(State.class));
         }
 
         ColorMap cm = new ColorMap(compiler);

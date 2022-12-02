@@ -18,7 +18,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tcl-regex</artifactId>
     <groupId>com.basistech.tclre</groupId>
-    <version>0.14.6-SNAPSHOT</version>
+    <version>0.14.7-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <description>Java port of the regex engine from Tcl</description>
     <parent>

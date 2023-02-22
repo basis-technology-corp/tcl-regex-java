@@ -24,7 +24,7 @@
     <parent>
         <groupId>com.basistech</groupId>
         <artifactId>open-source-parent</artifactId>
-        <version>12.0.0</version>
+        <version>13.0.0</version>
     </parent>
     <inceptionYear>2014</inceptionYear>
     <url>http://basis-technology-corp.github.io/tcl-regex-java</url>

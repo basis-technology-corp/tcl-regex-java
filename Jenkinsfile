@@ -16,7 +16,7 @@ standardProperties(properties)
 def options = [:]
 
 options.afterBuild = {
-    withMaven([dk: params.testJdk]) {
+    withMaven(jdk: params.testJdk]) {
         withSonarQubeEnv() {
             sh "mvn -D sonar.login=${env.SONAR_AUTH_TOKEN} sonar:sonar -D sonar.host.url=${env.SONAR_HOST_URL}"
         }

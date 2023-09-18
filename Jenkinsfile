@@ -8,7 +8,14 @@ properties([
         string(name: 'version',
         defaultValue: '',
         description: 'Version to release, or empty to use the default next version')
-    ])
+    ]),
+    buildParams: [
+        string(
+	    name: 'buildJdk',
+	    defaultValue: 'openjdk-17',
+            description: 'The JDK to use for building',
+	),
+    ]
 ])
 
 standardProperties(properties)

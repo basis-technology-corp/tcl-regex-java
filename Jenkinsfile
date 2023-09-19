@@ -12,17 +12,14 @@ properties([
             defaultValue: '',
             description: 'Version to release, or empty to use the default next version'
 	),
-	string(
-	    name: 'buildJdk',
-	    defaultValue: 'openjdk-17',
-            description: 'The JDK to use for building'
-	)
-    ])
+     ])
 ])
 
 standardProperties(properties)
 
-def options = [:]
+def options = [
+    mavenOptionsExtra: [jdk: 'openjdk-17'],
+]
 
 options.afterBuild = {
     withMaven([jdk: params.testJdk]) {

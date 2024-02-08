@@ -122,12 +122,6 @@
             <artifactId>args4j</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.core</artifactId>
-            <version>5.0.0</version>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
     <build>
         <defaultGoal>install</defaultGoal>
@@ -150,31 +144,9 @@
             </plugins>
         </pluginManagement>
         <plugins>
-            <!-- because we're not dealing any tricky OSGi version
-                 issues, we can just grab our dependencies and filter
-                 down to get our bundles. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-bundles</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/bundles</outputDirectory>
-                            <!--
-                              Exclude the ones that are not OSGi
-                              components, plus OSGi itself.
-                          -->
-                            <excludeArtifactIds>bndlib,log4j-slf4j-impl,org.osgi.core</excludeArtifactIds>
-                            <excludeGroupIds>org.slf4j</excludeGroupIds>
-                            <includeScope>compile</includeScope>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.servicemix.tooling</groupId>

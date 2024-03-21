@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright 2014-2022 Basis Technology Corp.
+  ~ Copyright 2014-2024 Basis Technology Corp.
   ~
   ~    Licensed under the Apache License, Version 2.0 (the "License");
   ~    you may not use this file except in compliance with the License.
@@ -18,13 +18,12 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tcl-regex</artifactId>
     <groupId>com.basistech.tclre</groupId>
-    <version>0.14.11-SNAPSHOT</version>
-    <packaging>bundle</packaging>
+    <version>0.14.12-SNAPSHOT</version>
     <description>Java port of the regex engine from Tcl</description>
     <parent>
         <groupId>com.basistech</groupId>
         <artifactId>open-source-parent</artifactId>
-        <version>17.0.0</version>
+        <version>18.0.0</version>
     </parent>
     <inceptionYear>2014</inceptionYear>
     <url>http://basis-technology-corp.github.io/tcl-regex-java</url>
@@ -63,36 +62,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.url</groupId>
-            <artifactId>pax-url-aether</artifactId>
-            <version>2.6.11</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.url</groupId>
-            <artifactId>pax-url-aether</artifactId>
-            <version>2.6.11</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.basistech</groupId>
-            <artifactId>pax-exam-test-composite</artifactId>
-            <version>0.0.11</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.felix</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.framework</artifactId>
-            <version>7.0.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -161,15 +130,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <configuration>
-                    <instructions>
-                        <Export-Package>com.basistech.tclre</Export-Package>
-                    </instructions>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

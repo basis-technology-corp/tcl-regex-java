@@ -11,7 +11,7 @@ properties([
 	    name: 'version',
             defaultValue: '',
             description: 'Version to release, or empty to use the default next version'
-	),
+	)
      ])
 ])
 

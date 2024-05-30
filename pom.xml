@@ -18,12 +18,12 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tcl-regex</artifactId>
     <groupId>com.basistech.tclre</groupId>
-    <version>0.14.12-SNAPSHOT</version>
+    <version>0.14.13-SNAPSHOT</version>
     <description>Java port of the regex engine from Tcl</description>
     <parent>
         <groupId>com.basistech</groupId>
         <artifactId>open-source-parent</artifactId>
-        <version>18.0.0</version>
+        <version>19.0.0</version>
     </parent>
     <inceptionYear>2014</inceptionYear>
     <url>http://basis-technology-corp.github.io/tcl-regex-java</url>

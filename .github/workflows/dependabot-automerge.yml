@@ -1,0 +1,6 @@
+name: Dependabot automerge
+on: pull_request
+jobs:
+  dependabot:
+    secrets: inherit
+    uses: RosetteTextAnalytics/reusable-workflows/.github/workflows/dependabot-automerge.yml@main

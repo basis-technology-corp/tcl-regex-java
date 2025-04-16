@@ -1,5 +1,9 @@
 name: Dependabot automerge
 on: pull_request
+
+permissions:
+  pull-requests: write
+
 jobs:
   dependabot:
     runs-on: ubuntu-latest
